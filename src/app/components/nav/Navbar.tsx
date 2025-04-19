@@ -14,9 +14,10 @@ interface BurgerIconProps {
 }
 
 const navItems: NavItem[] = [
+  { name: 'หน้าหลัก', path: '/' },
   { name: 'ค้นหาฟรีแลนซ์', path: '/find-freelance' },
   { name: 'โปรเจกต์บอร์ด', path: '/project-board' },
-  { name: 'จัดการโปรเจกต์', path: '/project-manage' }
+  { name: 'จัดการโปรเจกต์', path: '/project-manage'}
 ]
 
 function BurgerIcon({ isMenuOpen }: BurgerIconProps) {
@@ -178,7 +179,7 @@ function Navbar() {
             : 'bg-white/80'
         }`}
       >
-        <div className="flex place-items-center gap-6">
+        <div className="flex place-items-center gap-8">
           <button
             onClick={toggleMenuOpen}
             className="sm:hidden hover:text-primary-blue-400 transition-colors p-1 rounded-full hover:bg-gray-100"
@@ -189,18 +190,18 @@ function Navbar() {
           <Link href={'/'} className="transform transition-transform hover:scale-105">
             <h1 className="text-2xl font-medium">connect</h1>
           </Link>
-          <div className="hidden gap-6 sm:flex">
+          <div className="hidden gap-8 sm:flex">
             {navItems.map((item) => (
               <Link
-                key={item.path}
-                href={item.path}
-                className={`text-s font-normal hover:text-primary-blue-400 transition-all duration-200 relative after:absolute after:bottom-[-5px] after:left-0 after:h-[2px] after:bg-primary-blue-400 after:transition-all after:duration-300 ${
-                  pathname === item.path
-                    ? 'text-primary-blue-400 after:w-full'
-                    : 'text-gray-400 after:w-0 hover:after:w-full'
-                }`}
+              key={item.path}
+              href={item.path}
+              className={`text-s font-normal hover:text-primary-blue-400 transition-all duration-200 relative after:absolute after:bottom-[-5px] after:left-0 after:h-[2px] after:bg-primary-blue-400 after:transition-all after:duration-300 ${
+                pathname === item.path
+                ? 'text-primary-blue-400 after:w-full'
+                : 'text-gray-400 after:w-0 hover:after:w-full'
+              } ${!isMenuOpen && item.path === '/' ? 'hidden' : ''}`}
               >
-                {item.name}
+              {item.name}
               </Link>
             ))}
           </div>

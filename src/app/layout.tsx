@@ -2,6 +2,7 @@ import React from "react";
 import Navbar from "./components/nav/Navbar";
 import "./css/globals.css";
 import { ReactNode } from "react";
+import Footer from "./components/footer/Footer";
 
 export const metadata = {
   title: "COSCI-CONNECT",
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <div className="py-20 px-4 md:px-4 lg:px-4 xl:px-12">
           {children}
         </div>
+        <Footer/>
       </body>
     </html>
   );
