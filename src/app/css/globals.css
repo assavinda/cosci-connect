@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@100;200;300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+    /* colors */
+    --color-primary-black: #1a1a1a ;
+    --color-primary-gray: #7a7a7a ;
+    --color-secondary-gray: #9e9e9e ;
+    --color-primary-white: #ffffff ;
+    --color-primary-blue-600: #0C5095 ;
+    --color-primary-blue-500: #1167AE ;
+    --color-primary-blue-400: #4296CE ;
+    --color-primary-blue-300: #69BBE6 ;
+    --color-primary-blue-200: #9DDDF6 ;
+    --color-primary-blue-100: #DEF6FF ;
+  
+    /* font sizes */
+    --text-xxs: 0.5rem;
+    --text-xs: 0.75rem;
+    --text-s: 1rem;
+    --text-m: 1.25rem;
+    --text-l: 1.5rem;
+    --text-xl: 1.75rem;
+    --text-2xl: 2rem;
+    --text-3xl: 2.25rem;
+    --text-4xl: 2.5rem;
+    --text-5xl: 2.75rem;
+    --text-6xl: 3rem;
+    --text-7xl: 3.25rem;
+  
+    /* spacing */
+    --spacing-sec-s: 40px;
+    --spacing-sec-m: 80px;
+    --spacing-sec-l: 112px;
+}
+
+* {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+*::-webkit-scrollbar {
+    display: none;
+}
+  
+body {
+    font-family: "IBM Plex Sans Thai", sans-serif;
+    @apply text-primary-black;
+}
+
+button {
+    @apply cursor-pointer;
+}
