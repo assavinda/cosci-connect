@@ -3,9 +3,8 @@ import FreelanceList from "../../components/lists/FreelanceList";
 
 export default function FindFreelancePage() {
     // In a real implementation, you would fetch this data from your backend
-    // These values are for demonstration purposes
+    // This value is for demonstration purposes
     const totalFreelancers = 56; // Example: 56 total freelancers
-    const itemsPerPage = 12; // Show 12 items per page
     
     return (
       <div className="flex flex-col gap-3">
@@ -28,7 +27,6 @@ export default function FindFreelancePage() {
 
         {/* freelance list with pagination */}
         <FreelanceList 
-          itemsPerPage={itemsPerPage} 
           totalItems={totalFreelancers} 
         />
       </div>

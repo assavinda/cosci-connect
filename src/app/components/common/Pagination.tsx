@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface PaginationProps {
   currentPage: number;
@@ -14,6 +15,7 @@ const Pagination: React.FC<PaginationProps> = ({
   baseUrl,
   queryParams = {},
 }) => {
+  const router = useRouter();
   // Don't render pagination if there's only one page
   if (totalPages <= 1) return null;
 
@@ -22,6 +24,20 @@ const Pagination: React.FC<PaginationProps> = ({
     const params = new URLSearchParams(queryParams);
     params.set('page', page.toString());
     return `${baseUrl}?${params.toString()}`;
+  };
+  
+  // Handle navigation with scroll to top
+  const handlePageChange = (page: number) => {
+    // Scroll to top smoothly before changing the page
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+    
+    // Wait for the scroll animation to complete before changing the page
+    setTimeout(() => {
+      router.push(createPageUrl(page));
+    }, 500); // Adjust timing as needed - should match your scroll animation duration
   };
 
   // Generate array of page numbers to display
@@ -67,22 +83,22 @@ const Pagination: React.FC<PaginationProps> = ({
   const pageNumbers = getPageNumbers();
 
   return (
-    <nav className="flex justify-center mt-6 mb-8" aria-label="Pagination">
-      <ul className="flex gap-3 items-center">
+    <nav className="flex justify-center mt-12 mb-8" aria-label="Pagination">
+      <ul className="flex gap-2 items-center">
         {/* Previous Page Button */}
-        <li>
+        <li className="mx-2">
           {currentPage > 1 ? (
-            <Link
-              href={createPageUrl(currentPage - 1)}
-              className="p-2 rounded-full border border-gray-300 hover:bg-gray-100 text-gray-500 flex items-center"
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              className="p-1 rounded-lg border border-gray-300 hover:bg-gray-100 text-gray-500 flex items-center"
               aria-label="Previous page"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
-            </Link>
+            </button>
           ) : (
-            <span className="p-2 rounded-full border border-gray-200 text-gray-300 cursor-not-allowed flex items-center">
+            <span className="p-1 rounded-lg border border-gray-200 text-gray-300 cursor-not-allowed flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
@@ -107,31 +123,31 @@ const Pagination: React.FC<PaginationProps> = ({
                   {page}
                 </span>
               ) : (
-                <Link
-                  href={createPageUrl(page as number)}
+                <button
+                  onClick={() => handlePageChange(page as number)}
                   className="px-3 py-1 rounded-xl border border-gray-300 hover:bg-gray-100 text-gray-500 font-medium"
                 >
                   {page}
-                </Link>
+                </button>
               )}
             </li>
           );
         })}
 
         {/* Next Page Button */}
-        <li>
+        <li className="mx-2">
           {currentPage < totalPages ? (
-            <Link
-              href={createPageUrl(currentPage + 1)}
-              className="p-2 rounded-full border border-gray-300 hover:bg-gray-100 text-gray-500 flex items-center"
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              className="p-1 rounded-lg border border-gray-300 hover:bg-gray-100 text-gray-500 flex items-center"
               aria-label="Next page"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
-            </Link>
+            </button>
           ) : (
-            <span className="p-2 rounded-full border border-gray-200 text-gray-300 cursor-not-allowed flex items-center">
+            <span className="p-1 rounded-lg border border-gray-200 text-gray-300 cursor-not-allowed flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
