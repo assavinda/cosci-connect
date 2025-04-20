@@ -4,7 +4,7 @@ import Link from "next/link"
 import ProjectManageButtons from "../../components/buttons/ProjectManageButtons";
 
 // สร้างคอมโพเนนต์การ์ดโปรเจกต์
-const ProjectCard = ({ id, title, owner, status, progress, onUpdateProgress }) => {
+const ProjectManageCard = ({ id, title, owner, status, progress, onUpdateProgress }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [newProgress, setNewProgress] = useState(progress);
   
@@ -17,7 +17,7 @@ const ProjectCard = ({ id, title, owner, status, progress, onUpdateProgress }) =
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all">
       <div className="flex justify-between items-start mb-3">
         <h3 className="font-medium text-primary-blue-500 truncate">{title}</h3>
-        <span className={`text-xs px-2 py-1 rounded-full ${
+        <span className={`text-xs px-2 py-1 rounded-full text-nowrap ${
           status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
           status === 'revision' ? 'bg-orange-100 text-orange-800' :
           status === 'active' ? 'bg-green-100 text-green-800' :
@@ -103,7 +103,7 @@ const ProjectCard = ({ id, title, owner, status, progress, onUpdateProgress }) =
 }
 
 // สร้างคอมโพเนนต์ส่วนโปรเจกต์ตามสถานะ
-const ProjectSection = ({ title, status, projects, emptyMessage, onUpdateProgress }) => {
+const ProjectManageList = ({ title, status, projects, emptyMessage, onUpdateProgress }) => {
   return (
     <div className="bg-gray-50 rounded-xl p-4">
       <div className="flex justify-between items-center mb-4">
@@ -116,7 +116,7 @@ const ProjectSection = ({ title, status, projects, emptyMessage, onUpdateProgres
       {projects.length > 0 ? (
         <div className="space-y-3">
           {projects.map((project, index) => (
-            <ProjectCard 
+            <ProjectManageCard 
               key={index} 
               {...project} 
               onUpdateProgress={onUpdateProgress}
@@ -147,7 +147,7 @@ const sampleProjects = {
     {
       id: "r1",
       title: "แอปพลิเคชันบันทึกรายรับรายจ่าย",
-      owner: "นักศึกษา กขค",
+      owner: "ศิษย์เก่า กขค",
       status: "request",
       progress: 0
     },
@@ -267,22 +267,19 @@ export default function ManageProjectsPage() {
               </span></p>
             </div>
           </div>
-          <button className="bg-white text-primary-blue-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-all">
-            ดูทั้งหมด
-          </button>
         </div>
       </section>
       
       {/* Row 1: Pending and Requests */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <ProjectSection 
+        <ProjectManageList 
           title="รอการตอบรับ" 
           status="pending" 
           projects={projects.pending}
           emptyMessage="ไม่มีโปรเจกต์ที่รอการตอบรับ" 
           onUpdateProgress={updateProgress}
         />
-        <ProjectSection 
+        <ProjectManageList 
           title="คำขอร่วมงาน" 
           status="requests" 
           projects={projects.requests}
@@ -293,21 +290,21 @@ export default function ManageProjectsPage() {
       
       {/* Row 2: Active, Revision, Awaiting */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <ProjectSection 
+        <ProjectManageList 
           title="กำลังดำเนินการ" 
           status="active" 
           projects={projects.active}
           emptyMessage="ไม่มีโปรเจกต์ที่กำลังดำเนินการ" 
           onUpdateProgress={updateProgress}
         />
-        <ProjectSection 
+        <ProjectManageList 
           title="ต้องแก้ไข" 
           status="revision" 
           projects={projects.revision}
           emptyMessage="ไม่มีโปรเจกต์ที่ต้องแก้ไข" 
           onUpdateProgress={updateProgress}
         />
-        <ProjectSection 
+        <ProjectManageList 
           title="รอการยืนยัน" 
           status="awaiting" 
           projects={projects.awaiting}
@@ -318,7 +315,7 @@ export default function ManageProjectsPage() {
       
       {/* Row 3: Completed (เต็มความกว้าง) */}
       <div className="w-full">
-        <ProjectSection 
+        <ProjectManageList 
           title="เสร็จสิ้น" 
           status="completed" 
           projects={projects.completed}

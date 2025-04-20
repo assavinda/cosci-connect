@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@100;200;300;400;500;600;700&display=swap');
+/* @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@100;200;300;400;500;600;700&display=swap'); */
 @import "tailwindcss";
 
 @theme {
@@ -53,17 +53,21 @@ button {
 }
 
 .btn-primary {
-    @apply bg-primary-blue-500 text-white border border-primary-blue-500 hover:bg-primary-blue-400 hover:border-primary-blue-400 p-2 h-fit rounded-xl
+    @apply bg-primary-blue-500 text-white border border-primary-blue-500 hover:bg-primary-blue-400 hover:border-primary-blue-400 p-2.5 h-fit rounded-xl
 }
 
 .btn-secondary {
-    @apply bg-white text-gray-500 border border-gray-500 hover:bg-gray-100 hover:border-gray-500 p-2 h-fit rounded-xl
+    @apply bg-white text-gray-500 border border-gray-500 hover:bg-gray-100 hover:border-gray-500 p-2.5 h-fit rounded-xl
 }
 
 .btn-danger {
-    @apply bg-white text-red-500 border border-red-500 hover:bg-red-100 p-2 h-fit rounded-xl
+    @apply bg-white text-red-500 border border-red-500 hover:bg-red-100 p-2.5 h-fit rounded-xl
+}
+
+.label {
+    @apply block text-gray-700 text-sm font-bold mb-2
 }
 
 .input {
-    @apply p-3 w-full border border-gray-400 rounded-xl
+    @apply p-2.5 w-full border border-gray-400 rounded-xl
 }
