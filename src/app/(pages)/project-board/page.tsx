@@ -1,3 +1,4 @@
+import NewProjectButton from "../../components/buttons/NewProjectButton";
 import ProjectBoardList from "../../components/lists/ProjectBoardList";
 import React from "react"
 
@@ -17,9 +18,7 @@ function ProjectBoardPage() {
                     โพสต์งานหรือโปรเจกต์เพื่อหาฟรีแลนซ์สำหรับทำโปรเจกต์ของคุณ
                 </p>
             </div>
-            <button className="btn-primary w-full md:w-fit">
-                โพสต์งานใหม่
-            </button>
+            <NewProjectButton/>
         </section>
 
         {/* filter */}
