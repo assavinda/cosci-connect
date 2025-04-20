@@ -174,7 +174,7 @@ function Navbar() {
     <>
       <nav
         id="main-navbar"
-        className={`w-screen h-fit backdrop-blur-xs shadow py-4 px-4 md:px-4 lg:px-4 xl:px-12 fixed top-0 flex justify-between z-50 ${
+        className={`w-screen h-fit backdrop-blur-md shadow py-4 px-4 md:px-4 lg:px-4 xl:px-12 fixed top-0 flex justify-between z-50 ${
           isScrolled
             ? 'bg-white/90 shadow-md shadow-gray-400/25 rounded-b-xl'
             : 'bg-white/80'
