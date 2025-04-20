@@ -17,7 +17,8 @@ const navItems: NavItem[] = [
   { name: 'หน้าหลัก', path: '/' },
   { name: 'ค้นหาฟรีแลนซ์', path: '/find-freelance' },
   { name: 'โปรเจกต์บอร์ด', path: '/project-board' },
-  { name: 'จัดการโปรเจกต์', path: '/project-manage'}
+  { name: 'จัดการโปรเจกต์', path: '/manage-projects'},
+  { name: 'เกี่ยวกับเรา', path: '/about-us'}
 ]
 
 function BurgerIcon({ isMenuOpen }: BurgerIconProps) {

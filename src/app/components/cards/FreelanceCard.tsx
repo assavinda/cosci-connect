@@ -11,8 +11,14 @@ function FreelanceCard() {
             </div>
         </div>
         <hr className="text-gray-200"/>
-        <p className="text-gray-400">freelancer's skills</p>
-        <div className="w-full h-44 rounded-xl bg-gray-400"></div>
+        <p className="text-gray-400 text-xs">freelancer's skills</p>
+        <div className="w-full h-44 rounded-xl bg-gray-400 flex justify-end place-items-end relative">
+          <div className="absolute bg-gradient-to-t from-black/50 w-full rounded-b-xl">
+            <p className="text-white m-2 text-end text-xs">ตัวอย่างผลงาน</p>
+          </div>
+          
+        </div>
+        <p className="text-gray-400 text-s">ราคาเริ่มต้น: <span className="text-primary-blue-400">600 ฿</span></p>
         <button className="btn-primary">
             ดูโปรไฟล์
         </button>

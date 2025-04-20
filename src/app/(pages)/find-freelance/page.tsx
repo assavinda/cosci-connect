@@ -20,7 +20,7 @@ export default function FindFreelancePage() {
 
         {/* filter */}
         <section className="mt-6 flex flex-col">
-          <p className="font-medium">Filtered by:</p>
+          <p className="font-light text-gray-400">Filtered by</p>
         </section>
 
         <hr className="text-gray-300"/>
