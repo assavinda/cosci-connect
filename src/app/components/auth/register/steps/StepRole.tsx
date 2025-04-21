@@ -11,7 +11,7 @@ function StepRole({ selectedRole, onRoleSelect }: StepRoleProps) {
     {
       id: "student",
       title: "นิสิต",
-      description: "นิสิตปัจจุบันของมหาวิทยาลัย",
+      description: "นิสิตปัจจุบันของ COSCI",
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
@@ -22,7 +22,7 @@ function StepRole({ selectedRole, onRoleSelect }: StepRoleProps) {
     {
       id: "alumni",
       title: "ศิษย์เก่า",
-      description: "ศิษย์เก่าของมหาวิทยาลัย",
+      description: "ศิษย์เก่าของ COSCI",
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
@@ -33,7 +33,7 @@ function StepRole({ selectedRole, onRoleSelect }: StepRoleProps) {
     {
       id: "teacher",
       title: "อาจารย์",
-      description: "อาจารย์หรือบุคลากรของมหาวิทยาลัย",
+      description: "อาจารย์หรือบุคลากรของ COSCI",
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />

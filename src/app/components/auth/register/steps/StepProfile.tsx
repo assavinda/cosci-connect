@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { RegisterData } from '../RegisterForm';
 
 interface StepProfileProps {
@@ -11,18 +11,39 @@ function StepProfile({ data, updateData, onSelectImage }: StepProfileProps) {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [portfolioError, setPortfolioError] = useState('');
 
+  // Update preview when profileImage changes (after cropping)
+  useEffect(() => {
+    if (data.profileImage) {
+      // Clear any previous preview URL to avoid memory leaks
+      if (previewImage) {
+        URL.revokeObjectURL(previewImage);
+      }
+      // Create a new preview from the cropped image
+      const newPreviewUrl = URL.createObjectURL(data.profileImage);
+      setPreviewImage(newPreviewUrl);
+      
+      // Clean up preview URL when component unmounts or preview changes
+      return () => {
+        URL.revokeObjectURL(newPreviewUrl);
+      };
+    }
+  }, [data.profileImage]);
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
       
-      // Create a preview URL
+      // Create a preview URL for the cropper
       const reader = new FileReader();
       reader.onload = () => {
         const imageUrl = reader.result as string;
-        setPreviewImage(imageUrl);
+        // Don't set the preview yet, wait until after cropping
         onSelectImage(imageUrl); // Open crop modal
       };
       reader.readAsDataURL(file);
+      
+      // Reset the input value to ensure change event fires even if the same file is selected again
+      e.target.value = '';
     }
   };
 
@@ -55,6 +76,16 @@ function StepProfile({ data, updateData, onSelectImage }: StepProfileProps) {
   const handleBioChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     updateData({ bio: e.target.value });
   };
+  
+  const removeProfileImage = () => {
+    // Clear preview image
+    if (previewImage) {
+      URL.revokeObjectURL(previewImage);
+      setPreviewImage(null);
+    }
+    // Reset profile image data
+    updateData({ profileImage: undefined });
+  };
 
   // Format file size in KB or MB
   const formatFileSize = (bytes: number) => {
@@ -82,9 +113,9 @@ function StepProfile({ data, updateData, onSelectImage }: StepProfileProps) {
         
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-            {previewImage || data.profileImage ? (
+            {previewImage ? (
               <img
-                src={previewImage || (data.profileImage ? URL.createObjectURL(data.profileImage) : '')}
+                src={previewImage}
                 alt="Preview"
                 className="w-full h-full object-cover"
               />
@@ -96,7 +127,7 @@ function StepProfile({ data, updateData, onSelectImage }: StepProfileProps) {
             )}
           </div>
           
-          <div>
+          <div className="flex gap-2">
             <label
               htmlFor="profile-image"
               className="px-3 py-1 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 text-sm inline-block"
@@ -110,6 +141,16 @@ function StepProfile({ data, updateData, onSelectImage }: StepProfileProps) {
               className="hidden"
               onChange={handleImageChange}
             />
+            
+            {previewImage && (
+              <button
+                type="button"
+                onClick={removeProfileImage}
+                className="px-3 py-1 bg-white border border-gray-300 rounded-lg text-red-500 hover:bg-gray-50 text-sm inline-block"
+              >
+                ลบรูปภาพ
+              </button>
+            )}
           </div>
         </div>
       </div>

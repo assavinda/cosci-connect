@@ -6,7 +6,7 @@ function ProjectBoardCard() {
     <div className="bg-white shadow-md rounded-xl w-full p-3 flex flex-col border-[0.1px] border-gray-300 gap-3 hover:bg-gray-50">
         <div className="flex place-items-center gap-3">
             <div className="truncate w-full">
-                <p className="font-medium truncate">ชื่อโปรเจกต์</p>
+                <p className="font-medium truncate hover:text-primary-blue-400">ชื่อโปรเจกต์</p>
                 <div className="flex justify-between place-items-end">
                     <p className="text-xs text-gray-400">
                         โดย: อาจารย์ชื่อ นามสกุล
@@ -23,13 +23,15 @@ function ProjectBoardCard() {
             คำอธิบาย
         </p>
         
-        <div className="flex justify-between place-items-end">
-            <p className="text-gray-400 text-s">งบค่าจ้าง: <span className="text-primary-blue-400">600 ฿</span></p>
-            <p className="text-xs text-gray-400"></p>
+        <div className="flex justify-between place-items-center gap-2">
+          <div className="bg-gray-100 p-2 w-full rounded-xl">
+            <p className="text-gray-500 text-s">งบค่าจ้าง <span className="text-primary-blue-400 text-s">600 ฿</span></p>
+          </div>
+          
+          <button className="btn-primary">
+              ดูรายละเอียด
+          </button>
         </div>
-        <button className="btn-primary">
-            ดูรายละเอียด
-        </button>
     </div>
   )
 }

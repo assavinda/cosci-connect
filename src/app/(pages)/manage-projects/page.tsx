@@ -26,7 +26,7 @@ const ProjectManageCard = ({ id, title, owner, status, progress, onUpdateProgres
           'bg-blue-100 text-blue-800'
         }`}>
           {status === 'pending' ? 'รอตอบรับ' : 
-           status === 'revision' ? 'ต้องแก้ไข' :
+           status === 'revision' ? 'กำลังแก้ไข' :
            status === 'active' ? 'กำลังดำเนินการ' :
            status === 'request' ? 'คำขอร่วมงาน' :
            status === 'awaiting' ? 'รอการยืนยัน' :
@@ -34,7 +34,7 @@ const ProjectManageCard = ({ id, title, owner, status, progress, onUpdateProgres
         </span>
       </div>
       <div className="flex gap-2">
-        <p className="text-sm text-gray-600">โดย</p>
+        <p className="text-sm text-gray-400">โดย</p>
         <Link href={'/user/owner'}>
             <p className="text-sm text-gray-600 mb-2 truncate hover:underline hover:text-primary-blue-400">{owner}</p>
         </Link>
@@ -49,7 +49,7 @@ const ProjectManageCard = ({ id, title, owner, status, progress, onUpdateProgres
         ></div>
       </div>
       
-      <div className="flex justify-between text-xs text-gray-500">
+      <div className="flex justify-between w-full text-xs text-gray-500">
         <div>
           {isEditing ? (
             <div className="flex items-center gap-2">
@@ -59,11 +59,11 @@ const ProjectManageCard = ({ id, title, owner, status, progress, onUpdateProgres
                 max="100"
                 value={newProgress}
                 onChange={(e) => setNewProgress(Number(e.target.value))}
-                className="w-16 p-1 border rounded text-xs"
+                className="w-16 p-1 bg-gray-100 rounded text-xs"
               />
               <button 
                 onClick={handleProgressUpdate}
-                className="bg-green-500 text-white px-2 py-1 rounded text-xs"
+                className="text-primary-blue-400 px-2 py-1 rounded text-xs"
               >
                 บันทึก
               </button>
@@ -80,9 +80,9 @@ const ProjectManageCard = ({ id, title, owner, status, progress, onUpdateProgres
           ) : (
             <button 
               onClick={() => setIsEditing(true)}
-              className="flex items-center gap-1 hover:text-primary-blue-500"
+              className="flex py-1 items-center gap-1 hover:text-primary-blue-500"
             >
-              ความคืบหน้า {progress}%
+              {progress}%
               <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
                 <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -251,18 +251,18 @@ export default function ManageProjectsPage() {
         <h1 className="font-medium text-xl text-white">
           จัดการโปรเจกต์
         </h1>
-        <p className="text-white font-light">
+        <p className="text-white">
           จัดการทุกขั้นตอนในทุกโปรเจกต์ของคุณตั้งแต่รับงานจนถึงเสร็จงาน
         </p>
         <div className="flex justify-between items-center mt-2">
           <div className="flex flex-wrap gap-3">
             <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-lg">
-              <p className="text-white font-light text-sm">โปรเจกต์ทั้งหมด: <span className="font-medium">
+              <p className="text-white text-sm">โปรเจกต์ทั้งหมด: <span className="font-medium">
                 {Object.values(projects).reduce((acc, arr) => acc + arr.length, 0)}
               </span></p>
             </div>
             <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-lg">
-              <p className="text-white font-light text-sm">กำลังดำเนินการ: <span className="font-medium">
+              <p className="text-white text-sm">กำลังดำเนินการ: <span className="font-medium">
                 {projects.active.length}
               </span></p>
             </div>
@@ -298,10 +298,10 @@ export default function ManageProjectsPage() {
           onUpdateProgress={updateProgress}
         />
         <ProjectManageList 
-          title="ต้องแก้ไข" 
+          title="กำลังแก้ไข" 
           status="revision" 
           projects={projects.revision}
-          emptyMessage="ไม่มีโปรเจกต์ที่ต้องแก้ไข" 
+          emptyMessage="ไม่มีโปรเจกต์ที่กำลังแก้ไข" 
           onUpdateProgress={updateProgress}
         />
         <ProjectManageList 

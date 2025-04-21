@@ -179,7 +179,7 @@ function ChatWindow({ isOpen, onClose }: ChatWindowProps) {
   return (
     <div 
       ref={chatWindowRef}
-      className="fixed bottom-28 sm:bottom-10 right-6 sm:right-28 w-full sm:w-80 h-[360px] bg-white/90 backdrop-blur-md rounded-xl shadow-xl flex flex-col overflow-hidden z-50"
+      className="fixed bottom-20 sm:bottom-10 right-6 sm:right-28 w-full sm:w-80 h-[360px] bg-white/90 backdrop-blur-md rounded-xl shadow-xl flex flex-col overflow-hidden z-50"
       style={{ maxWidth: 'calc(100vw - 48px)' }}
     >
       {/* Header */}

@@ -15,7 +15,7 @@ function InboxButton() {
 
   return (
     <>
-      <div className="fixed bottom-0 right-0 m-10 hover:scale-[1.05] z-40">
+      <div className="fixed bottom-0 right-0 m-4 sm:m-10 hover:scale-[1.05] z-40">
         <button 
           className="bg-white/80 backdrop-blur-md text-primary-blue-500 border-2 border-primary-blue-500 shadow-lg hover:text-primary-blue-400 hover:border-primary-blue-400 p-3 w-[56px] font-medium rounded-full relative"
           onClick={toggleChatWindow}

@@ -68,7 +68,8 @@ function ProjectBoardList({ totalItems = 100, initialItemsPerPage = 12 }: Projec
     return (
         <div>
         {/* Page indicator at top right */}
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-between mb-6">
+            <p className="text-gray-400 text-sm">Filtered by</p>
             <p className="text-gray-500 text-sm">
                 หน้า {currentPage} จาก {totalPages}
             </p>
@@ -87,7 +88,7 @@ function ProjectBoardList({ totalItems = 100, initialItemsPerPage = 12 }: Projec
         <Pagination 
             currentPage={currentPage}
             totalPages={totalPages}
-            baseUrl="/find-freelance"
+            baseUrl="/project-board"
             queryParams={{
             // Add any existing filter query params here
             ...(searchParams.get('skill') && { skill: searchParams.get('skill')! }),

@@ -68,7 +68,8 @@ function FreelanceList({ totalItems = 100, initialItemsPerPage = 12 }: Freelance
   return (
     <div>
       {/* Page indicator at top right */}
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-between mb-6">
+        <p className="text-gray-400 text-sm">Filtered by</p>
         <p className="text-gray-500 text-sm">
           หน้า {currentPage} จาก {totalPages}
         </p>

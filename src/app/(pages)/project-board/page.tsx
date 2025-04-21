@@ -14,19 +14,14 @@ function ProjectBoardPage() {
                 <h1 className="font-medium text-xl text-primary-blue-500 whitespace-nowrap">
                     โปรเจกต์บอร์ด
                 </h1>
-                <p className="text-gray-400 font-light text-wrap">
+                <p className="text-gray-400 text-wrap">
                     โพสต์งานหรือโปรเจกต์เพื่อหาฟรีแลนซ์สำหรับทำโปรเจกต์ของคุณ
                 </p>
             </div>
             <NewProjectButton/>
         </section>
 
-        {/* filter */}
-        <section className="mt-6 flex flex-col">
-            <p className="font-light text-gray-400">Filtered by</p>
-        </section>
-
-        <hr className="text-gray-300"/>
+        <hr className="text-gray-300 mt-4"/>
 
         <ProjectBoardList 
           totalItems={totalProjects} 

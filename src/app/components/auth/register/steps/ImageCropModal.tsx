@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import Cropper from 'react-easy-crop';
 import { Point, Area } from 'react-easy-crop/types';
 
@@ -9,10 +9,17 @@ interface ImageCropModalProps {
 }
 
 function ImageCropModal({ imageSrc, onClose, onSave }: ImageCropModalProps) {
+  // Default values for crop and zoom
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Reset crop and zoom when modal opens with a new image
+  useEffect(() => {
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+  }, [imageSrc]);
 
   const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -57,7 +64,7 @@ function ImageCropModal({ imageSrc, onClose, onSave }: ImageCropModalProps) {
         croppedAreaPixels.height
       );
       
-      // Convert canvas to blob
+      // Convert canvas to blob with good quality
       canvas.toBlob((blob) => {
         if (blob) {
           // Create a File from the blob
@@ -70,7 +77,7 @@ function ImageCropModal({ imageSrc, onClose, onSave }: ImageCropModalProps) {
           onSave(croppedFile);
         }
         setIsProcessing(false);
-      }, 'image/jpeg');
+      }, 'image/jpeg', 0.9); // เพิ่มคุณภาพรูปเป็น 0.9 (90%)
     } catch (e) {
       console.error('Error cropping image:', e);
       setIsProcessing(false);

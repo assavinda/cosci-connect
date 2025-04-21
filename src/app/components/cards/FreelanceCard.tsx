@@ -6,7 +6,7 @@ function FreelanceCard() {
         <div className="flex place-items-center gap-3">
             <div className="bg-gray-400 size-10 rounded-full shadow-sm"></div>
             <div className="truncate">
-                <p className="font-medium truncate">ชื่อจริง นามสกุล</p>
+                <p className="font-medium truncate hover:text-primary-blue-400">ชื่อจริง นามสกุล</p>
                 <p className="text-xs text-gray-400">วิชาเอก</p>
             </div>
         </div>
@@ -18,10 +18,16 @@ function FreelanceCard() {
           </div>
           
         </div>
-        <p className="text-gray-400 text-s">ราคาเริ่มต้น: <span className="text-primary-blue-400">600 ฿</span></p>
-        <button className="btn-primary">
-            ดูโปรไฟล์
-        </button>
+        <div className="flex justify-between place-items-center gap-2">
+          <div className="bg-gray-100 p-2 w-full rounded-xl">
+            <p className="text-gray-500 text-s">เริ่มต้น <span className="text-primary-blue-400 text-s">600 ฿</span></p>
+          </div>
+          
+          <button className="btn-primary">
+              ดูโปรไฟล์
+          </button>
+        </div>
+        
     </div>
   )
 }

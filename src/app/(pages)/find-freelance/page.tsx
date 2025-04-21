@@ -5,6 +5,8 @@ export default function FindFreelancePage() {
     // In a real implementation, you would fetch this data from your backend
     // This value is for demonstration purposes
     const totalFreelancers = 56; // Example: 56 total freelancers
+
+    //ในของจริงแสดง student ที่มี status เป็น on
     
     return (
       <div className="flex flex-col gap-3">
@@ -13,17 +15,12 @@ export default function FindFreelancePage() {
           <h1 className="font-medium text-xl text-primary-blue-500 whitespace-nowrap">
             ค้นหาฟรีแลนซ์
           </h1>
-          <p className="text-gray-400 font-light text-wrap">
+          <p className="text-gray-400 text-wrap">
             ค้นหาฟรีแลนซ์จากทักษะความสามารถที่ตอบโจทย์ไอเดียของคุณ
           </p>
         </section>
 
-        {/* filter */}
-        <section className="mt-6 flex flex-col">
-          <p className="font-light text-gray-400">Filtered by</p>
-        </section>
-
-        <hr className="text-gray-300"/>
+        <hr className="text-gray-300 mt-4"/>
 
         {/* freelance list with pagination */}
         <FreelanceList 

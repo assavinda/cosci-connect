@@ -17,7 +17,7 @@ function StepPersonalInfo({ data, updateData }: StepPersonalInfoProps) {
       if (data.studentId.length !== 11) {
         setStudentIdError('รหัสนิสิตต้องมี 11 หลัก');
       } else if (data.studentId.substring(3, 8) !== '30010') {
-        setStudentIdError('รหัสนิสิตไม่ถูกต้อง (ตัวเลขหลักที่ 4-8 ต้องเป็น 30010)');
+        setStudentIdError('รหัสนิสิตไม่ถูกต้อง');
       } else {
         setStudentIdError('');
       }

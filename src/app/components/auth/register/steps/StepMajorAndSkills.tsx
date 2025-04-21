@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { RegisterData } from '../RegisterForm';
+import MajorDropdown from './MajorDropdown';
 
 interface StepMajorAndSkillsProps {
   data: RegisterData;
@@ -10,21 +11,22 @@ interface StepMajorAndSkillsProps {
 function StepMajorAndSkills({ data, updateData, skillCategories }: StepMajorAndSkillsProps) {
   const [activeCategory, setActiveCategory] = useState(Object.keys(skillCategories)[0]);
   
+  // Array of majors for dropdown
   const majors = [
-    "Computer Science",
-    "Information Technology",
-    "Software Engineering",
-    "Business Information Systems",
-    "Digital Media",
-    "Cybersecurity",
-    "Data Science",
-    "Artificial Intelligence",
-    "Computer Engineering",
-    "Graphic Design",
+    { value: "Computer Science", label: "Computer Science" },
+    { value: "Information Technology", label: "Information Technology" },
+    { value: "Software Engineering", label: "Software Engineering" },
+    { value: "Business Information Systems", label: "Business Information Systems" },
+    { value: "Digital Media", label: "Digital Media" },
+    { value: "Cybersecurity", label: "Cybersecurity" },
+    { value: "Data Science", label: "Data Science" },
+    { value: "Artificial Intelligence", label: "Artificial Intelligence" },
+    { value: "Computer Engineering", label: "Computer Engineering" },
+    { value: "Graphic Design", label: "Graphic Design" },
   ];
 
-  const handleMajorChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    updateData({ major: e.target.value });
+  const handleMajorChange = (value: string) => {
+    updateData({ major: value });
   };
 
   const handleSkillToggle = (skill: string) => {
@@ -57,25 +59,14 @@ function StepMajorAndSkills({ data, updateData, skillCategories }: StepMajorAndS
         <label htmlFor="major" className="block text-gray-700 text-sm mb-1">
           วิชาเอก
         </label>
-        <div className="relative">
-          <select
-            id="major"
-            className="input w-full appearance-none pr-10 cursor-pointer bg-white"
-            value={data.major}
-            onChange={handleMajorChange}
-            required
-          >
-            <option value="" disabled>เลือกวิชาเอก</option>
-            {majors.map((major) => (
-              <option key={major} value={major}>{major}</option>
-            ))}
-          </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-              <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-            </svg>
-          </div>
-        </div>
+        <MajorDropdown
+          id="major"
+          options={majors}
+          value={data.major}
+          onChange={handleMajorChange}
+          placeholder="เลือกวิชาเอก"
+          required
+        />
       </div>
 
       {data.role === 'student' && (
