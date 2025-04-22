@@ -13,16 +13,11 @@ function StepMajorAndSkills({ data, updateData, skillCategories }: StepMajorAndS
   
   // Array of majors for dropdown
   const majors = [
-    { value: "Computer Science", label: "Computer Science" },
-    { value: "Information Technology", label: "Information Technology" },
-    { value: "Software Engineering", label: "Software Engineering" },
-    { value: "Business Information Systems", label: "Business Information Systems" },
-    { value: "Digital Media", label: "Digital Media" },
-    { value: "Cybersecurity", label: "Cybersecurity" },
-    { value: "Data Science", label: "Data Science" },
-    { value: "Artificial Intelligence", label: "Artificial Intelligence" },
-    { value: "Computer Engineering", label: "Computer Engineering" },
-    { value: "Graphic Design", label: "Graphic Design" },
+    { value: "คอมพิวเตอร์เพื่อการสื่อสาร", label: "คอมพิวเตอร์เพื่อการสื่อสาร" },
+    { value: "การจัดการธุรกิจไซเบอร์", label: "การจัดการธุรกิจไซเบอร์" },
+    { value: "การออกแบบส่ื่อปฏิสัมพันธ์และมัลติมีเดีย", label: "การออกแบบส่ื่อปฏิสัมพันธ์และมัลติมีเดีย" },
+    { value: "การสื่อสารเพื่อการท่องเที่ยว", label: "การสื่อสารเพื่อการท่องเที่ยว" },
+    { value: "การสื่อสารเพื่อสุขภาพ", label: "การสื่อสารเพื่อสุขภาพ" },
   ];
 
   const handleMajorChange = (value: string) => {

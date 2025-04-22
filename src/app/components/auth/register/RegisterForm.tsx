@@ -26,11 +26,12 @@ export interface RegisterData {
   role: UserRole;
   firstName: string;
   lastName: string;
+  name: string; // เพิ่มฟิลด์ name สำหรับเก็บชื่อเต็ม
   studentId?: string;
   major: string;
   skills: string[];
   email: string;
-  isEmailVerified: boolean; // Add this field to track verification
+  isEmailVerified: boolean;
   profileImage?: File;
   portfolioFile?: File;
   bio?: string;
@@ -46,6 +47,7 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
     role: "student",
     firstName: "",
     lastName: "",
+    name: "", // เริ่มต้นเป็นค่าว่าง
     studentId: "",
     major: "",
     skills: [],
@@ -134,7 +136,25 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
         ...data, 
         isEmailVerified: false 
       }));
-    } else {
+    } 
+    // If firstName or lastName is updated, update name as well
+    else if ('firstName' in data || 'lastName' in data) {
+      const updatedData = {
+        ...data
+      };
+      
+      // Create the full name by combining firstName and lastName
+      const firstName = 'firstName' in data ? data.firstName : registerData.firstName;
+      const lastName = 'lastName' in data ? data.lastName : registerData.lastName;
+      
+      // Only set name if both firstName and lastName are present
+      if (firstName && lastName) {
+        updatedData.name = `${firstName} ${lastName}`;
+      }
+      
+      setRegisterData(prev => ({ ...prev, ...updatedData }));
+    }
+    else {
       setRegisterData(prev => ({ ...prev, ...data }));
     }
   };
