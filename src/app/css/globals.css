@@ -53,15 +53,15 @@ button {
 }
 
 .btn-primary {
-    @apply bg-primary-blue-500 text-white text-nowrap border border-primary-blue-500 hover:bg-primary-blue-400 hover:border-primary-blue-400 p-2.5 h-fit rounded-xl
+    @apply bg-primary-blue-500 text-white text-nowrap border border-primary-blue-500 hover:bg-primary-blue-400 hover:border-primary-blue-400 px-2.5 py-1.5 h-fit rounded-xl
 }
 
 .btn-secondary {
-    @apply bg-white text-gray-500 text-nowrap border border-gray-500 hover:bg-gray-100 hover:border-gray-500 p-2.5 h-fit rounded-xl
+    @apply bg-white text-gray-500 text-nowrap border border-gray-300 hover:bg-gray-100 hover:border-gray-300 px-2.5 py-1.5 h-fit rounded-xl
 }
 
 .btn-danger {
-    @apply bg-white text-red-500 text-nowrap border border-red-500 hover:bg-red-100 p-2.5 h-fit rounded-xl
+    @apply bg-white text-red-400 text-nowrap border border-red-300 hover:bg-red-100 px-2.5 py-1.5 h-fit rounded-xl
 }
 
 .label {
@@ -69,5 +69,5 @@ button {
 }
 
 .input {
-    @apply p-2.5 w-full border border-gray-400 rounded-xl
+    @apply px-2.5 py-2 w-full border border-gray-400 rounded-xl
 }

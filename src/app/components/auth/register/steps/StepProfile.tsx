@@ -101,7 +101,7 @@ function StepProfile({ data, updateData, onSelectImage }: StepProfileProps) {
       <div>
         <h2 className="text-lg font-medium text-gray-800">โปรไฟล์</h2>
         <p className="text-gray-500 text-sm">
-          เพิ่มรูปโปรไฟล์และรายละเอียดเพิ่มเติม (ไม่บังคับ)
+          เพิ่มรูปโปรไฟล์และรายละเอียดเพิ่มเติม
         </p>
       </div>
 

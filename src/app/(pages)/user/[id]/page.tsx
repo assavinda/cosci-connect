@@ -9,6 +9,10 @@ export default function UserProfilePage() {
         <p>บทบาท</p>
         {/* ถ้า user คนนี้เป็นฟรีแลนซ์ ให้ขึ้นปุ่มนี้*/}
         <HireButton/>
+        
+        portfolio
+
+        ภาพตัวอย่างผลงาน 6 รูป
     </div>
   )
 }

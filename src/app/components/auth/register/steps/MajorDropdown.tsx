@@ -126,7 +126,7 @@ const MajorDropdown: React.FC<MajorDropdownProps> = ({
     >
       {/* Dropdown trigger */}
       <div
-        className={`flex items-center justify-between p-2.5 w-full border rounded-xl cursor-pointer ${
+        className={`flex items-center justify-between px-2.5 py-2 w-full border rounded-xl cursor-pointer ${
           isOpen ? 'border-primary-blue-500 ring-2 ring-primary-blue-100' : 'border-gray-400'
         } ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white hover:border-gray-500'}`}
         onClick={toggleDropdown}
@@ -162,7 +162,7 @@ const MajorDropdown: React.FC<MajorDropdownProps> = ({
               filteredOptions.map((option, index) => (
                 <li
                   key={option.value}
-                  className={`px-3 py-2 cursor-pointer ${
+                  className={`px-3 py-1.5 cursor-pointer ${
                     option.value === value
                       ? 'bg-primary-blue-100 text-primary-blue-600'
                       : highlightedIndex === index

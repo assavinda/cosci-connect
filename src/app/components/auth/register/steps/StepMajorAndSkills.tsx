@@ -113,6 +113,32 @@ function StepMajorAndSkills({ data, updateData, skillCategories }: StepMajorAndS
               ))}
             </div>
           </div>
+
+          {/* Selected skills display */}
+          <div className="mt-3">
+                  <p className="text-sm text-gray-500 mb-2">ทักษะที่เลือก ({data.skills.length})</p>
+                  <div className="flex flex-wrap gap-2">
+                    {data.skills.map(skill => (
+                      <span 
+                        key={skill}
+                        className="bg-primary-blue-100 text-primary-blue-600 text-xs px-2 py-1 rounded-lg flex items-center"
+                      >
+                        {skill}
+                        <button 
+                          type="button"
+                          onClick={() => handleSkillToggle(skill)} 
+                          className="ml-1 text-primary-blue-600 hover:text-primary-blue-800 transition-colors"
+                          aria-label={`ลบทักษะ ${skill}`}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                          </svg>
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+          </div>
         </div>
       )}
     </div>
