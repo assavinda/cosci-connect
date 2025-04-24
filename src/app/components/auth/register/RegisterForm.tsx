@@ -72,8 +72,15 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
         return !!registerData.role;
       case 2: // Personal Info
         if (!registerData.firstName || !registerData.lastName) return false;
-        if (registerData.role === "student" && (!registerData.studentId || registerData.studentId.length !== 11)) {
-          return false;
+        if (registerData.role === "student") {
+          if (!registerData.studentId || registerData.studentId.length !== 11) {
+            return false;
+          }
+          // ตรวจสอบหากมีข้อความผิดพลาดในช่องรหัสนิสิต
+          const studentIdInput = document.getElementById('studentId');
+          if (studentIdInput && studentIdInput.classList.contains('border-red-500')) {
+            return false;
+          }
         }
         return true;
       case 3: // Major and Skills
@@ -84,7 +91,15 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
         return true;
       case 4: // Email
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(registerData.email);
+        if (!emailRegex.test(registerData.email)) return false;
+        
+        // ตรวจสอบหากมีข้อความผิดพลาดในช่องอีเมล
+        const emailInput = document.getElementById('email');
+        if (emailInput && emailInput.classList.contains('border-red-500')) {
+          return false;
+        }
+        
+        return true;
       case 5: // Profile (optional fields, always valid)
         return true;
       default:
@@ -96,7 +111,26 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
     // Clear previous errors
     setError("");
     
+    // Case step 1-3 and 5, just move to next step
+    if (currentStep < 4 || currentStep === 5) {
+      console.log(`Moving from step ${currentStep} to step ${currentStep + 1}`);
+      setCurrentStep(currentStep + 1);
+      return;
+    }
+    
+    // For step 4 (Email validation and OTP)
     if (currentStep === 4) {
+      // ตรวจสอบว่าอีเมลมีอยู่ในระบบแล้วหรือไม่
+      try {
+        const emailResponse = await axios.get(`/api/auth/check-email?email=${encodeURIComponent(registerData.email)}`);
+        if (emailResponse.data.exists) {
+          setError("อีเมลนี้ได้ลงทะเบียนไปแล้ว กรุณาใช้อีเมลอื่น");
+          return;
+        }
+      } catch (error) {
+        console.error("Error checking email:", error);
+      }
+      
       // Check if email was already verified or if it changed
       if (registerData.isEmailVerified && registerData.email === previousEmail) {
         // Email already verified and not changed - go directly to next step
@@ -132,8 +166,6 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
       handleSubmit();
       return;
     }
-
-    setCurrentStep(currentStep + 1);
   };
 
   const prevStep = () => {

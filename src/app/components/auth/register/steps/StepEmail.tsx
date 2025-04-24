@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 interface StepEmailProps {
   email: string;
@@ -8,6 +9,9 @@ interface StepEmailProps {
 
 function StepEmail({ email, isVerified, onEmailChange }: StepEmailProps) {
   const [emailError, setEmailError] = useState('');
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [emailExistsInSystem, setEmailExistsInSystem] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
 
   // Validate email format whenever it changes
   useEffect(() => {
@@ -16,14 +20,39 @@ function StepEmail({ email, isVerified, onEmailChange }: StepEmailProps) {
       if (!emailRegex.test(email)) {
         setEmailError('กรุณากรอกอีเมลให้ถูกต้อง');
       } else {
-        // Here we would normally check if email exists in the database
-        // For now, we'll just validate the format
-        setEmailError('');
+        // เมื่ออีเมลถูกต้องตามรูปแบบและได้รับการแตะ (touched) แล้ว
+        // ตรวจสอบว่ามีอีเมลนี้ในระบบแล้วหรือไม่
+        if (emailTouched) {
+          checkEmailExists();
+        } else {
+          setEmailError('');
+        }
       }
     } else {
       setEmailError('');
     }
-  }, [email]);
+  }, [email, emailTouched]);
+
+  // ตรวจสอบว่าอีเมลมีในระบบแล้วหรือไม่
+  const checkEmailExists = async () => {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+
+    setIsCheckingEmail(true);
+    try {
+      const response = await axios.get(`/api/auth/check-email?email=${encodeURIComponent(email)}`);
+      setEmailExistsInSystem(response.data.exists);
+      
+      if (response.data.exists) {
+        setEmailError('อีเมลนี้ได้ลงทะเบียนไปแล้ว');
+      } else {
+        setEmailError('');
+      }
+    } catch (error) {
+      console.error("Error checking email:", error);
+    } finally {
+      setIsCheckingEmail(false);
+    }
+  };
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onEmailChange(e.target.value);
@@ -46,18 +75,40 @@ function StepEmail({ email, isVerified, onEmailChange }: StepEmailProps) {
           <input
             type="email"
             id="email"
-            className={`input pr-10 ${emailError ? 'border-red-500' : isVerified ? 'border-green-500' : ''}`}
+            className={`input pr-10 ${
+              emailError ? 'border-red-500' : 
+              isVerified ? 'border-green-500' : 
+              emailTouched && !emailExistsInSystem && !isCheckingEmail ? 'border-green-500' : ''
+            }`}
             placeholder="example@g.swu.ac.th"
             value={email}
             onChange={handleEmailChange}
+            onBlur={() => setEmailTouched(true)}
             required
           />
-          {isVerified && (
+          
+          {/* แสดงไอคอนสถานะการตรวจสอบอีเมล */}
+          {email && (
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
+              {isCheckingEmail ? (
+                <div className="w-5 h-5 border-2 border-gray-400 border-r-transparent rounded-full animate-spin"></div>
+              ) : isVerified ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+              ) : emailExistsInSystem ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="15" y1="9" x2="9" y2="15"></line>
+                  <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+              ) : emailTouched && !emailError ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+              ) : null}
             </div>
           )}
         </div>
