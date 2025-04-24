@@ -1,8 +1,10 @@
-'use client'
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import React from "react";
-import { useState, useEffect } from "react"
+// src/app/components/nav/Navbar.tsx
+'use client';
+
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { useSession, signOut } from "next-auth/react";
 
 interface NavItem {
   name: string;
@@ -19,7 +21,7 @@ const navItems: NavItem[] = [
   { name: 'โปรเจกต์บอร์ด', path: '/project-board' },
   { name: 'จัดการโปรเจกต์', path: '/manage-projects'},
   { name: 'เกี่ยวกับเรา', path: '/about-us'}
-]
+];
 
 function BurgerIcon({ isMenuOpen }: BurgerIconProps) {
   return (
@@ -117,58 +119,93 @@ function BellIcon() {
 }
 
 function Navbar() {
-  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false)
-  const [isScrolled, setIsScrolled] = useState<boolean>(false)
-  const [navHeight, setNavHeight] = useState<number>(72) // ประมาณความสูงของ navbar
+  const { data: session, status } = useSession();
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const [isScrolled, setIsScrolled] = useState<boolean>(false);
+  const [navHeight, setNavHeight] = useState<number>(72); // ประมาณความสูงของ navbar
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState<boolean>(false);
   
   const toggleMenuOpen = (): void => {
-    setIsMenuOpen(!isMenuOpen)
+    setIsMenuOpen(!isMenuOpen);
     // Prevent scrolling when menu is open
     if (!isMenuOpen) {
-      document.body.style.overflow = 'hidden'
+      document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'auto'
+      document.body.style.overflow = 'auto';
     }
-  }
+  };
   
-  const pathname = usePathname()
+  const pathname = usePathname();
+  const router = useRouter();
   
   // Get navbar height on mount and resize
   useEffect(() => {
     const updateNavHeight = (): void => {
-      const navElement = document.getElementById('main-navbar')
+      const navElement = document.getElementById('main-navbar');
       if (navElement) {
-        setNavHeight(navElement.offsetHeight)
+        setNavHeight(navElement.offsetHeight);
       }
     }
     // Initial measurement
-    updateNavHeight()
+    updateNavHeight();
     // Update on resize
-    window.addEventListener('resize', updateNavHeight)
-    return () => window.removeEventListener('resize', updateNavHeight)
-  }, [])
+    window.addEventListener('resize', updateNavHeight);
+    return () => window.removeEventListener('resize', updateNavHeight);
+  }, []);
   
   // Add scroll effect
   useEffect(() => {
     const handleScroll = (): void => {
       if (window.scrollY > 20) {
-        setIsScrolled(true)
+        setIsScrolled(true);
       } else {
-        setIsScrolled(false)
+        setIsScrolled(false);
       }
     }
-    window.addEventListener('scroll', handleScroll)
+    window.addEventListener('scroll', handleScroll);
     return () => {
-      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('scroll', handleScroll);
     }
-  }, [])
+  }, []);
   
   // Clean up body style when component unmounts
   useEffect(() => {
     return () => {
-      document.body.style.overflow = 'auto'
+      document.body.style.overflow = 'auto';
     }
-  }, [])
+  }, []);
+
+  // Handle user menu toggle
+  const toggleUserMenu = () => {
+    setIsUserMenuOpen(!isUserMenuOpen);
+  };
+
+  // Close user menu if clicked outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const userMenu = document.getElementById('user-menu');
+      const profileButton = document.getElementById('profile-button');
+      
+      if (
+        userMenu && 
+        profileButton && 
+        !userMenu.contains(event.target as Node) && 
+        !profileButton.contains(event.target as Node)
+      ) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Handle logout
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: '/' });
+  };
   
   return (
     <>
@@ -211,10 +248,76 @@ function Navbar() {
           <button className="p-1 rounded-full hover:bg-gray-100 transition-all duration-200">
             <BellIcon/>
           </button>
-          {/* profile Image */}
-          <div className="rounded-full bg-gray-400 size-10 hover:shadow-md transition-all duration-300 cursor-pointer hover:scale-105"></div>
+          
+          {/* User Profile / Auth Button */}
+          {status === 'loading' ? (
+            // Loading state
+            <div className="rounded-full bg-gray-200 size-10 animate-pulse"></div>
+          ) : session ? (
+            // Logged in - show profile
+            <div className="relative">
+              <button 
+                id="profile-button"
+                className="rounded-full bg-gray-400 size-10 hover:shadow-md transition-all duration-300 cursor-pointer hover:scale-105 overflow-hidden"
+                onClick={toggleUserMenu}
+              >
+                {session.user?.profileImageUrl ? (
+                  <img 
+                    src={session.user.profileImageUrl} 
+                    alt={session.user.name || 'User profile'} 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-primary-blue-500 text-white font-medium">
+                    {session.user?.name?.charAt(0) || '?'}
+                  </div>
+                )}
+              </button>
+              
+              {/* User dropdown menu */}
+              {isUserMenuOpen && (
+                <div 
+                  id="user-menu"
+                  className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg overflow-hidden z-50"
+                >
+                  <div className="p-3 border-b border-gray-100">
+                    <p className="font-medium truncate">{session.user?.name}</p>
+                    <p className="text-sm text-gray-500 truncate">{session.user?.email}</p>
+                  </div>
+                  <ul>
+                    <li>
+                      <Link 
+                        href="/account" 
+                        className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        โปรไฟล์
+                      </Link>
+                    </li>
+                    <li>
+                      <button 
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 text-red-500 hover:bg-gray-100"
+                      >
+                        ออกจากระบบ
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : (
+            // Not logged in - show login button
+            <Link 
+              href="/auth?state=login"
+              className="btn-primary text-sm py-1"
+            >
+              เข้าสู่ระบบ
+            </Link>
+          )}
         </div>
       </nav>
+      
       {/* Overlay when mobile menu is open - ตอนนี้จะเริ่มต้นจากด้านล่างของ navbar */}
       <div
         style={{ top: `${navHeight}px` }}
@@ -223,6 +326,7 @@ function Navbar() {
         }`}
         onClick={toggleMenuOpen}
       ></div>
+      
       {/* Mobile Menu - slide-in animation */}
       <div
         style={{ top: `${navHeight}px` }}
@@ -248,6 +352,80 @@ function Navbar() {
               {item.name}
             </Link>
           ))}
+          
+          {/* Authentication links for mobile menu */}
+          {!session && (
+            <div className="mt-2 pt-2 border-t border-gray-200">
+              <Link
+                href="/auth?state=login"
+                className={`py-3 px-4 text-s font-normal hover:bg-gray-100 rounded-xl transition-all duration-100 text-primary-blue-500`}
+                onClick={() => setIsMenuOpen(false)}
+                style={{
+                  transitionDelay: `${navItems.length * 50}ms`,
+                  opacity: isMenuOpen ? 1 : 0,
+                  transform: isMenuOpen
+                    ? 'translateY(0)'
+                    : 'translateY(-20px)'
+                }}
+              >
+                เข้าสู่ระบบ
+              </Link>
+              <Link
+                href="/auth?state=register"
+                className={`py-3 px-4 text-s font-normal hover:bg-gray-100 rounded-xl transition-all duration-100 text-primary-blue-500`}
+                onClick={() => setIsMenuOpen(false)}
+                style={{
+                  transitionDelay: `${(navItems.length + 1) * 50}ms`,
+                  opacity: isMenuOpen ? 1 : 0,
+                  transform: isMenuOpen
+                    ? 'translateY(0)'
+                    : 'translateY(-20px)'
+                }}
+              >
+                สร้างบัญชี
+              </Link>
+            </div>
+          )}
+          
+          {/* User info and logout for mobile menu */}
+          {session && (
+            <div className="mt-2 pt-2 border-t border-gray-200">
+              <div className="py-3 px-4 flex items-center gap-3">
+                <div className="rounded-full bg-gray-400 size-10 overflow-hidden">
+                  {session.user?.profileImageUrl ? (
+                    <img 
+                      src={session.user.profileImageUrl} 
+                      alt={session.user.name || 'User profile'} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-primary-blue-500 text-white font-medium">
+                      {session.user?.name?.charAt(0) || '?'}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium truncate">{session.user?.name}</p>
+                  <p className="text-xs text-gray-500 truncate">{session.user?.email}</p>
+                </div>
+              </div>
+              
+              <Link
+                href="/account"
+                className={`py-3 px-4 text-s font-normal hover:bg-gray-100 rounded-xl transition-all duration-100 text-gray-600`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                โปรไฟล์
+              </Link>
+              
+              <button
+                onClick={handleLogout}
+                className={`w-full text-left py-3 px-4 text-s font-normal hover:bg-gray-100 rounded-xl transition-all duration-100 text-red-500`}
+              >
+                ออกจากระบบ
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </>

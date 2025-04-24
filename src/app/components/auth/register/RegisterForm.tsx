@@ -1,4 +1,8 @@
+// src/app/components/auth/register/RegisterForm.tsx
+'use client';
+
 import React, { useState } from "react";
+import axios from "axios";
 import StepRole from "./steps/StepRole";
 import StepPersonalInfo from "./steps/StepPersonalInfo";
 import StepMajorAndSkills from "./steps/StepMajorAndSkills";
@@ -6,6 +10,8 @@ import StepEmail from "./steps/StepEmail";
 import StepProfile from "./steps/StepProfile";
 import OTP from "../otp/OTP";
 import ImageCropModal from "./steps/ImageCropModal";
+import StepIndicator from "./steps/StepIndicator";
+import { useRouter } from "next/navigation";
 
 interface RegisterFormProps {
   onLoginClick: () => void;
@@ -26,7 +32,7 @@ export interface RegisterData {
   role: UserRole;
   firstName: string;
   lastName: string;
-  name: string; // เพิ่มฟิลด์ name สำหรับเก็บชื่อเต็ม
+  name: string;
   studentId?: string;
   major: string;
   skills: string[];
@@ -38,16 +44,19 @@ export interface RegisterData {
 }
 
 function RegisterForm({ onLoginClick }: RegisterFormProps) {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [showOTP, setShowOTP] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [cropImage, setCropImage] = useState<string | null>(null);
   const [previousEmail, setPreviousEmail] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  
   const [registerData, setRegisterData] = useState<RegisterData>({
     role: "student",
     firstName: "",
     lastName: "",
-    name: "", // เริ่มต้นเป็นค่าว่าง
+    name: "",
     studentId: "",
     major: "",
     skills: [],
@@ -83,7 +92,10 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
     }
   };
 
-  const nextStep = () => {
+  const nextStep = async () => {
+    // Clear previous errors
+    setError("");
+    
     if (currentStep === 4) {
       // Check if email was already verified or if it changed
       if (registerData.isEmailVerified && registerData.email === previousEmail) {
@@ -94,11 +106,24 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
       
       // Email not verified or changed - send OTP
       setIsLoading(true);
-      setTimeout(() => {
+      
+      try {
+        // Request an OTP for verification
+        const response = await axios.get(`/api/auth/verify-otp?email=${encodeURIComponent(registerData.email)}`);
+        
+        if (response.data.success) {
+          setPreviousEmail(registerData.email); // Save current email
+          setShowOTP(true);
+        } else {
+          setError("Failed to send OTP. Please try again.");
+        }
+      } catch (error) {
+        console.error("Failed to send OTP:", error);
+        setError("An error occurred. Please try again later.");
+      } finally {
         setIsLoading(false);
-        setShowOTP(true);
-        setPreviousEmail(registerData.email); // Save current email
-      }, 1000);
+      }
+      
       return;
     }
 
@@ -115,17 +140,73 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
+    // Clear any errors when moving back
+    setError("");
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      console.log("Form submitted successfully", registerData);
+    setError("");
+    
+    try {
+      // Create FormData to send files
+      const formData = new FormData();
+      
+      // Add basic user data
+      formData.append('firstName', registerData.firstName);
+      formData.append('lastName', registerData.lastName);
+      formData.append('email', registerData.email);
+      formData.append('role', registerData.role);
+      formData.append('major', registerData.major);
+      
+      // Add student ID if role is student
+      if (registerData.role === 'student' && registerData.studentId) {
+        formData.append('studentId', registerData.studentId);
+      }
+      
+      // Add skills as JSON string
+      formData.append('skills', JSON.stringify(registerData.skills));
+      
+      // Add bio if provided
+      if (registerData.bio) {
+        formData.append('bio', registerData.bio);
+      }
+      
+      // Add profile image if provided
+      if (registerData.profileImage) {
+        formData.append('profileImage', registerData.profileImage);
+      }
+      
+      // Add portfolio file if provided and role is student
+      if (registerData.role === 'student' && registerData.portfolioFile) {
+        formData.append('portfolio', registerData.portfolioFile);
+      }
+      
+      // Send registration request
+      const response = await axios.post('/api/auth/register', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      if (response.data.success) {
+        // Registration successful, redirect to login
+        router.push('/auth?state=login');
+      } else {
+        setError("Registration failed. Please try again.");
+      }
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      
+      // Handle specific error messages from the server
+      if (error.response && error.response.data && error.response.data.error) {
+        setError(error.response.data.error);
+      } else {
+        setError("An error occurred during registration. Please try again.");
+      }
+    } finally {
       setIsLoading(false);
-      // Redirect to login or dashboard
-      window.location.href = "/";
-    }, 1500);
+    }
   };
 
   const updateRegisterData = (data: Partial<RegisterData>) => {
@@ -181,6 +262,15 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
       </div>
 
       <hr className="text-gray-200" />
+      
+      {/* Step Indicator */}
+      <StepIndicator currentStep={currentStep} totalSteps={5} />
+
+      {error && (
+        <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-2 rounded-lg">
+          {error}
+        </div>
+      )}
 
       <div className="flex flex-col gap-6">
         {currentStep === 1 && (
@@ -227,6 +317,7 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
               type="button"
               onClick={prevStep}
               className="btn-secondary"
+              disabled={isLoading}
             >
               ย้อนกลับ
             </button>
@@ -259,8 +350,21 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
         </div>
       </div>
 
-      {showOTP && <OTP onClose={() => setShowOTP(false)} onVerified={handleOTPVerified} />}
-      {cropImage && <ImageCropModal imageSrc={cropImage} onClose={() => setCropImage(null)} onSave={handleCroppedImage} />}
+      {showOTP && (
+        <OTP 
+          onClose={() => setShowOTP(false)} 
+          onVerified={handleOTPVerified} 
+          email={registerData.email}
+        />
+      )}
+      
+      {cropImage && (
+        <ImageCropModal 
+          imageSrc={cropImage} 
+          onClose={() => setCropImage(null)} 
+          onSave={handleCroppedImage} 
+        />
+      )}
     </div>
   );
 }

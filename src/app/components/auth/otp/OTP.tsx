@@ -1,11 +1,14 @@
-import React, { useState, useRef, useEffect } from "react"
+// src/app/components/auth/otp/OTP.tsx
+import axios from "axios";
+import React, { useState, useRef, useEffect } from "react";
 
 interface OTPProps {
   onClose: () => void;
   onVerified?: () => void;
+  email?: string; // Optional email for resending OTP
 }
 
-function OTP({ onClose, onVerified }: OTPProps) {
+function OTP({ onClose, onVerified, email }: OTPProps) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -83,7 +86,7 @@ function OTP({ onClose, onVerified }: OTPProps) {
     }
   };
 
-  const verifyOtp = () => {
+  const verifyOtp = async () => {
     // Check if all OTP fields are filled
     if (otp.some(digit => digit === "")) {
       setError("กรุณากรอก OTP ให้ครบทุกช่อง");
@@ -92,13 +95,19 @@ function OTP({ onClose, onVerified }: OTPProps) {
     
     // Show loading state
     setIsVerifying(true);
+    setError("");
     
-    // Example verification - in production you'd call your API
+    // Get the full OTP
     const enteredOtp = otp.join("");
     
-    // Simulate API call
-    setTimeout(() => {
-      if (enteredOtp === "123456") { // Example valid OTP
+    try {
+      // Call the API to verify OTP
+      const response = await axios.post('/api/auth/verify-otp', {
+        email,
+        otp: enteredOtp
+      });
+      
+      if (response.data.success) {
         // Call onVerified callback if provided
         if (onVerified) {
           onVerified();
@@ -108,12 +117,21 @@ function OTP({ onClose, onVerified }: OTPProps) {
         }
       } else {
         setError("OTP ไม่ถูกต้อง กรุณาลองอีกครั้ง");
-        setIsVerifying(false);
       }
-    }, 1500);
+    } catch (error) {
+      console.error("OTP verification error:", error);
+      setError("OTP ไม่ถูกต้องหรือหมดอายุ กรุณาลองอีกครั้ง");
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
-  const resendOtp = () => {
+  const resendOtp = async () => {
+    if (!email) {
+      setError("ไม่สามารถส่ง OTP ใหม่ได้");
+      return;
+    }
+    
     // Reset the OTP inputs
     setOtp(["", "", "", "", "", ""]);
     
@@ -126,8 +144,17 @@ function OTP({ onClose, onVerified }: OTPProps) {
     // Focus the first input
     inputRefs.current[0]?.focus();
     
-    // In actual implementation, make an API call to resend OTP
-    console.log("Resending OTP...");
+    try {
+      // Call API to resend OTP
+      const response = await axios.get(`/api/auth/verify-otp?email=${encodeURIComponent(email)}`);
+      
+      if (!response.data.success) {
+        setError("ไม่สามารถส่ง OTP ใหม่ได้ กรุณาลองอีกครั้ง");
+      }
+    } catch (error) {
+      console.error("Error resending OTP:", error);
+      setError("เกิดข้อผิดพลาด กรุณาลองอีกครั้ง");
+    }
   };
 
   return (
