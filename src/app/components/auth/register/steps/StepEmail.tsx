@@ -1,59 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React from 'react';
+
+interface EmailValidation {
+  isChecking: boolean;
+  exists: boolean;
+  error: string;
+  touched: boolean;
+}
 
 interface StepEmailProps {
   email: string;
   isVerified: boolean;
+  validation: EmailValidation;
   onEmailChange: (email: string) => void;
+  onEmailTouched: () => void;
 }
 
-function StepEmail({ email, isVerified, onEmailChange }: StepEmailProps) {
-  const [emailError, setEmailError] = useState('');
-  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
-  const [emailExistsInSystem, setEmailExistsInSystem] = useState(false);
-  const [emailTouched, setEmailTouched] = useState(false);
-
-  // Validate email format whenever it changes
-  useEffect(() => {
-    if (email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        setEmailError('กรุณากรอกอีเมลให้ถูกต้อง');
-      } else {
-        // เมื่ออีเมลถูกต้องตามรูปแบบและได้รับการแตะ (touched) แล้ว
-        // ตรวจสอบว่ามีอีเมลนี้ในระบบแล้วหรือไม่
-        if (emailTouched) {
-          checkEmailExists();
-        } else {
-          setEmailError('');
-        }
-      }
-    } else {
-      setEmailError('');
-    }
-  }, [email, emailTouched]);
-
-  // ตรวจสอบว่าอีเมลมีในระบบแล้วหรือไม่
-  const checkEmailExists = async () => {
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
-
-    setIsCheckingEmail(true);
-    try {
-      const response = await axios.get(`/api/auth/check-email?email=${encodeURIComponent(email)}`);
-      setEmailExistsInSystem(response.data.exists);
-      
-      if (response.data.exists) {
-        setEmailError('อีเมลนี้ได้ลงทะเบียนไปแล้ว');
-      } else {
-        setEmailError('');
-      }
-    } catch (error) {
-      console.error("Error checking email:", error);
-    } finally {
-      setIsCheckingEmail(false);
-    }
-  };
-
+function StepEmail({ email, isVerified, validation, onEmailChange, onEmailTouched }: StepEmailProps) {
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onEmailChange(e.target.value);
   };
@@ -76,34 +38,34 @@ function StepEmail({ email, isVerified, onEmailChange }: StepEmailProps) {
             type="email"
             id="email"
             className={`input pr-10 ${
-              emailError ? 'border-red-500' : 
+              validation.error ? 'border-red-500' : 
               isVerified ? 'border-green-500' : 
-              emailTouched && !emailExistsInSystem && !isCheckingEmail ? 'border-green-500' : ''
+              validation.touched && !validation.exists && !validation.isChecking ? 'border-green-500' : ''
             }`}
             placeholder="example@g.swu.ac.th"
             value={email}
             onChange={handleEmailChange}
-            onBlur={() => setEmailTouched(true)}
+            onBlur={onEmailTouched}
             required
           />
           
           {/* แสดงไอคอนสถานะการตรวจสอบอีเมล */}
           {email && (
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-              {isCheckingEmail ? (
+              {validation.isChecking ? (
                 <div className="w-5 h-5 border-2 border-gray-400 border-r-transparent rounded-full animate-spin"></div>
               ) : isVerified ? (
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                   <polyline points="22 4 12 14.01 9 11.01"></polyline>
                 </svg>
-              ) : emailExistsInSystem ? (
+              ) : validation.exists ? (
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
                   <circle cx="12" cy="12" r="10"></circle>
                   <line x1="15" y1="9" x2="9" y2="15"></line>
                   <line x1="9" y1="9" x2="15" y2="15"></line>
                 </svg>
-              ) : emailTouched && !emailError ? (
+              ) : validation.touched && !validation.error ? (
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                   <polyline points="22 4 12 14.01 9 11.01"></polyline>
@@ -112,18 +74,28 @@ function StepEmail({ email, isVerified, onEmailChange }: StepEmailProps) {
             </div>
           )}
         </div>
-        {emailError && (
-          <p className="text-red-500 text-xs mt-1">{emailError}</p>
-        )}
-        {isVerified ? (
-          <p className="text-green-500 text-xs mt-1">
-            อีเมลได้รับการยืนยันแล้ว
-          </p>
-        ) : (
-          <p className="text-xs text-gray-500 mt-1">
-            คุณจะได้รับรหัส OTP ทางอีเมลนี้เพื่อยืนยันตัวตน
-          </p>
-        )}
+
+        <div className='relative py-2'>
+          {isVerified ? (
+            <div className="absolute">
+              <p className="text-green-500 text-xs mt-1">
+                อีเมลได้รับการยืนยันแล้ว
+              </p>
+            </div>
+          ) : (
+            <div className="absolute">
+            {validation.error ? (
+                <p className="text-red-500 text-xs">
+                  {validation.error}
+                </p>
+              ) : (
+              <p className="text-xs text-gray-500">
+                คุณจะได้รับรหัส OTP ทางอีเมลนี้เพื่อยืนยันตัวตน
+              </p>)
+            }
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">

@@ -1,7 +1,7 @@
 // src/app/components/auth/register/RegisterForm.tsx
 'use client';
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import StepRole from "./steps/StepRole";
 import StepPersonalInfo from "./steps/StepPersonalInfo";
@@ -43,6 +43,27 @@ export interface RegisterData {
   bio?: string;
 }
 
+interface ValidationState {
+  studentId: {
+    isChecking: boolean;
+    exists: boolean;
+    error: string;
+    touched: boolean;
+  };
+  email: {
+    isChecking: boolean;
+    exists: boolean;
+    error: string;
+    touched: boolean;
+  };
+  firstName: {
+    error: string;
+  };
+  lastName: {
+    error: string;
+  };
+}
+
 function RegisterForm({ onLoginClick }: RegisterFormProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
@@ -51,6 +72,28 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
   const [cropImage, setCropImage] = useState<string | null>(null);
   const [previousEmail, setPreviousEmail] = useState<string>("");
   const [error, setError] = useState<string>("");
+  
+  // Centralized validation state
+  const [validation, setValidation] = useState<ValidationState>({
+    studentId: {
+      isChecking: false,
+      exists: false,
+      error: '',
+      touched: false
+    },
+    email: {
+      isChecking: false,
+      exists: false,
+      error: '',
+      touched: false
+    },
+    firstName: {
+      error: ''
+    },
+    lastName: {
+      error: ''
+    }
+  });
   
   const [registerData, setRegisterData] = useState<RegisterData>({
     role: "student",
@@ -65,6 +108,143 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
     bio: ""
   });
 
+  // Validate student ID pattern whenever it changes
+  useEffect(() => {
+    if (registerData.role === 'student' && registerData.studentId) {
+      if (registerData.studentId.length !== 11) {
+        setValidation(prev => ({
+          ...prev,
+          studentId: { ...prev.studentId, error: 'รหัสนิสิตต้องมี 11 หลัก' }
+        }));
+      } else if (!/^[0-9]+$/.test(registerData.studentId)) {
+        setValidation(prev => ({
+          ...prev,
+          studentId: { ...prev.studentId, error: 'รหัสนิสิตต้องเป็นตัวเลขเท่านั้น' }
+        }));
+      } else if (registerData.studentId.substring(3, 8) !== '30010') {
+        setValidation(prev => ({
+          ...prev,
+          studentId: { ...prev.studentId, error: 'รหัสนิสิตไม่ถูกต้อง' }
+        }));
+      } else {
+        // ถ้ารูปแบบถูกต้อง และรหัสนิสิตเคยถูกกรอกแล้ว (touched)
+        // ให้ตรวจสอบว่ามีรหัสนิสิตนี้ในระบบแล้วหรือไม่
+        if (validation.studentId.touched) {
+          checkStudentIdExists(registerData.studentId);
+        } else {
+          setValidation(prev => ({
+            ...prev,
+            studentId: { ...prev.studentId, error: '' }
+          }));
+        }
+      }
+    } else {
+      setValidation(prev => ({
+        ...prev,
+        studentId: { ...prev.studentId, error: '' }
+      }));
+    }
+  }, [registerData.studentId, registerData.role, validation.studentId.touched]);
+
+  // Validate email format whenever it changes
+  useEffect(() => {
+    if (registerData.email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(registerData.email)) {
+        setValidation(prev => ({
+          ...prev,
+          email: { ...prev.email, error: 'กรุณากรอกอีเมลให้ถูกต้อง' }
+        }));
+      } else {
+        // เมื่ออีเมลถูกต้องตามรูปแบบและได้รับการแตะ (touched) แล้ว
+        // ตรวจสอบว่ามีอีเมลนี้ในระบบแล้วหรือไม่
+        if (validation.email.touched) {
+          checkEmailExists();
+        } else {
+          setValidation(prev => ({
+            ...prev,
+            email: { ...prev.email, error: '' }
+          }));
+        }
+      }
+    } else {
+      setValidation(prev => ({
+        ...prev,
+        email: { ...prev.email, error: '' }
+      }));
+    }
+  }, [registerData.email, validation.email.touched]);
+
+  // ตรวจสอบว่ารหัสนิสิตมีในระบบแล้วหรือไม่
+  const checkStudentIdExists = async (studentId: string) => {
+    if (!studentId || studentId.length !== 11) return;
+
+    setValidation(prev => ({
+      ...prev,
+      studentId: { ...prev.studentId, isChecking: true, error: '' }
+    }));
+
+    try {
+      const response = await axios.get(`/api/auth/check-student-id?studentId=${encodeURIComponent(studentId)}`);
+      const exists = response.data.exists;
+      
+      setValidation(prev => ({
+        ...prev,
+        studentId: { 
+          ...prev.studentId, 
+          isChecking: false, 
+          exists: exists,
+          error: exists ? 'มีผู้ใช้งานรหัสนิสิตนี้แล้ว' : '' 
+        }
+      }));
+    } catch (error: any) {
+      console.error("Error checking student ID:", error);
+      setValidation(prev => ({
+        ...prev,
+        studentId: { 
+          ...prev.studentId, 
+          isChecking: false,
+          error: 'เกิดข้อผิดพลาดในการตรวจสอบรหัสนิสิต' 
+        }
+      }));
+    }
+  };
+
+  // ตรวจสอบว่าอีเมลมีในระบบแล้วหรือไม่
+  const checkEmailExists = async () => {
+    if (!registerData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerData.email)) return;
+
+    setValidation(prev => ({
+      ...prev,
+      email: { ...prev.email, isChecking: true, error: '' }
+    }));
+
+    try {
+      const response = await axios.get(`/api/auth/check-email?email=${encodeURIComponent(registerData.email)}`);
+      const exists = response.data.exists;
+      
+      setValidation(prev => ({
+        ...prev,
+        email: { 
+          ...prev.email, 
+          isChecking: false, 
+          exists: exists,
+          error: exists ? 'อีเมลนี้ได้ลงทะเบียนไปแล้ว' : '' 
+        }
+      }));
+    } catch (error) {
+      console.error("Error checking email:", error);
+      setValidation(prev => ({
+        ...prev,
+        email: { 
+          ...prev.email, 
+          isChecking: false,
+          error: 'เกิดข้อผิดพลาดในการตรวจสอบอีเมล' 
+        }
+      }));
+    }
+  };
+
   // เช็คว่าขั้นตอนปัจจุบันมีข้อมูลครบหรือไม่
   const isStepValid = () => {
     switch (currentStep) {
@@ -72,13 +252,14 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
         return !!registerData.role;
       case 2: // Personal Info
         if (!registerData.firstName || !registerData.lastName) return false;
+        if (validation.firstName.error || validation.lastName.error) return false;
+        
         if (registerData.role === "student") {
           if (!registerData.studentId || registerData.studentId.length !== 11) {
             return false;
           }
-          // ตรวจสอบหากมีข้อความผิดพลาดในช่องรหัสนิสิต
-          const studentIdInput = document.getElementById('studentId');
-          if (studentIdInput && studentIdInput.classList.contains('border-red-500')) {
+          // ตรวจสอบว่ามีข้อผิดพลาดในรหัสนิสิตหรือไม่
+          if (validation.studentId.error || validation.studentId.exists) {
             return false;
           }
         }
@@ -93,9 +274,8 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(registerData.email)) return false;
         
-        // ตรวจสอบหากมีข้อความผิดพลาดในช่องอีเมล
-        const emailInput = document.getElementById('email');
-        if (emailInput && emailInput.classList.contains('border-red-500')) {
+        // ตรวจสอบว่ามีข้อผิดพลาดในอีเมลหรือไม่
+        if (validation.email.error || validation.email.exists) {
           return false;
         }
         
@@ -120,15 +300,10 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
     
     // For step 4 (Email validation and OTP)
     if (currentStep === 4) {
-      // ตรวจสอบว่าอีเมลมีอยู่ในระบบแล้วหรือไม่
-      try {
-        const emailResponse = await axios.get(`/api/auth/check-email?email=${encodeURIComponent(registerData.email)}`);
-        if (emailResponse.data.exists) {
-          setError("อีเมลนี้ได้ลงทะเบียนไปแล้ว กรุณาใช้อีเมลอื่น");
-          return;
-        }
-      } catch (error) {
-        console.error("Error checking email:", error);
+      // ตรวจสอบว่าอีเมลมีอยู่ในระบบแล้วหรือไม่ (อีกครั้ง)
+      if (validation.email.exists) {
+        setError("อีเมลนี้ได้ลงทะเบียนไปแล้ว กรุณาใช้อีเมลอื่น");
+        return;
       }
       
       // Check if email was already verified or if it changed
@@ -249,6 +424,12 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
         ...data, 
         isEmailVerified: false 
       }));
+      
+      // Set email as touched
+      setValidation(prev => ({
+        ...prev,
+        email: { ...prev.email, touched: true }
+      }));
     } 
     // If firstName or lastName is updated, update name as well
     else if ('firstName' in data || 'lastName' in data) {
@@ -267,8 +448,38 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
       
       setRegisterData(prev => ({ ...prev, ...updatedData }));
     }
+    // If studentId is updated, mark it as touched
+    else if ('studentId' in data) {
+      setRegisterData(prev => ({ ...prev, ...data }));
+      
+      // Set studentId as touched
+      setValidation(prev => ({
+        ...prev,
+        studentId: { ...prev.studentId, touched: true }
+      }));
+    }
     else {
       setRegisterData(prev => ({ ...prev, ...data }));
+    }
+  };
+
+  // Handle name validation
+  const handleNameValidation = (value: string, field: 'firstName' | 'lastName') => {
+    // ให้รองรับทั้งภาษาไทยและภาษาอังกฤษ ไม่รับตัวเลขและอักขระพิเศษ
+    const letterRegex = /^[ก-๙a-zA-Z\s]+$/;
+    
+    if (value === '' || letterRegex.test(value)) {
+      setValidation(prev => ({
+        ...prev,
+        [field]: { error: '' }
+      }));
+      return true;
+    } else {
+      setValidation(prev => ({
+        ...prev,
+        [field]: { error: field === 'firstName' ? 'ชื่อต้องเป็นตัวอักษรเท่านั้น' : 'นามสกุลต้องเป็นตัวอักษรเท่านั้น' }
+      }));
+      return false;
     }
   };
 
@@ -282,6 +493,22 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
   const handleCroppedImage = (file: File) => {
     updateRegisterData({ profileImage: file });
     setCropImage(null);
+  };
+
+  // Touch email field
+  const handleEmailTouched = () => {
+    setValidation(prev => ({
+      ...prev,
+      email: { ...prev.email, touched: true }
+    }));
+  };
+
+  // Touch studentId field
+  const handleStudentIdTouched = () => {
+    setValidation(prev => ({
+      ...prev,
+      studentId: { ...prev.studentId, touched: true }
+    }));
   };
 
   return (
@@ -312,7 +539,10 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
         {currentStep === 2 && (
           <StepPersonalInfo 
             data={registerData} 
+            validation={validation}
             updateData={updateRegisterData}
+            onValidateName={handleNameValidation}
+            onStudentIdTouched={handleStudentIdTouched}
           />
         )}
 
@@ -328,7 +558,9 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
           <StepEmail 
             email={registerData.email}
             isVerified={registerData.isEmailVerified}
+            validation={validation.email}
             onEmailChange={(email) => updateRegisterData({ email })}
+            onEmailTouched={handleEmailTouched}
           />
         )}
 
