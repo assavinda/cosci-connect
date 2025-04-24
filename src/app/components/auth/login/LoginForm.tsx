@@ -145,12 +145,6 @@ function LoginForm({ onRegisterClick }: LoginFormProps) {
 
       <hr className="text-gray-300"/>
 
-      {error && (
-        <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-2 rounded-lg">
-          {error}
-        </div>
-      )}
-
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <div>
           <label className="label">อีเมล</label>
@@ -191,20 +185,14 @@ function LoginForm({ onRegisterClick }: LoginFormProps) {
               </div>
             )}
           </div>
+          <div className="relative py-2">
+            {error && (
+              <p className="text-xs text-red-500 absolute">
+                {error}
+              </p>
+            )}
+          </div>
           
-          {/* ข้อความช่วยเหลือสำหรับแนะนำผู้ใช้ */}
-          {email && !isChecking && !emailExists && emailTouched && (
-            <div className="flex gap-2 mt-1">
-              <p className="text-sm text-gray-500">ยังไม่มีบัญชี?</p>
-              <button 
-                type="button" 
-                className="text-sm text-primary-blue-500 hover:text-primary-blue-400 hover:underline"
-                onClick={onRegisterClick}
-              >
-                สร้างบัญชีใหม่
-              </button>
-            </div>
-          )}
         </div>
         
         <button 

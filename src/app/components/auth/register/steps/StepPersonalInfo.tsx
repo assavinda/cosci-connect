@@ -80,9 +80,11 @@ function StepPersonalInfo({ data, updateData }: StepPersonalInfoProps) {
             onChange={(e) => handleNameChange(e, 'firstName')}
             required
           />
-          {firstNameError && (
-            <p className="text-red-500 text-xs mt-1">{firstNameError}</p>
-          )}
+          <div className="relative py-2">
+            {firstNameError && (
+              <p className="text-red-500 text-xs absolute">{firstNameError}</p>
+            )}
+          </div>
         </div>
         
         <div>
@@ -98,9 +100,11 @@ function StepPersonalInfo({ data, updateData }: StepPersonalInfoProps) {
             onChange={(e) => handleNameChange(e, 'lastName')}
             required
           />
-          {lastNameError && (
-            <p className="text-red-500 text-xs mt-1">{lastNameError}</p>
-          )}
+          <div className="relative py-2">
+            {lastNameError && (
+              <p className="text-red-500 text-xs absolute">{lastNameError}</p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -118,9 +122,11 @@ function StepPersonalInfo({ data, updateData }: StepPersonalInfoProps) {
             onChange={handleStudentIdChange}
             required
           />
-          {studentIdError && (
-            <p className="text-red-500 text-xs mt-1">{studentIdError}</p>
-          )}
+          <div className="relative py-2">
+            {studentIdError && (
+              <p className="text-red-500 text-xs absolute">{studentIdError}</p>
+            )}
+          </div>
         </div>
       )}
     </div>
