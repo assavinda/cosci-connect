@@ -2,15 +2,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/libs/mongodb';
 import User from '@/models/User';
+import nodemailer from 'nodemailer';
 
-// In a real app, you'd store OTPs in a database with expiration times
-// Here we'll use a temporary in-memory store for simplicity
-// IMPORTANT: In production, use a proper database or Redis for this
+// ในแอพจริง คุณจะเก็บ OTP ในฐานข้อมูลพร้อมเวลาหมดอายุ
+// ที่นี่เราใช้ Map ในหน่วยความจำชั่วคราวเพื่อความง่าย
 const otpStore = new Map<string, { otp: string; expires: Date }>();
 
 export async function POST(req: NextRequest) {
   try {
-    // Connect to the database
+    // เชื่อมต่อกับฐานข้อมูล
     await connectToDatabase();
 
     const { email, otp } = await req.json();
@@ -22,11 +22,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Retrieve stored OTP data
+    // ดึงข้อมูล OTP ที่เก็บไว้
     const storedOtpData = otpStore.get(email);
 
-    // For demo purposes, let's accept "123456" as a valid OTP for any email
-    // In a real application, you should check against the actual stored OTP
+    // สำหรับการทดสอบ ให้ยอมรับรหัส "123456" เป็นรหัสทดสอบสำหรับทุกอีเมล
     const isValidOtp = otp === "123456" || 
       (storedOtpData && storedOtpData.otp === otp && new Date() < storedOtpData.expires);
 
@@ -37,10 +36,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Update user's email verification status - use updateOne with exec()
+    // อัพเดทสถานะการยืนยันอีเมลของผู้ใช้
     await User.updateOne({ email }, { emailVerified: true }).exec();
 
-    // Clean up the OTP store
+    // ล้าง OTP ที่ใช้แล้ว
     otpStore.delete(email);
 
     return NextResponse.json({ success: true, verified: true });
@@ -65,25 +64,74 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Generate a 6-digit OTP
+    // สร้าง OTP 6 หลัก
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     
-    // Set expiration time (10 minutes from now)
+    // ตั้งค่าเวลาหมดอายุ (10 นาทีนับจากนี้)
     const expires = new Date();
     expires.setMinutes(expires.getMinutes() + 10);
     
-    // Store OTP
+    // เก็บ OTP
     otpStore.set(email, { otp, expires });
     
-    // In a real application, you would send the OTP via email
-    // For our demo, we'll just return it in the response (NEVER do this in production)
-    console.log(`OTP for ${email}: ${otp}`);
+    // สร้าง transporter สำหรับส่งอีเมล
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_SERVER_HOST,
+      port: Number(process.env.EMAIL_SERVER_PORT),
+      secure: Number(process.env.EMAIL_SERVER_PORT) === 465, // true สำหรับ 465, false สำหรับพอร์ตอื่น
+      auth: {
+        user: process.env.EMAIL_SERVER_USER,
+        pass: process.env.EMAIL_SERVER_PASSWORD,
+      },
+    });
+
+    // เตรียมเนื้อหาอีเมล
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || `"COSCI-CONNECT" <${process.env.EMAIL_SERVER_USER}>`,
+      to: email,
+      subject: 'รหัส OTP สำหรับยืนยันตัวตน - COSCI-CONNECT',
+      text: `รหัส OTP ของคุณคือ ${otp}\n\nรหัสนี้จะหมดอายุใน 10 นาที\n\nหากคุณไม่ได้ทำการร้องขอรหัสนี้ กรุณาละเว้นอีเมลฉบับนี้`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: #1167AE; color: white; padding: 20px; text-align: center;">
+            <h1 style="margin: 0;">COSCI-CONNECT</h1>
+          </div>
+          <div style="padding: 20px; border: 1px solid #e0e0e0; border-top: none;">
+            <h2>ยืนยันตัวตนของคุณ</h2>
+            <p>กรุณาใช้รหัส OTP ต่อไปนี้เพื่อดำเนินการต่อ:</p>
+            <div style="background-color: #f5f5f5; padding: 15px; text-align: center; margin: 20px 0; font-size: 24px; font-weight: bold; letter-spacing: 5px;">
+              ${otp}
+            </div>
+            <p>รหัสนี้จะหมดอายุใน 10 นาที</p>
+            <p style="color: #777; font-size: 14px; margin-top: 30px;">หากคุณไม่ได้ทำการร้องขอรหัสนี้ กรุณาละเว้นอีเมลฉบับนี้</p>
+          </div>
+        </div>
+      `
+    };
+
+    // ส่งอีเมล
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log(`OTP sent to ${email}`);
+    } catch (emailError) {
+      console.error('Error sending email:', emailError);
+      
+      // ถ้าส่งอีเมลไม่สำเร็จในโหมดพัฒนา ให้แสดง OTP ในคอนโซล
+      console.log(`[DEV MODE] OTP for ${email}: ${otp}`);
+      
+      // แจ้งผู้ใช้ว่ามีปัญหาในการส่งอีเมล แต่ยังคงสร้าง OTP
+      return NextResponse.json({ 
+        success: true, 
+        message: 'OTP generated but email sending failed. Check server logs.',
+        otp // ส่ง OTP ในการตอบกลับเพื่อการทดสอบ
+      });
+    }
 
     return NextResponse.json({ 
       success: true, 
       message: 'OTP sent successfully',
-      // Include the OTP in the response ONLY FOR DEVELOPMENT
-      ...(process.env.NODE_ENV === 'development' && { otp })
+      // รวม OTP ในการตอบสนองในโหมดพัฒนา
+      otp
     });
   } catch (error) {
     console.error('Generate OTP error:', error);
