@@ -41,6 +41,9 @@ export interface RegisterData {
   profileImage?: File;
   portfolioFile?: File;
   bio?: string;
+  basePrice?: number;  // เพิ่มฟิลด์สำหรับราคาเริ่มต้น
+  isOpen?: boolean;    // เพิ่มฟิลด์สำหรับสถานะรับงาน
+  galleryImages?: File[];  // เพิ่มฟิลด์สำหรับรูปภาพตัวอย่างผลงาน
 }
 
 interface ValidationState {
@@ -106,7 +109,10 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
     skills: [],
     email: "",
     isEmailVerified: false,
-    bio: ""
+    bio: "",
+    basePrice: 500,     // ตั้งค่าเริ่มต้นเป็น 500 บาท
+    isOpen: true,       // ตั้งค่าเริ่มต้นเป็นเปิดรับงาน
+    galleryImages: []   // เริ่มต้นเป็นอาร์เรย์ว่าง
   });
 
   // Validate student ID pattern whenever it changes
@@ -371,6 +377,10 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
       // Add student ID if role is student
       if (registerData.role === 'student' && registerData.studentId) {
         formData.append('studentId', registerData.studentId);
+        
+        // Add student-specific fields
+        formData.append('basePrice', (registerData.basePrice || 500).toString());
+        formData.append('isOpen', (registerData.isOpen !== undefined ? registerData.isOpen : true).toString());
       }
       
       // Add skills as JSON string
@@ -389,6 +399,13 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
       // Add portfolio file if provided and role is student
       if (registerData.role === 'student' && registerData.portfolioFile) {
         formData.append('portfolio', registerData.portfolioFile);
+      }
+      
+      // Add gallery images if provided and role is student
+      if (registerData.role === 'student' && registerData.galleryImages && registerData.galleryImages.length > 0) {
+        registerData.galleryImages.forEach((file, index) => {
+          formData.append(`galleryImage${index}`, file);
+        });
       }
       
       // Send registration request
@@ -465,6 +482,17 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
         studentId: { ...prev.studentId, touched: true }
       }));
     }
+    // If role is updated, reset student-specific fields if needed
+    else if ('role' in data && data.role !== 'student') {
+      setRegisterData(prev => ({ 
+        ...prev, 
+        ...data,
+        studentId: '',
+        basePrice: undefined,
+        isOpen: undefined,
+        galleryImages: []
+      }));
+    }
     else {
       setRegisterData(prev => ({ ...prev, ...data }));
     }
@@ -500,6 +528,15 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
   const handleCroppedImage = (file: File) => {
     updateRegisterData({ profileImage: file });
     setCropImage(null);
+  };
+
+  // Handle gallery images
+  const handleGalleryImages = (files: FileList) => {
+    if (files && files.length > 0) {
+      // Limit to max 6 images
+      const newImages = Array.from(files).slice(0, 6);
+      updateRegisterData({ galleryImages: newImages });
+    }
   };
 
   // Touch email field
@@ -547,6 +584,8 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
               ขั้นตอน {currentStep} จาก 5
             </span>
           </div>
+
+          <StepIndicator currentStep={currentStep} totalSteps={5} />
 
           <hr className="text-gray-200" />
 

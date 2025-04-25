@@ -6,13 +6,15 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import LogOutButton from "../../components/buttons/LogOutButton";
+import EditProfileForm from "../../components/account/EditProfileForm";
 import React from "react";
 
 function AccountPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [userData, setUserData] = useState(null);
+  const [userData, setUserData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -58,6 +60,32 @@ function AccountPage() {
     }
   };
 
+  // Enter edit mode
+  const handleEditProfile = () => {
+    setIsEditing(true);
+  };
+
+  // Cancel editing
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+  };
+
+  // Update user data after successful edit
+  const handleUpdateSuccess = (updatedData: any) => {
+    setUserData(updatedData);
+    setIsEditing(false);
+  };
+
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('th-TH', {
+      style: 'currency',
+      currency: 'THB',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
   // Show loading state
   if (status === 'loading' || isLoading) {
     return (
@@ -68,13 +96,38 @@ function AccountPage() {
     );
   }
 
+  // Show edit form if in edit mode
+  if (isEditing && userData) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <EditProfileForm 
+          userData={userData}
+          onUpdateSuccess={handleUpdateSuccess}
+          onCancel={handleCancelEdit}
+        />
+      </div>
+    );
+  }
+
   // Show account page content when authenticated and data is loaded
   return (
     <div className="max-w-4xl mx-auto">
       <div className="bg-white rounded-xl shadow-md p-6 mb-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-medium text-primary-blue-500">โปรไฟล์ของฉัน</h1>
-          <LogOutButton />
+          <div className="flex gap-3">
+            <button 
+              onClick={handleEditProfile}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              แก้ไขโปรไฟล์
+            </button>
+            <LogOutButton />
+          </div>
         </div>
 
         {userData && (
@@ -120,7 +173,7 @@ function AccountPage() {
                 
                 {/* สถานะพร้อมรับงาน (สำหรับนิสิตเท่านั้น) */}
                 {userData.role === 'student' && (
-                  <div className="mt-4">
+                  <div className="mt-4 w-full">
                     <button
                       onClick={toggleIsOpen}
                       className={`w-full py-2 rounded-lg transition-colors font-medium flex items-center justify-center gap-2 ${
@@ -135,9 +188,17 @@ function AccountPage() {
                   </div>
                 )}
                 
-                <button className="btn-secondary w-full mt-4">
-                  แก้ไขโปรไฟล์
-                </button>
+                {/* ราคาเริ่มต้น (สำหรับนิสิตเท่านั้น) */}
+                {userData.role === 'student' && userData.basePrice && (
+                  <div className="mt-4 w-full">
+                    <div className="bg-gray-100 p-4 rounded-lg">
+                      <span className="text-sm text-gray-500">ราคาเริ่มต้น</span>
+                      <p className="font-medium text-primary-blue-500 text-lg">
+                        {formatCurrency(userData.basePrice)}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             
@@ -165,7 +226,7 @@ function AccountPage() {
               </div>
               
               {userData.skills && userData.skills.length > 0 && (
-                <div className="bg-gray-50 rounded-xl p-4">
+                <div className="bg-gray-50 rounded-xl p-4 mb-6">
                   <h3 className="text-lg font-medium mb-2">ทักษะ</h3>
                   <div className="flex flex-wrap gap-2">
                     {userData.skills.map(skill => (
@@ -175,6 +236,24 @@ function AccountPage() {
                       >
                         {skill}
                       </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {userData.role === 'student' && userData.galleryImages && userData.galleryImages.length > 0 && (
+                <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                  <h3 className="text-lg font-medium mb-2">ตัวอย่างผลงาน</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {userData.galleryImages.map((image, index) => (
+                      <div key={index} className="rounded-lg overflow-hidden h-40 bg-gray-200 border border-gray-300">
+                        <img 
+                          src={image} 
+                          alt={`ตัวอย่างผลงาน ${index+1}`} 
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -206,5 +285,4 @@ function AccountPage() {
     </div>
   );
 }
-
 export default AccountPage;

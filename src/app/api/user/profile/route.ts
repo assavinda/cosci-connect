@@ -44,7 +44,9 @@ export async function GET(req: NextRequest) {
       bio: user.bio,
       profileImageUrl: user.profileImageUrl,
       portfolioUrl: user.portfolioUrl,
-      isOpen: user.role === 'student' ? user.isOpen : undefined, // เพิ่มการส่งค่า isOpen
+      isOpen: user.role === 'student' ? user.isOpen : undefined,
+      basePrice: user.basePrice,
+      galleryImages: user.galleryImages || []
     });
   } catch (error) {
     console.error('Error fetching user profile:', error);
@@ -93,37 +95,13 @@ export async function PATCH(req: NextRequest) {
     const skillsString = formData.get('skills') as string;
     const skills = skillsString ? JSON.parse(skillsString) : undefined;
     
-    // รับค่า isOpen จาก formData (เฉพาะนิสิต)
+    // Get base price for students
+    const basePriceStr = formData.get('basePrice') as string;
+    const basePrice = basePriceStr ? parseInt(basePriceStr, 10) : undefined;
+    
+    // Get isOpen status for students
     const isOpenStr = formData.get('isOpen') as string;
     const isOpen = user.role === 'student' ? isOpenStr === 'true' : undefined;
-    
-    // Handle profile image update if provided
-    const profileImage = formData.get('profileImage') as File | null;
-    let profileImageUrl = undefined;
-    
-    if (profileImage) {
-      // Convert the file to a buffer and then to base64
-      const bytes = await profileImage.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const base64Image = `data:${profileImage.type};base64,${buffer.toString('base64')}`;
-      
-      // Upload to Cloudinary
-      profileImageUrl = await uploadToCloudinary(base64Image, user._id.toString(), 'profileImage');
-    }
-    
-    // Handle portfolio update if provided
-    const portfolio = formData.get('portfolio') as File | null;
-    let portfolioUrl = undefined;
-    
-    if (portfolio && user.role === 'student') {
-      // Convert the file to a buffer and then to base64
-      const bytes = await portfolio.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const base64File = `data:${portfolio.type};base64,${buffer.toString('base64')}`;
-      
-      // Upload to Cloudinary
-      portfolioUrl = await uploadToCloudinary(base64File, user._id.toString(), 'portfolio');
-    }
     
     // Create update object with only the fields that were provided
     const updateData: any = {};
@@ -133,9 +111,98 @@ export async function PATCH(req: NextRequest) {
     if (firstName && lastName) updateData.name = `${firstName} ${lastName}`;
     if (bio !== undefined) updateData.bio = bio;
     if (skills) updateData.skills = skills;
-    if (profileImageUrl) updateData.profileImageUrl = profileImageUrl;
-    if (portfolioUrl) updateData.portfolioUrl = portfolioUrl;
-    if (isOpen !== undefined && user.role === 'student') updateData.isOpen = isOpen; // เพิ่มการอัปเดต isOpen
+    if (basePrice !== undefined && user.role === 'student') updateData.basePrice = basePrice;
+    if (isOpen !== undefined && user.role === 'student') updateData.isOpen = isOpen;
+    
+    // Handle profile image update if provided
+    const profileImage = formData.get('profileImage') as File | null;
+    
+    if (profileImage) {
+      // Convert the file to a buffer and then to base64
+      const bytes = await profileImage.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      const base64Image = `data:${profileImage.type};base64,${buffer.toString('base64')}`;
+      
+      // Upload to Cloudinary
+      const profileImageUrl = await uploadToCloudinary(base64Image, user._id.toString(), 'profileImage');
+      updateData.profileImageUrl = profileImageUrl;
+    }
+    
+    // Handle portfolio file for students
+    if (user.role === 'student') {
+      // Check if portfolio should be deleted
+      const deletePortfolio = formData.get('deletePortfolio') === 'true';
+      
+      if (deletePortfolio) {
+        updateData.portfolioUrl = null;
+      } else {
+        // Upload new portfolio if provided
+        const portfolio = formData.get('portfolio') as File | null;
+        
+        if (portfolio) {
+          // Convert the file to a buffer and then to base64
+          const bytes = await portfolio.arrayBuffer();
+          const buffer = Buffer.from(bytes);
+          const base64File = `data:${portfolio.type};base64,${buffer.toString('base64')}`;
+          
+          // Upload to Cloudinary
+          const portfolioUrl = await uploadToCloudinary(base64File, user._id.toString(), 'portfolio');
+          updateData.portfolioUrl = portfolioUrl;
+        }
+      }
+      
+      // Handle gallery images
+      // Initialize gallery images if they don't exist
+      if (!user.galleryImages) {
+        user.galleryImages = [];
+      }
+      
+      // Handle deleted gallery images
+      const deletedGalleryImagesStr = formData.get('deletedGalleryImages') as string;
+      if (deletedGalleryImagesStr) {
+        const deletedGalleryImages = JSON.parse(deletedGalleryImagesStr);
+        if (Array.isArray(deletedGalleryImages) && deletedGalleryImages.length > 0) {
+          // Remove deleted images from the array
+          updateData.galleryImages = user.galleryImages.filter(
+            (url: string) => !deletedGalleryImages.includes(url)
+          );
+        }
+      } else {
+        // If no deleted images were specified, keep the existing ones
+        updateData.galleryImages = [...user.galleryImages];
+      }
+      
+      // Handle new gallery images
+      const newGalleryImages: string[] = [];
+      
+      // Process up to 6 new gallery images
+      for (let i = 0; i < 6; i++) {
+        const galleryImage = formData.get(`galleryImage${i}`) as File | null;
+        
+        if (galleryImage) {
+          // Convert the file to a buffer and then to base64
+          const bytes = await galleryImage.arrayBuffer();
+          const buffer = Buffer.from(bytes);
+          const base64Image = `data:${galleryImage.type};base64,${buffer.toString('base64')}`;
+          
+          // Upload to Cloudinary with a unique ID for each gallery image
+          const galleryImageUrl = await uploadToCloudinary(
+            base64Image, 
+            user._id.toString(), 
+            'profileImage', // Use the same folder but with a unique public_id
+            `gallery_${Date.now()}_${i}` // Create a unique ID for each image
+          );
+          
+          newGalleryImages.push(galleryImageUrl);
+        }
+      }
+      
+      // Combine existing (minus deleted) and new gallery images, up to max of 6
+      if (newGalleryImages.length > 0) {
+        const currentGalleryImages = updateData.galleryImages || user.galleryImages || [];
+        updateData.galleryImages = [...currentGalleryImages, ...newGalleryImages].slice(0, 6);
+      }
+    }
     
     // Update the user
     const updatedUser = await User.findOneAndUpdate(
@@ -157,7 +224,9 @@ export async function PATCH(req: NextRequest) {
       bio: updatedUser.bio,
       profileImageUrl: updatedUser.profileImageUrl,
       portfolioUrl: updatedUser.portfolioUrl,
-      isOpen: updatedUser.role === 'student' ? updatedUser.isOpen : undefined, // เพิ่มการส่งค่า isOpen ในการตอบกลับ
+      isOpen: updatedUser.role === 'student' ? updatedUser.isOpen : undefined,
+      basePrice: updatedUser.basePrice,
+      galleryImages: updatedUser.galleryImages || []
     });
   } catch (error) {
     console.error('Error updating user profile:', error);

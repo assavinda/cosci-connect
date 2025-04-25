@@ -64,7 +64,9 @@ const handler = NextAuth({
             lastName: user.lastName,
             emailVerified: user.emailVerified,
             profileImageUrl: user.profileImageUrl,
-            isOpen: user.role === 'student' ? user.isOpen : undefined, // เพิ่มฟิลด์ isOpen
+            isOpen: user.role === 'student' ? user.isOpen : undefined,
+            basePrice: user.role === 'student' ? user.basePrice : undefined,
+            galleryImages: user.role === 'student' ? user.galleryImages : undefined,
           };
         } catch (error) {
           console.error('Error authorizing user:', error);
@@ -101,6 +103,8 @@ const handler = NextAuth({
         
         if (token.profileImageUrl) session.user.profileImageUrl = token.profileImageUrl as string;
         if (token.isOpen !== undefined && token.role === 'student') session.user.isOpen = Boolean(token.isOpen);
+        if (token.basePrice !== undefined && token.role === 'student') session.user.basePrice = Number(token.basePrice);
+        if (token.galleryImages && token.role === 'student') session.user.galleryImages = token.galleryImages as string[];
         
         // เพิ่มข้อมูลเพิ่มเติมจาก MongoDB หากข้อมูลใน token ไม่ครบถ้วน
         try {
@@ -122,8 +126,17 @@ const handler = NextAuth({
             }
             
             if (!session.user.profileImageUrl) session.user.profileImageUrl = userData.profileImageUrl || null;
+            
             if (session.user.isOpen === undefined && userData.role === 'student') {
               session.user.isOpen = Boolean(userData.isOpen);
+            }
+            
+            if (session.user.basePrice === undefined && userData.role === 'student') {
+              session.user.basePrice = userData.basePrice;
+            }
+            
+            if (!session.user.galleryImages && userData.role === 'student') {
+              session.user.galleryImages = userData.galleryImages;
             }
           }
         } catch (error) {
@@ -140,7 +153,11 @@ const handler = NextAuth({
         token.lastName = user.lastName;
         token.emailVerified = Boolean(user.emailVerified);
         token.profileImageUrl = user.profileImageUrl;
-        if (user.role === 'student') token.isOpen = user.isOpen; // เพิ่มฟิลด์ isOpen
+        if (user.role === 'student') {
+          token.isOpen = user.isOpen;
+          token.basePrice = user.basePrice;
+          token.galleryImages = user.galleryImages;
+        }
       }
       return token;
     },

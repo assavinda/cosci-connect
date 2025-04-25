@@ -10,7 +10,9 @@ declare module 'next-auth' {
       lastName?: string;
       emailVerified?: boolean;
       profileImageUrl?: string | null;
-      isOpen?: boolean; // เพิ่มฟิลด์นี้
+      isOpen?: boolean;
+      basePrice?: number;  // เพิ่มฟิลด์ราคาเริ่มต้น
+      galleryImages?: string[];  // เพิ่มฟิลด์รูปภาพตัวอย่างผลงาน
     } & DefaultSession['user'];
   }
 
@@ -20,7 +22,9 @@ declare module 'next-auth' {
     lastName?: string;
     emailVerified?: boolean;
     profileImageUrl?: string;
-    isOpen?: boolean; // เพิ่มฟิลด์นี้
+    isOpen?: boolean;
+    basePrice?: number;
+    galleryImages?: string[];
   }
 }
 
@@ -31,7 +35,9 @@ declare module 'next-auth/jwt' {
     lastName?: string;
     emailVerified?: boolean;
     profileImageUrl?: string;
-    isOpen?: boolean; // เพิ่มฟิลด์นี้
+    isOpen?: boolean;
+    basePrice?: number;
+    galleryImages?: string[];
   }
 }
 

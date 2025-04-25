@@ -18,24 +18,29 @@ cloudinary.config({
  * @param file Base64 encoded file to upload
  * @param userId User ID for creating folder structure
  * @param type Type of file ('profileImage' or 'portfolio')
+ * @param publicId Optional public ID to use (for gallery images)
  * @returns URL of the uploaded file
  */
 export async function uploadToCloudinary(
   file: string, 
   userId: string, 
-  type: 'profileImage' | 'portfolio'
+  type: 'profileImage' | 'portfolio',
+  publicId?: string
 ): Promise<string> {
   // Create the folder path
   const folderPath = `users/${userId}/${type}`;
   
   try {
+    // Set the public_id based on the type or provided publicId
+    const customPublicId = publicId || (type === 'portfolio' ? 'portfolio' : 'profile');
+    
     // Upload the file to Cloudinary
     const result = await cloudinary.uploader.upload(file, {
       folder: folderPath,
       resource_type: type === 'portfolio' ? 'raw' : 'image',
-      // Set the public_id to ensure overwriting of previous files
-      public_id: type === 'portfolio' ? 'portfolio' : 'profile',
-      overwrite: true,
+      // Set the public_id to ensure proper naming/overwriting
+      public_id: customPublicId,
+      overwrite: !publicId, // Only overwrite for non-gallery images
       // For PDF files, specify the format
       format: type === 'portfolio' ? 'pdf' : undefined,
     });

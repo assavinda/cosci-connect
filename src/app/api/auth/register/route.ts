@@ -21,6 +21,10 @@ export async function POST(req: NextRequest) {
     const major = formData.get('major') as string;
     const bio = formData.get('bio') as string || '';
     
+    // รับค่า basePrice จาก formData
+    const basePriceStr = formData.get('basePrice') as string;
+    const basePrice = role === 'student' ? parseInt(basePriceStr, 10) || 500 : undefined;
+    
     // รับค่า isOpen จาก formData
     const isOpenStr = formData.get('isOpen') as string;
     const isOpen = role === 'student' ? isOpenStr === 'true' : undefined;
@@ -73,7 +77,8 @@ export async function POST(req: NextRequest) {
       bio,
       emailVerified: true, // Set to true since we verify via OTP
       ...(role === 'student' && { studentId }),
-      ...(role === 'student' && { isOpen }), // เพิ่มฟิลด์ isOpen ถ้าเป็นนิสิต
+      ...(role === 'student' && { isOpen }),
+      ...(role === 'student' && { basePrice }),
     };
 
     const user = new User(userData);
@@ -112,8 +117,38 @@ export async function POST(req: NextRequest) {
       user.portfolioUrl = portfolioUrl;
     }
 
+    // Handle gallery images upload if provided
+    const galleryImages: string[] = [];
+    if (role === 'student') {
+      // Process up to 6 gallery images
+      for (let i = 0; i < 6; i++) {
+        const galleryImage = formData.get(`galleryImage${i}`) as File | null;
+        
+        if (galleryImage) {
+          // Convert the file to a buffer and then to base64
+          const bytes = await galleryImage.arrayBuffer();
+          const buffer = Buffer.from(bytes);
+          const base64Image = `data:${galleryImage.type};base64,${buffer.toString('base64')}`;
+          
+          // Upload to Cloudinary with a unique subfolder for gallery images
+          const galleryImageUrl = await uploadToCloudinary(
+            base64Image, 
+            userId, 
+            'profileImage', // Use the same folder but with a unique public_id
+            `gallery_${Date.now()}_${i}` // Create a unique ID for each image
+          );
+          
+          galleryImages.push(galleryImageUrl);
+        }
+      }
+      
+      if (galleryImages.length > 0) {
+        user.galleryImages = galleryImages;
+      }
+    }
+
     // Save the updated user if files were uploaded
-    if (profileImage || portfolio) {
+    if (profileImage || portfolio || galleryImages.length > 0) {
       await user.save();
     }
 
@@ -126,7 +161,9 @@ export async function POST(req: NextRequest) {
           email,
           role,
           profileImageUrl: user.profileImageUrl,
-          isOpen: role === 'student' ? user.isOpen : undefined // เพิ่มการส่งค่า isOpen ในการตอบกลับ
+          isOpen: role === 'student' ? user.isOpen : undefined,
+          basePrice: role === 'student' ? user.basePrice : undefined,
+          galleryImages: role === 'student' ? user.galleryImages : undefined
         } 
       },
       { status: 201 }
