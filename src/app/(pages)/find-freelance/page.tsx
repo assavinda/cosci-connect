@@ -1,31 +1,165 @@
-import React from "react";
+'use client';
+
+import React, { useState, useEffect } from "react";
 import FreelanceList from "../../components/lists/FreelanceList";
+import FreelanceFilter from "../../components/filters/FreelanceFilter";
+import { useSearchParams, useRouter } from "next/navigation";
+import axios from "axios";
+import Loading from "../../components/common/Loading";
+import { skillCategories } from "../../components/auth/register/RegisterForm";
 
 export default function FindFreelancePage() {
-    // In a real implementation, you would fetch this data from your backend
-    // This value is for demonstration purposes
-    const totalFreelancers = 56; // Example: 56 total freelancers
-
-    //ในของจริงแสดง student ที่มี status เป็น on
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const [totalFreelancers, setTotalFreelancers] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+    const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+    const [selectedMajor, setSelectedMajor] = useState(searchParams.get('major') || '');
+    const [priceRange, setPriceRange] = useState({
+        min: parseInt(searchParams.get('minPrice') || '0', 10),
+        max: parseInt(searchParams.get('maxPrice') || '10000', 10)
+    });
+    
+    // Get all available skills from skill categories for the filter
+    const allSkills: string[] = Object.values(skillCategories).flat();
+    
+    // Initialize selected skills from URL parameters
+    useEffect(() => {
+        const skills = searchParams.get('skills');
+        if (skills) {
+            setSelectedSkills(skills.split(','));
+        }
+        
+        const query = searchParams.get('q');
+        if (query) {
+            setSearchQuery(query);
+        }
+        
+        const major = searchParams.get('major');
+        if (major) {
+            setSelectedMajor(major);
+        }
+        
+        const minPrice = searchParams.get('minPrice');
+        const maxPrice = searchParams.get('maxPrice');
+        
+        if (minPrice || maxPrice) {
+            setPriceRange({
+                min: minPrice ? parseInt(minPrice, 10) : 0,
+                max: maxPrice ? parseInt(maxPrice, 10) : 10000
+            });
+        }
+    }, [searchParams]);
+    
+    // Fetch total count of available freelancers (students with isOpen=true)
+    useEffect(() => {
+        const fetchTotalCount = async () => {
+            try {
+                // Build params object for API call
+                const params: Record<string, string | number> = {};
+                
+                // Add filters if they exist
+                if (searchQuery) params.q = searchQuery;
+                if (selectedSkills.length > 0) params.skills = selectedSkills.join(',');
+                if (selectedMajor) params.major = selectedMajor;
+                if (priceRange.min > 0) params.minPrice = priceRange.min;
+                if (priceRange.max < 10000) params.maxPrice = priceRange.max;
+                
+                // Make HEAD request to get count
+                const response = await axios.head('/api/freelancers', { params });
+                const totalCount = parseInt(response.headers['x-total-count'], 10);
+                
+                if (!isNaN(totalCount)) {
+                    setTotalFreelancers(totalCount);
+                }
+                
+                setIsLoading(false);
+            } catch (error) {
+                console.error('Error fetching total freelancers count:', error);
+                setIsLoading(false);
+            }
+        };
+        
+        fetchTotalCount();
+    }, [searchQuery, selectedSkills, selectedMajor, priceRange]);
+    
+    // Handle filter changes and update URL
+    const applyFilters = () => {
+        const params = new URLSearchParams();
+        
+        if (searchQuery) params.set('q', searchQuery);
+        if (selectedSkills.length > 0) params.set('skills', selectedSkills.join(','));
+        if (selectedMajor) params.set('major', selectedMajor);
+        if (priceRange.min > 0) params.set('minPrice', priceRange.min.toString());
+        if (priceRange.max < 10000) params.set('maxPrice', priceRange.max.toString());
+        
+        // Reset to page 1
+        params.set('page', '1');
+        
+        router.push(`/find-freelance?${params.toString()}`);
+    };
+    
+    const resetFilters = () => {
+        setSearchQuery('');
+        setSelectedSkills([]);
+        setSelectedMajor('');
+        setPriceRange({ min: 0, max: 10000 });
+        router.push('/find-freelance');
+    };
+    
+    const majors = [
+        "คอมพิวเตอร์เพื่อการสื่อสาร",
+        "การจัดการธุรกิจไซเบอร์",
+        "การออกแบบส่ื่อปฏิสัมพันธ์และมัลติมีเดีย",
+        "การสื่อสารเพื่อการท่องเที่ยว",
+        "การสื่อสารเพื่อสุขภาพ"
+    ];
     
     return (
-      <div className="flex flex-col gap-3">
-        {/* page title */}
-        <section className="mt-6 flex flex-col gap-2">
-          <h1 className="font-medium text-xl text-primary-blue-500 whitespace-nowrap">
-            ค้นหาฟรีแลนซ์
-          </h1>
-          <p className="text-gray-400 text-wrap">
-            ค้นหาฟรีแลนซ์จากทักษะความสามารถที่ตอบโจทย์ไอเดียของคุณ
-          </p>
-        </section>
+        <div className="flex flex-col gap-3">
+            {/* page title */}
+            <section className="mt-6 mb-4 flex flex-col gap-2">
+                <h1 className="font-medium text-xl text-primary-blue-500 whitespace-nowrap">
+                    ค้นหาฟรีแลนซ์
+                </h1>
+                <p className="text-gray-400 text-wrap">
+                    ค้นหาฟรีแลนซ์จากทักษะความสามารถที่ตอบโจทย์ไอเดียของคุณ
+                </p>
+            </section>
 
-        <hr className="text-gray-300 mt-4"/>
+            {/* Filters section */}
+            <FreelanceFilter 
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                selectedSkills={selectedSkills}
+                onSkillsChange={setSelectedSkills}
+                selectedMajor={selectedMajor}
+                onMajorChange={setSelectedMajor}
+                priceRange={priceRange}
+                onPriceRangeChange={setPriceRange}
+                onApplyFilters={applyFilters}
+                onResetFilters={resetFilters}
+                availableSkills={allSkills}
+                availableMajors={majors}
+            />
 
-        {/* freelance list with pagination */}
-        <FreelanceList 
-          totalItems={totalFreelancers} 
-        />
-      </div>
+            <hr className="text-gray-300"/>
+
+            {/* freelance list with pagination */}
+            {isLoading ? (
+                <div className="flex justify-center my-12">
+                    <Loading size="large" color="primary" />
+                </div>
+            ) : (
+                <FreelanceList 
+                    totalItems={totalFreelancers}
+                    searchQuery={searchQuery}
+                    selectedSkills={selectedSkills} 
+                    selectedMajor={selectedMajor}
+                    priceRange={priceRange}
+                />
+            )}
+        </div>
     );
 }

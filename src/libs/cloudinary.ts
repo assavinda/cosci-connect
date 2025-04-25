@@ -17,18 +17,20 @@ cloudinary.config({
  * Upload a file to Cloudinary
  * @param file Base64 encoded file to upload
  * @param userId User ID for creating folder structure
- * @param type Type of file ('profileImage' or 'portfolio')
+ * @param type Type of file ('profileImage', 'portfolio', or 'gallery')
  * @param publicId Optional public ID to use (for gallery images)
  * @returns URL of the uploaded file
  */
 export async function uploadToCloudinary(
   file: string, 
   userId: string, 
-  type: 'profileImage' | 'portfolio',
+  type: 'profileImage' | 'portfolio' | 'gallery',
   publicId?: string
 ): Promise<string> {
-  // Create the folder path
-  const folderPath = `users/${userId}/${type}`;
+  // Create the folder path based on file type
+  const folderPath = type === 'gallery' 
+    ? `users/${userId}/gallery` 
+    : `users/${userId}/${type}`;
   
   try {
     // Set the public_id based on the type or provided publicId
@@ -39,8 +41,8 @@ export async function uploadToCloudinary(
       folder: folderPath,
       resource_type: type === 'portfolio' ? 'raw' : 'image',
       // Set the public_id to ensure proper naming/overwriting
-      public_id: customPublicId,
-      overwrite: !publicId, // Only overwrite for non-gallery images
+      public_id: type === 'gallery' ? publicId : customPublicId,
+      overwrite: type !== 'gallery', // Only overwrite for non-gallery images
       // For PDF files, specify the format
       format: type === 'portfolio' ? 'pdf' : undefined,
     });
@@ -52,4 +54,51 @@ export async function uploadToCloudinary(
   }
 }
 
-export default cloudinary;
+/**
+ * Delete a file from Cloudinary
+ * @param url The URL of the file to delete
+ * @returns Success status
+ */
+export async function deleteFromCloudinary(url: string): Promise<boolean> {
+  try {
+    console.log('Attempting to delete Cloudinary file:', url);
+    
+    // URL format examples:
+    // https://res.cloudinary.com/cloud_name/image/upload/v1234567890/users/123456/gallery/image_123.jpg
+    // or sometimes: https://res.cloudinary.com/cloud_name/image/upload/users/123456/gallery/image_123.jpg (no version)
+    
+    // Get everything after the /upload/ part which includes version (if present) and path
+    const uploadIndex = url.indexOf('/upload/');
+    if (uploadIndex === -1) {
+      console.error('Invalid Cloudinary URL format (missing /upload/)', url);
+      return false;
+    }
+    
+    let pathAfterUpload = url.substring(uploadIndex + 8); // +8 for "/upload/"
+    
+    // Check if the path contains a version number (v1234567890/)
+    const versionMatch = pathAfterUpload.match(/^v\d+\//);
+    if (versionMatch) {
+      // Remove the version part if it exists
+      pathAfterUpload = pathAfterUpload.substring(versionMatch[0].length);
+    }
+    
+    // This should now be the full path without version: users/123456/gallery/image_123.jpg
+    // Extract the file extension
+    const extension = pathAfterUpload.substring(pathAfterUpload.lastIndexOf('.'));
+    
+    // Remove the extension to get the public ID
+    const publicId = pathAfterUpload.substring(0, pathAfterUpload.lastIndexOf('.'));
+    
+    console.log('Extracted public ID:', publicId);
+    
+    // Delete the file using the full public ID
+    const result = await cloudinary.uploader.destroy(publicId);
+    console.log('Cloudinary delete result:', result);
+    
+    return result.result === 'ok';
+  } catch (error) {
+    console.error('Cloudinary delete error:', error);
+    return false;
+  }
+}

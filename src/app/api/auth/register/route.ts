@@ -130,12 +130,15 @@ export async function POST(req: NextRequest) {
           const buffer = Buffer.from(bytes);
           const base64Image = `data:${galleryImage.type};base64,${buffer.toString('base64')}`;
           
-          // Upload to Cloudinary with a unique subfolder for gallery images
+          // Generate a unique ID for gallery image
+          const uniqueId = `gallery_${Date.now()}_${i}`;
+          
+          // Upload to Cloudinary to specific gallery folder
           const galleryImageUrl = await uploadToCloudinary(
             base64Image, 
             userId, 
-            'profileImage', // Use the same folder but with a unique public_id
-            `gallery_${Date.now()}_${i}` // Create a unique ID for each image
+            'gallery',
+            uniqueId
           );
           
           galleryImages.push(galleryImageUrl);

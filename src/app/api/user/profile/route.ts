@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import connectToDatabase from '@/libs/mongodb';
 import User from '@/models/User';
-import { uploadToCloudinary } from '@/libs/cloudinary';
+import { uploadToCloudinary, deleteFromCloudinary } from '@/libs/cloudinary';
 
 // Get the user profile
 export async function GET(req: NextRequest) {
@@ -160,47 +160,36 @@ export async function PATCH(req: NextRequest) {
       // Handle deleted gallery images
       const deletedGalleryImagesStr = formData.get('deletedGalleryImages') as string;
       if (deletedGalleryImagesStr) {
-        const deletedGalleryImages = JSON.parse(deletedGalleryImagesStr);
-        if (Array.isArray(deletedGalleryImages) && deletedGalleryImages.length > 0) {
-          // Remove deleted images from the array
-          updateData.galleryImages = user.galleryImages.filter(
-            (url: string) => !deletedGalleryImages.includes(url)
-          );
+        console.log('Processing deleted gallery images');
+        try {
+          const deletedGalleryImages = JSON.parse(deletedGalleryImagesStr);
+          console.log('Parsed deletedGalleryImages:', deletedGalleryImages);
+          
+          if (Array.isArray(deletedGalleryImages) && deletedGalleryImages.length > 0) {
+            // Remove deleted images from the array
+            updateData.galleryImages = user.galleryImages.filter(
+              (url: string) => !deletedGalleryImages.includes(url)
+            );
+            
+            console.log(`Will remove ${deletedGalleryImages.length} images from user gallery`);
+            
+            // Delete each image from Cloudinary
+            for (const imageUrl of deletedGalleryImages) {
+              console.log('Attempting to delete from Cloudinary:', imageUrl);
+              const deleted = await deleteFromCloudinary(imageUrl);
+              console.log('Image delete result:', deleted ? 'Success' : 'Failed');
+            }
+          } else {
+            console.log('No valid image URLs to delete');
+          }
+        } catch (error) {
+          console.error('Error processing or deleting gallery images:', error);
+          // Even if delete fails, continue with DB update
+          updateData.galleryImages = [...user.galleryImages];
         }
       } else {
         // If no deleted images were specified, keep the existing ones
         updateData.galleryImages = [...user.galleryImages];
-      }
-      
-      // Handle new gallery images
-      const newGalleryImages: string[] = [];
-      
-      // Process up to 6 new gallery images
-      for (let i = 0; i < 6; i++) {
-        const galleryImage = formData.get(`galleryImage${i}`) as File | null;
-        
-        if (galleryImage) {
-          // Convert the file to a buffer and then to base64
-          const bytes = await galleryImage.arrayBuffer();
-          const buffer = Buffer.from(bytes);
-          const base64Image = `data:${galleryImage.type};base64,${buffer.toString('base64')}`;
-          
-          // Upload to Cloudinary with a unique ID for each gallery image
-          const galleryImageUrl = await uploadToCloudinary(
-            base64Image, 
-            user._id.toString(), 
-            'profileImage', // Use the same folder but with a unique public_id
-            `gallery_${Date.now()}_${i}` // Create a unique ID for each image
-          );
-          
-          newGalleryImages.push(galleryImageUrl);
-        }
-      }
-      
-      // Combine existing (minus deleted) and new gallery images, up to max of 6
-      if (newGalleryImages.length > 0) {
-        const currentGalleryImages = updateData.galleryImages || user.galleryImages || [];
-        updateData.galleryImages = [...currentGalleryImages, ...newGalleryImages].slice(0, 6);
       }
     }
     
