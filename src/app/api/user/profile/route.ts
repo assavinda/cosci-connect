@@ -191,6 +191,40 @@ export async function PATCH(req: NextRequest) {
         // If no deleted images were specified, keep the existing ones
         updateData.galleryImages = [...user.galleryImages];
       }
+      
+      // Handle new gallery images
+      const newGalleryImages: string[] = [];
+      
+      // Process up to 6 new gallery images
+      for (let i = 0; i < 6; i++) {
+        const galleryImage = formData.get(`galleryImage${i}`) as File | null;
+        
+        if (galleryImage) {
+          // Convert the file to a buffer and then to base64
+          const bytes = await galleryImage.arrayBuffer();
+          const buffer = Buffer.from(bytes);
+          const base64Image = `data:${galleryImage.type};base64,${buffer.toString('base64')}`;
+          
+          // Generate a unique ID for the gallery image
+          const uniqueId = `gallery_${Date.now()}_${i}`;
+          
+          // Upload to Cloudinary with a unique ID for each gallery image
+          const galleryImageUrl = await uploadToCloudinary(
+            base64Image, 
+            user._id.toString(), 
+            'gallery', // Use specific gallery type
+            uniqueId   // Create a unique ID for each image
+          );
+          
+          newGalleryImages.push(galleryImageUrl);
+        }
+      }
+      
+      // Combine existing (minus deleted) and new gallery images, up to max of 6
+      if (newGalleryImages.length > 0) {
+        const currentGalleryImages = updateData.galleryImages || user.galleryImages || [];
+        updateData.galleryImages = [...currentGalleryImages, ...newGalleryImages].slice(0, 6);
+      }
     }
     
     // Update the user

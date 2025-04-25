@@ -18,8 +18,8 @@ function FreelanceCard({
   galleryImages = []
 }: FreelanceCardProps) {
   // Limit skills display to maximum 3
-  const displaySkills = skills.slice(0, 3);
-  const hasMoreSkills = skills.length > 3;
+  const displaySkills = skills.slice(0, 2);
+  const hasMoreSkills = skills.length > 2;
   
   // First letter for placeholder profile
   const firstLetter = name ? name.charAt(0).toUpperCase() : "?";
@@ -68,20 +68,20 @@ function FreelanceCard({
             </div>
         </div>
         <hr className="text-gray-200"/>
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1.5">
             {displaySkills.length > 0 ? (
                 <>
                     {displaySkills.map((skill, index) => (
                         <span 
                             key={index} 
-                            className="bg-primary-blue-50 text-primary-blue-500 text-xs px-2 py-1 rounded-full"
+                            className="bg-primary-blue-100 text-primary-blue-500 text-xs px-1 py-1 rounded-lg"
                         >
                             {skill}
                         </span>
                     ))}
                     {hasMoreSkills && (
-                        <span className="bg-gray-100 text-gray-500 text-xs px-2 py-1 rounded-full">
-                            +{skills.length - 3}
+                        <span className="bg-primary-blue-100 text-primary-blue-500 text-xs px-1 py-1 rounded-lg">
+                            +{skills.length - 2}
                         </span>
                     )}
                 </>

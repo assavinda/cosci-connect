@@ -204,10 +204,6 @@ function FreelanceList({
         </p>
         <div className="flex items-center gap-2">
           <p className="text-gray-500 text-sm whitespace-nowrap">
-            พบ <span className="font-medium text-primary-blue-500">{totalItems}</span> คน
-          </p>
-          <span className="text-gray-300">|</span>
-          <p className="text-gray-500 text-sm whitespace-nowrap">
             หน้า {currentPage} จาก {totalPages}
           </p>
         </div>

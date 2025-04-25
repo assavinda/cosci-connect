@@ -102,3 +102,5 @@ export async function deleteFromCloudinary(url: string): Promise<boolean> {
     return false;
   }
 }
+
+export default cloudinary;
