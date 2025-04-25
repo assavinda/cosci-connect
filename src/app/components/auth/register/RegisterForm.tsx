@@ -72,6 +72,7 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
   const [cropImage, setCropImage] = useState<string | null>(null);
   const [previousEmail, setPreviousEmail] = useState<string>("");
   const [error, setError] = useState<string>("");
+  const [isRegistrationSuccess, setIsRegistrationSuccess] = useState(false);
   
   // Centralized validation state
   const [validation, setValidation] = useState<ValidationState>({
@@ -291,8 +292,15 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
     // Clear previous errors
     setError("");
     
-    // Case step 1-3 and 5, just move to next step
-    if (currentStep < 4 || currentStep === 5) {
+    // Check if this is the final step
+    if (currentStep === 5) {
+      // Final step, submit form
+      handleSubmit();
+      return;
+    }
+    
+    // Case step 1-3, just move to next step
+    if (currentStep < 4) {
       console.log(`Moving from step ${currentStep} to step ${currentStep + 1}`);
       setCurrentStep(currentStep + 1);
       return;
@@ -333,12 +341,6 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
         setIsLoading(false);
       }
       
-      return;
-    }
-
-    if (currentStep === 5) {
-      // Final step, submit form
-      handleSubmit();
       return;
     }
   };
@@ -397,8 +399,13 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
       });
       
       if (response.data.success) {
-        // Registration successful, redirect to login
-        router.push('/auth?state=login');
+        // แสดงข้อความสำเร็จ
+        setIsRegistrationSuccess(true);
+        
+        // รอ 2 วินาทีแล้วค่อยเปลี่ยนหน้า
+        setTimeout(() => {
+          router.push('/auth?state=login');
+        }, 2000);
       } else {
         setError("Registration failed. Please try again.");
       }
@@ -513,103 +520,126 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
 
   return (
     <div className="max-w-[520px] max-h-[640px] w-full h-full bg-white m-3 p-6 flex flex-col gap-4 rounded-xl shadow-md overflow-auto">
-      <div className="flex justify-between items-center">
-        <h1 className="text-xl font-medium">สร้างบัญชีใหม่</h1>
-        <span className="text-gray-500 text-sm">
-          ขั้นตอน {currentStep} จาก 5
-        </span>
-      </div>
-
-      <hr className="text-gray-200" />
-
-      {error && (
-        <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-2 rounded-lg">
-          {error}
+      {isRegistrationSuccess ? (
+        // หน้าสำเร็จ
+        <div className="text-center py-4">
+          <div className="mb-4 flex justify-center">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+          </div>
+          <h2 className="text-xl font-medium text-gray-800 mb-2">สร้างบัญชีสำเร็จ</h2>
+          <p className="text-gray-600 mb-6">
+            กำลังนำคุณไปยังหน้าเข้าสู่ระบบ...
+          </p>
+          <div className="flex justify-center">
+            <div className="w-8 h-8 border-4 border-primary-blue-400 border-r-transparent rounded-full animate-spin"></div>
+          </div>
         </div>
-      )}
+      ) : (
+        // หน้าลงทะเบียนปกติ
+        <>
+          <div className="flex justify-between items-center">
+            <h1 className="text-xl font-medium">สร้างบัญชีใหม่</h1>
+            <span className="text-gray-500 text-sm">
+              ขั้นตอน {currentStep} จาก 5
+            </span>
+          </div>
 
-      <div className="flex flex-col gap-6">
-        {currentStep === 1 && (
-          <StepRole 
-            selectedRole={registerData.role} 
-            onRoleSelect={(role) => updateRegisterData({ role })} 
-          />
-        )}
+          <hr className="text-gray-200" />
 
-        {currentStep === 2 && (
-          <StepPersonalInfo 
-            data={registerData} 
-            validation={validation}
-            updateData={updateRegisterData}
-            onValidateName={handleNameValidation}
-            onStudentIdTouched={handleStudentIdTouched}
-          />
-        )}
-
-        {currentStep === 3 && (
-          <StepMajorAndSkills 
-            data={registerData} 
-            updateData={updateRegisterData} 
-            skillCategories={skillCategories}
-          />
-        )}
-
-        {currentStep === 4 && (
-          <StepEmail 
-            email={registerData.email}
-            isVerified={registerData.isEmailVerified}
-            validation={validation.email}
-            onEmailChange={(email) => updateRegisterData({ email })}
-            onEmailTouched={handleEmailTouched}
-          />
-        )}
-
-        {currentStep === 5 && (
-          <StepProfile 
-            data={registerData} 
-            updateData={updateRegisterData}
-            onSelectImage={(imageUrl) => setCropImage(imageUrl)}
-          />
-        )}
-
-        <div className="flex justify-between">
-          {currentStep > 1 ? (
-            <button 
-              type="button"
-              onClick={prevStep}
-              className="btn-secondary"
-              disabled={isLoading}
-            >
-              ย้อนกลับ
-            </button>
-          ) : (
-            <div></div> // Empty div to maintain layout
+          {error && (
+            <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-2 rounded-lg">
+              {error}
+            </div>
           )}
 
-          <button 
-            type="button"
-            onClick={nextStep}
-            disabled={!isStepValid() || isLoading}
-            className={`btn-primary ${!isStepValid() || isLoading ? 'opacity-50 cursor-not-allowed' : ''} w-32 flex justify-center items-center`}
-          >
-            {isLoading && (
-              <span className="inline-block h-4 w-4 border-2 border-white border-r-transparent rounded-full animate-spin mr-2"></span>
+          <div className="flex flex-col gap-6">
+            {currentStep === 1 && (
+              <StepRole 
+                selectedRole={registerData.role} 
+                onRoleSelect={(role) => updateRegisterData({ role })} 
+              />
             )}
-            {currentStep < 5 ? 'ถัดไป' : 'สร้างบัญชี'}
-          </button>
-        </div>
 
-        <div className="flex gap-2 justify-end text-sm">
-          <p className="text-gray-400">มีบัญชีอยู่แล้ว ?</p>
-          <button 
-            type="button" 
-            className="text-primary-blue-500 hover:text-primary-blue-400 hover:underline"
-            onClick={onLoginClick}
-          >
-            ลงชื่อเข้าใช้
-          </button>
-        </div>
-      </div>
+            {currentStep === 2 && (
+              <StepPersonalInfo 
+                data={registerData} 
+                validation={validation}
+                updateData={updateRegisterData}
+                onValidateName={handleNameValidation}
+                onStudentIdTouched={handleStudentIdTouched}
+              />
+            )}
+
+            {currentStep === 3 && (
+              <StepMajorAndSkills 
+                data={registerData} 
+                updateData={updateRegisterData} 
+                skillCategories={skillCategories}
+              />
+            )}
+
+            {currentStep === 4 && (
+              <StepEmail 
+                email={registerData.email}
+                isVerified={registerData.isEmailVerified}
+                validation={validation.email}
+                onEmailChange={(email) => updateRegisterData({ email })}
+                onEmailTouched={handleEmailTouched}
+              />
+            )}
+
+            {currentStep === 5 && (
+              <StepProfile 
+                data={registerData} 
+                updateData={updateRegisterData}
+                onSelectImage={(imageUrl) => setCropImage(imageUrl)}
+              />
+            )}
+
+            <div className="flex justify-between">
+              {currentStep > 1 ? (
+                <button 
+                  type="button"
+                  onClick={prevStep}
+                  className="btn-secondary"
+                  disabled={isLoading}
+                >
+                  ย้อนกลับ
+                </button>
+              ) : (
+                <div></div> // Empty div to maintain layout
+              )}
+
+              <button 
+                type="button"
+                onClick={nextStep}
+                disabled={!isStepValid() || isLoading}
+                className={`btn-primary ${!isStepValid() || isLoading ? 'opacity-50 cursor-not-allowed' : ''} w-32 flex justify-center items-center`}
+              >
+                {isLoading && (
+                  <span className="inline-block h-4 w-4 border-2 border-white border-r-transparent rounded-full animate-spin mr-2"></span>
+                )}
+                {currentStep < 5 ? 'ถัดไป' : 'สร้างบัญชี'}
+              </button>
+            </div>
+
+            <div className="flex gap-2 justify-end text-sm">
+              <p className="text-gray-400">มีบัญชีอยู่แล้ว ?</p>
+              <button 
+                type="button" 
+                className="text-primary-blue-500 hover:text-primary-blue-400 hover:underline"
+                onClick={onLoginClick}
+              >
+                ลงชื่อเข้าใช้
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {showOTP && (
         <OTP 

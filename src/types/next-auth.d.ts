@@ -10,6 +10,7 @@ declare module 'next-auth' {
       lastName?: string;
       emailVerified?: boolean;
       profileImageUrl?: string | null;
+      isOpen?: boolean; // เพิ่มฟิลด์นี้
     } & DefaultSession['user'];
   }
 
@@ -19,12 +20,18 @@ declare module 'next-auth' {
     lastName?: string;
     emailVerified?: boolean;
     profileImageUrl?: string;
+    isOpen?: boolean; // เพิ่มฟิลด์นี้
   }
 }
 
 declare module 'next-auth/jwt' {
   interface JWT {
     role?: 'student' | 'alumni' | 'teacher';
+    firstName?: string;
+    lastName?: string;
+    emailVerified?: boolean;
+    profileImageUrl?: string;
+    isOpen?: boolean; // เพิ่มฟิลด์นี้
   }
 }
 

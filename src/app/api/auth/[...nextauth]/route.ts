@@ -64,6 +64,7 @@ const handler = NextAuth({
             lastName: user.lastName,
             emailVerified: user.emailVerified,
             profileImageUrl: user.profileImageUrl,
+            isOpen: user.role === 'student' ? user.isOpen : undefined, // เพิ่มฟิลด์ isOpen
           };
         } catch (error) {
           console.error('Error authorizing user:', error);
@@ -91,8 +92,15 @@ const handler = NextAuth({
         if (token.role) session.user.role = token.role as any;
         if (token.firstName) session.user.firstName = token.firstName as string;
         if (token.lastName) session.user.lastName = token.lastName as string;
-        if (token.emailVerified !== undefined) session.user.emailVerified = token.emailVerified as boolean;
+        
+        // Handle emailVerified - convert to boolean safely
+        if (token.emailVerified !== undefined) {
+          // Force convert to boolean - if it's a Date or any truthy value, consider it as verified
+          session.user.emailVerified = Boolean(token.emailVerified);
+        }
+        
         if (token.profileImageUrl) session.user.profileImageUrl = token.profileImageUrl as string;
+        if (token.isOpen !== undefined && token.role === 'student') session.user.isOpen = Boolean(token.isOpen);
         
         // เพิ่มข้อมูลเพิ่มเติมจาก MongoDB หากข้อมูลใน token ไม่ครบถ้วน
         try {
@@ -107,8 +115,16 @@ const handler = NextAuth({
             if (!session.user.firstName) session.user.firstName = userData.firstName;
             if (!session.user.lastName) session.user.lastName = userData.lastName;
             if (!session.user.name) session.user.name = userData.name;
-            if (session.user.emailVerified === undefined) session.user.emailVerified = userData.emailVerified;
+            
+            // Handle emailVerified from database - convert to boolean safely
+            if (session.user.emailVerified === undefined && userData.emailVerified !== undefined) {
+              session.user.emailVerified = Boolean(userData.emailVerified);
+            }
+            
             if (!session.user.profileImageUrl) session.user.profileImageUrl = userData.profileImageUrl || null;
+            if (session.user.isOpen === undefined && userData.role === 'student') {
+              session.user.isOpen = Boolean(userData.isOpen);
+            }
           }
         } catch (error) {
           console.error('Error fetching user data for session:', error);
@@ -122,8 +138,9 @@ const handler = NextAuth({
         token.role = user.role;
         token.firstName = user.firstName;
         token.lastName = user.lastName;
-        token.emailVerified = user.emailVerified;
+        token.emailVerified = Boolean(user.emailVerified);
         token.profileImageUrl = user.profileImageUrl;
+        if (user.role === 'student') token.isOpen = user.isOpen; // เพิ่มฟิลด์ isOpen
       }
       return token;
     },

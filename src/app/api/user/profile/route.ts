@@ -44,6 +44,7 @@ export async function GET(req: NextRequest) {
       bio: user.bio,
       profileImageUrl: user.profileImageUrl,
       portfolioUrl: user.portfolioUrl,
+      isOpen: user.role === 'student' ? user.isOpen : undefined, // เพิ่มการส่งค่า isOpen
     });
   } catch (error) {
     console.error('Error fetching user profile:', error);
@@ -92,6 +93,10 @@ export async function PATCH(req: NextRequest) {
     const skillsString = formData.get('skills') as string;
     const skills = skillsString ? JSON.parse(skillsString) : undefined;
     
+    // รับค่า isOpen จาก formData (เฉพาะนิสิต)
+    const isOpenStr = formData.get('isOpen') as string;
+    const isOpen = user.role === 'student' ? isOpenStr === 'true' : undefined;
+    
     // Handle profile image update if provided
     const profileImage = formData.get('profileImage') as File | null;
     let profileImageUrl = undefined;
@@ -130,6 +135,7 @@ export async function PATCH(req: NextRequest) {
     if (skills) updateData.skills = skills;
     if (profileImageUrl) updateData.profileImageUrl = profileImageUrl;
     if (portfolioUrl) updateData.portfolioUrl = portfolioUrl;
+    if (isOpen !== undefined && user.role === 'student') updateData.isOpen = isOpen; // เพิ่มการอัปเดต isOpen
     
     // Update the user
     const updatedUser = await User.findOneAndUpdate(
@@ -151,6 +157,7 @@ export async function PATCH(req: NextRequest) {
       bio: updatedUser.bio,
       profileImageUrl: updatedUser.profileImageUrl,
       portfolioUrl: updatedUser.portfolioUrl,
+      isOpen: updatedUser.role === 'student' ? updatedUser.isOpen : undefined, // เพิ่มการส่งค่า isOpen ในการตอบกลับ
     });
   } catch (error) {
     console.error('Error updating user profile:', error);

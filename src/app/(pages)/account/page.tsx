@@ -40,6 +40,24 @@ function AccountPage() {
     fetchUserData();
   }, [session, status]);
 
+  // Toggle isOpen status (for students only)
+  const toggleIsOpen = async () => {
+    if (!userData || userData.role !== 'student') return;
+    
+    try {
+      setIsLoading(true);
+      const formData = new FormData();
+      formData.append('isOpen', (!userData.isOpen).toString());
+      
+      const response = await axios.patch('/api/user/profile', formData);
+      setUserData(response.data);
+    } catch (error) {
+      console.error('Error updating status:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Show loading state
   if (status === 'loading' || isLoading) {
     return (
@@ -99,6 +117,23 @@ function AccountPage() {
                     </div>
                   )}
                 </div>
+                
+                {/* สถานะพร้อมรับงาน (สำหรับนิสิตเท่านั้น) */}
+                {userData.role === 'student' && (
+                  <div className="mt-4">
+                    <button
+                      onClick={toggleIsOpen}
+                      className={`w-full py-2 rounded-lg transition-colors font-medium flex items-center justify-center gap-2 ${
+                        userData.isOpen
+                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                          : 'bg-red-100 text-red-700 hover:bg-red-200'
+                      }`}
+                    >
+                      <span className={`block w-3 h-3 rounded-full ${userData.isOpen ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                      {userData.isOpen ? 'พร้อมรับงาน' : 'ไม่พร้อมรับงาน'}
+                    </button>
+                  </div>
+                )}
                 
                 <button className="btn-secondary w-full mt-4">
                   แก้ไขโปรไฟล์
@@ -169,7 +204,7 @@ function AccountPage() {
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export default AccountPage
+export default AccountPage;

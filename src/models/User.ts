@@ -14,6 +14,7 @@ export interface IUser extends Document {
   portfolioUrl?: string;
   bio?: string;
   emailVerified: boolean;
+  isOpen?: boolean; // เพิ่มฟิลด์นี้
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,6 +41,7 @@ const UserSchema: Schema = new Schema(
     portfolioUrl: { type: String },
     bio: { type: String },
     emailVerified: { type: Boolean, default: false },
+    isOpen: { type: Boolean, default: function() { return this.role === 'student'; } }, // เพิ่มฟิลด์นี้
   },
   { timestamps: true }
 );

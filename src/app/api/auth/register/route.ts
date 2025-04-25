@@ -21,6 +21,10 @@ export async function POST(req: NextRequest) {
     const major = formData.get('major') as string;
     const bio = formData.get('bio') as string || '';
     
+    // รับค่า isOpen จาก formData
+    const isOpenStr = formData.get('isOpen') as string;
+    const isOpen = role === 'student' ? isOpenStr === 'true' : undefined;
+    
     // Get skills as a string and convert to array
     const skillsString = formData.get('skills') as string;
     const skills = skillsString ? JSON.parse(skillsString) : [];
@@ -69,6 +73,7 @@ export async function POST(req: NextRequest) {
       bio,
       emailVerified: true, // Set to true since we verify via OTP
       ...(role === 'student' && { studentId }),
+      ...(role === 'student' && { isOpen }), // เพิ่มฟิลด์ isOpen ถ้าเป็นนิสิต
     };
 
     const user = new User(userData);
@@ -120,7 +125,8 @@ export async function POST(req: NextRequest) {
           name,
           email,
           role,
-          profileImageUrl: user.profileImageUrl
+          profileImageUrl: user.profileImageUrl,
+          isOpen: role === 'student' ? user.isOpen : undefined // เพิ่มการส่งค่า isOpen ในการตอบกลับ
         } 
       },
       { status: 201 }
