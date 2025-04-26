@@ -51,7 +51,7 @@ function FreelanceCard({
   };
   
   return (
-    <div className="bg-white shadow-md rounded-xl w-full p-3 flex flex-col border-[0.1px] border-gray-300 gap-3 hover:bg-gray-50 hover:shadow-lg transition-all">
+    <div className="bg-white shadow-md rounded-xl w-full p-3 flex flex-col border-[0.1px] border-gray-300 gap-3 hover:bg-gray-50 transition-all">
         <div className="flex place-items-center gap-3">
             <div className="bg-primary-blue-400 size-10 rounded-full shadow-sm overflow-hidden flex items-center justify-center text-white font-medium">
                 {profileImageUrl ? (
@@ -74,13 +74,13 @@ function FreelanceCard({
                     {displaySkills.map((skill, index) => (
                         <span 
                             key={index} 
-                            className="bg-primary-blue-100 text-primary-blue-500 text-xs px-1 py-1 rounded-lg"
+                            className="border border-primary-blue-300 bg-primary-blue-100 text-primary-blue-500 text-xs px-1 py-0.5 rounded-lg"
                         >
                             {skill}
                         </span>
                     ))}
                     {hasMoreSkills && (
-                        <span className="bg-primary-blue-100 text-primary-blue-500 text-xs px-1 py-1 rounded-lg">
+                        <span className="text-white bg-primary-blue-400 border border-primary-blue-400 text-xs px-1 py-0.5 rounded-lg">
                             +{skills.length - 2}
                         </span>
                     )}
@@ -97,6 +97,12 @@ function FreelanceCard({
                 alt={`ตัวอย่างผลงาน ${currentImageIndex + 1}`} 
                 className="absolute inset-0 w-full h-full object-cover rounded-xl transition-opacity duration-500"
               />
+
+              <div className="absolute bg-gradient-to-t from-black/50 w-full h-[50%] rounded-b-xl">
+                <p className="text-white absolute bottom-2 right-2 text-end text-xs">
+                  {`ตัวอย่างผลงาน ${currentImageIndex + 1}/${galleryImages.length}`}
+                </p>
+              </div>
               
               {/* Navigation arrows for multiple images */}
               {hasMultipleImages && (
@@ -144,13 +150,6 @@ function FreelanceCard({
                 <p className="mt-2 text-sm text-gray-500">ไม่มีตัวอย่างผลงาน</p>
             </div>
           )}
-          <div className="absolute bg-gradient-to-t from-black/50 w-full rounded-b-xl">
-            <p className="text-white m-2 text-end text-xs">
-              {galleryImages.length > 0 
-                ? `ตัวอย่างผลงาน ${currentImageIndex + 1}/${galleryImages.length}` 
-                : "ตัวอย่างผลงาน"}
-            </p>
-          </div>
         </div>
         <div className="flex justify-between place-items-center gap-2">
           <div className="bg-gray-100 p-2 w-full rounded-xl">

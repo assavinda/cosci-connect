@@ -41,9 +41,9 @@ export interface RegisterData {
   profileImage?: File;
   portfolioFile?: File;
   bio?: string;
-  basePrice?: number;  // เพิ่มฟิลด์สำหรับราคาเริ่มต้น
-  isOpen?: boolean;    // เพิ่มฟิลด์สำหรับสถานะรับงาน
-  galleryImages?: File[];  // เพิ่มฟิลด์สำหรับรูปภาพตัวอย่างผลงาน
+  basePrice?: number;
+  isOpen?: boolean;
+  galleryImages?: File[];
 }
 
 interface ValidationState {
@@ -110,10 +110,20 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
     email: "",
     isEmailVerified: false,
     bio: "",
-    basePrice: 500,     // ตั้งค่าเริ่มต้นเป็น 500 บาท
-    isOpen: true,       // ตั้งค่าเริ่มต้นเป็นเปิดรับงาน
-    galleryImages: []   // เริ่มต้นเป็นอาร์เรย์ว่าง
+    // เริ่มต้นโดยไม่กำหนดค่าสำหรับฟิลด์เฉพาะนิสิต
   });
+
+  // เพิ่มค่าเริ่มต้นสำหรับฟิลด์ของนิสิตเมื่อเลือกบทบาทเป็นนิสิต
+  useEffect(() => {
+    if (registerData.role === 'student') {
+      setRegisterData(prev => ({
+        ...prev,
+        basePrice: prev.basePrice ?? 500,
+        isOpen: prev.isOpen ?? true,
+        skills: prev.skills.length ? prev.skills : [],
+      }));
+    }
+  }, [registerData.role]);
 
   // Validate student ID pattern whenever it changes
   useEffect(() => {
@@ -374,18 +384,6 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
       formData.append('role', registerData.role);
       formData.append('major', registerData.major);
       
-      // Add student ID if role is student
-      if (registerData.role === 'student' && registerData.studentId) {
-        formData.append('studentId', registerData.studentId);
-        
-        // Add student-specific fields
-        formData.append('basePrice', (registerData.basePrice || 500).toString());
-        formData.append('isOpen', (registerData.isOpen !== undefined ? registerData.isOpen : true).toString());
-      }
-      
-      // Add skills as JSON string
-      formData.append('skills', JSON.stringify(registerData.skills));
-      
       // Add bio if provided
       if (registerData.bio) {
         formData.append('bio', registerData.bio);
@@ -396,16 +394,38 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
         formData.append('profileImage', registerData.profileImage);
       }
       
-      // Add portfolio file if provided and role is student
-      if (registerData.role === 'student' && registerData.portfolioFile) {
-        formData.append('portfolio', registerData.portfolioFile);
-      }
-      
-      // Add gallery images if provided and role is student
-      if (registerData.role === 'student' && registerData.galleryImages && registerData.galleryImages.length > 0) {
-        registerData.galleryImages.forEach((file, index) => {
-          formData.append(`galleryImage${index}`, file);
-        });
+      // เพิ่มฟิลด์เฉพาะของนิสิตเท่านั้น
+      if (registerData.role === 'student') {
+        // Add student ID
+        if (registerData.studentId) {
+          formData.append('studentId', registerData.studentId);
+        }
+        
+        // Add skills as JSON string
+        if (registerData.skills && registerData.skills.length > 0) {
+          formData.append('skills', JSON.stringify(registerData.skills));
+        }
+        
+        // Add student-specific fields
+        if (registerData.basePrice !== undefined) {
+          formData.append('basePrice', registerData.basePrice.toString());
+        }
+        
+        if (registerData.isOpen !== undefined) {
+          formData.append('isOpen', registerData.isOpen.toString());
+        }
+        
+        // Add portfolio file if provided
+        if (registerData.portfolioFile) {
+          formData.append('portfolio', registerData.portfolioFile);
+        }
+        
+        // Add gallery images if provided
+        if (registerData.galleryImages && registerData.galleryImages.length > 0) {
+          registerData.galleryImages.forEach((file, index) => {
+            formData.append(`galleryImage${index}`, file);
+          });
+        }
       }
       
       // Send registration request
@@ -441,6 +461,30 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
   };
 
   const updateRegisterData = (data: Partial<RegisterData>) => {
+    // ถ้ามีการเปลี่ยนบทบาท
+    if ('role' in data && data.role !== registerData.role) {
+      const newData: Partial<RegisterData> = { ...data };
+      
+      // ถ้าเปลี่ยนจากนิสิตเป็นบทบาทอื่น ให้ลบฟิลด์ที่เกี่ยวข้องกับนิสิต
+      if (data.role !== 'student') {
+        newData.studentId = undefined;
+        newData.skills = [];  // ใช้อาร์เรย์ว่างแทนการกำหนดเป็น undefined เพื่อหลีกเลี่ยงปัญหา TypeScript
+        newData.basePrice = undefined;
+        newData.isOpen = undefined;
+        newData.portfolioFile = undefined;
+        newData.galleryImages = undefined;
+      } 
+      // ถ้าเปลี่ยนเป็นนิสิต ให้กำหนดค่าเริ่มต้น
+      else {
+        newData.basePrice = 500;
+        newData.isOpen = true;
+        newData.skills = [];
+      }
+      
+      setRegisterData(prev => ({ ...prev, ...newData }));
+      return;
+    }
+    
     // If email is being updated, reset verification status
     if ('email' in data && data.email !== registerData.email) {
       setRegisterData(prev => ({ 
@@ -454,9 +498,11 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
         ...prev,
         email: { ...prev.email, touched: true }
       }));
+      return;
     } 
+    
     // If firstName or lastName is updated, update name as well
-    else if ('firstName' in data || 'lastName' in data) {
+    if ('firstName' in data || 'lastName' in data) {
       const updatedData = {
         ...data
       };
@@ -471,9 +517,11 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
       }
       
       setRegisterData(prev => ({ ...prev, ...updatedData }));
+      return;
     }
+    
     // If studentId is updated, mark it as touched
-    else if ('studentId' in data) {
+    if ('studentId' in data) {
       setRegisterData(prev => ({ ...prev, ...data }));
       
       // Set studentId as touched
@@ -481,21 +529,11 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
         ...prev,
         studentId: { ...prev.studentId, touched: true }
       }));
+      return;
     }
-    // If role is updated, reset student-specific fields if needed
-    else if ('role' in data && data.role !== 'student') {
-      setRegisterData(prev => ({ 
-        ...prev, 
-        ...data,
-        studentId: '',
-        basePrice: undefined,
-        isOpen: undefined,
-        galleryImages: []
-      }));
-    }
-    else {
-      setRegisterData(prev => ({ ...prev, ...data }));
-    }
+    
+    // Default case: just update the data
+    setRegisterData(prev => ({ ...prev, ...data }));
   };
 
   // Handle name validation

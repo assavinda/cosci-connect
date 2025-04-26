@@ -9,14 +9,14 @@ export interface IUser extends Document {
   role: 'student' | 'alumni' | 'teacher';
   studentId?: string;
   major: string;
-  skills: string[];
+  skills?: string[];  // ทำให้เป็น optional
   profileImageUrl?: string;
   portfolioUrl?: string;
   bio?: string;
   emailVerified: boolean;
-  isOpen?: boolean; 
-  basePrice?: number;  // เพิ่มฟิลด์ราคาเริ่มต้น
-  galleryImages?: string[];  // เพิ่มฟิลด์รูปภาพตัวอย่างผลงาน
+  isOpen?: boolean;  // ทำให้เป็น optional
+  basePrice?: number;  // ทำให้เป็น optional
+  galleryImages?: string[];  // ทำให้เป็น optional
   createdAt: Date;
   updatedAt: Date;
 }
@@ -38,19 +38,34 @@ const UserSchema: Schema = new Schema(
       sparse: true
     },
     major: { type: String, required: true },
-    skills: [{ type: String }],
+    skills: {
+      type: [String],
+      required: function() { return this.role === 'student'; },
+      default: undefined
+    },
     profileImageUrl: { type: String },
-    portfolioUrl: { type: String },
+    portfolioUrl: { 
+      type: String,
+      default: function() { return this.role === 'student' ? null : undefined; }
+    },
     bio: { type: String },
     emailVerified: { type: Boolean, default: false },
-    isOpen: { type: Boolean, default: function() { return this.role === 'student'; } },
-    basePrice: { 
-      type: Number, 
-      default: 500,  // ตั้งค่าเริ่มต้นเป็น 500 บาท
-      min: 100,      // ราคาขั้นต่ำ 100 บาท
-      required: function() { return this.role === 'student'; }
+    isOpen: { 
+      type: Boolean, 
+      required: function() { return this.role === 'student'; },
+      default: function() { return this.role === 'student' ? true : undefined; }
     },
-    galleryImages: [{ type: String }]  // อาร์เรย์ของ URL รูปภาพ
+    basePrice: { 
+      type: Number,
+      min: 100,
+      required: function() { return this.role === 'student'; },
+      default: function() { return this.role === 'student' ? 500 : undefined; }
+    },
+    galleryImages: {
+      type: [String],
+      required: function() { return this.role === 'student'; },
+      default: []
+    }
   },
   { timestamps: true }
 );

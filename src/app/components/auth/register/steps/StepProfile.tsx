@@ -95,6 +95,14 @@ function StepProfile({ data, updateData, onSelectImage }: StepProfileProps) {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
+  
+  // สำหรับนิสิตเท่านั้น: ฟังก์ชันตั้งค่าราคาเริ่มต้น
+  const handleBasePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value, 10);
+    if (!isNaN(value) && value >= 100) {
+      updateData({ basePrice: value });
+    }
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -170,85 +178,142 @@ function StepProfile({ data, updateData, onSelectImage }: StepProfileProps) {
         />
       </div>
 
-      {/* Portfolio file upload (only for students) */}
+      {/* แสดงฟิลด์เฉพาะสำหรับนิสิตเท่านั้น */}
       {data.role === 'student' && (
-        <div>
-          <label htmlFor="portfolio" className="block text-gray-700 text-sm mb-1">
-            พอร์ตโฟลิโอ (PDF)
-          </label>
-          
-          {data.portfolioFile ? (
-            // File is selected - show file info card
-            <div className="border border-gray-200 rounded-lg p-3 bg-white shadow-sm">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-red-100 rounded-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-600">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                      <polyline points="14 2 14 8 20 8"></polyline>
-                      <path d="M9 15v-4"></path>
-                      <path d="M12 15v-6"></path>
-                      <path d="M15 15v-2"></path>
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium truncate max-w-[200px]">
-                      {data.portfolioFile.name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {formatFileSize(data.portfolioFile.size)}
-                    </p>
-                  </div>
-                </div>
-                <button 
-                  type="button"
-                  onClick={removePortfolio}
-                  className="p-1 text-gray-500 hover:text-red-500 rounded-full hover:bg-gray-100"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 6L6 18"></path>
-                    <path d="M6 6l12 12"></path>
-                  </svg>
-                </button>
-              </div>
+        <>
+          {/* ราคาเริ่มต้น */}
+          <div>
+            <label htmlFor="basePrice" className="block text-gray-700 text-sm mb-1">
+              ราคาเริ่มต้น (บาท)
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                id="basePrice"
+                min="100"
+                step="100"
+                className="input max-w-32"
+                value={data.basePrice || 500}
+                onChange={handleBasePriceChange}
+              />
+              <span className="text-gray-600">บาท</span>
             </div>
-          ) : (
-            // No file selected - show upload button
-            <div className="flex flex-col gap-2">
-              <label
-                htmlFor="portfolio"
-                className={`px-4 py-3 border border-dashed rounded-lg cursor-pointer flex items-center justify-center hover:bg-gray-50 ${
-                  portfolioError ? 'border-red-500 bg-red-50' : 'border-gray-300'
+            <p className="text-xs text-gray-500 mt-1">ราคาเริ่มต้นสำหรับการรับงาน (ขั้นต่ำ 100 บาท)</p>
+          </div>
+
+          {/* สถานะรับงาน */}
+          {/* <div>
+            <label className="block text-gray-700 text-sm mb-1">
+              สถานะการรับงาน
+            </label>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => updateData({ isOpen: true })}
+                className={`flex items-center gap-2 px-3 py-1 rounded-lg ${
+                  data.isOpen !== false
+                    ? 'bg-green-100 text-green-700 border-2 border-green-300'
+                    : 'bg-gray-100 text-gray-500 border border-gray-300'
                 }`}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 text-gray-500">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="17 8 12 3 7 8"></polyline>
-                  <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
-                <span className="text-sm">
-                  คลิกเพื่ออัพโหลดพอร์ตโฟลิโอ PDF
-                </span>
-              </label>
+                <span className={`w-3 h-3 rounded-full ${data.isOpen !== false ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                พร้อมรับงาน
+              </button>
               
-              <input
-                type="file"
-                id="portfolio"
-                accept=".pdf"
-                className="hidden"
-                onChange={handlePortfolioChange}
-              />
-              
-              {portfolioError && (
-                <p className="text-red-500 text-xs">{portfolioError}</p>
-              )}
-              
-              <p className="text-xs text-gray-500">
-                ไฟล์ PDF ขนาดไม่เกิน 5MB
-              </p>
+              <button
+                type="button"
+                onClick={() => updateData({ isOpen: false })}
+                className={`flex items-center gap-2 px-3 py-1 rounded-lg ${
+                  data.isOpen === false
+                    ? 'bg-red-100 text-red-700 border-2 border-red-300'
+                    : 'bg-gray-100 text-gray-500 border border-gray-300'
+                }`}
+              >
+                <span className={`w-3 h-3 rounded-full ${data.isOpen === false ? 'bg-red-500' : 'bg-gray-400'}`}></span>
+                ไม่พร้อมรับงาน
+              </button>
             </div>
-          )}
-        </div>
+          </div> */}
+
+          {/* Portfolio file upload */}
+          <div>
+            <label htmlFor="portfolio" className="block text-gray-700 text-sm mb-1">
+              พอร์ตโฟลิโอ (PDF)
+            </label>
+            
+            {data.portfolioFile ? (
+              // File is selected - show file info card
+              <div className="border border-gray-200 rounded-lg p-3 bg-white shadow-sm">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 bg-red-100 rounded-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-600">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <path d="M9 15v-4"></path>
+                        <path d="M12 15v-6"></path>
+                        <path d="M15 15v-2"></path>
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium truncate max-w-[200px]">
+                        {data.portfolioFile.name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {formatFileSize(data.portfolioFile.size)}
+                      </p>
+                    </div>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={removePortfolio}
+                    className="p-1 text-gray-500 hover:text-red-500 rounded-full hover:bg-gray-100"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 6L6 18"></path>
+                      <path d="M6 6l12 12"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              // No file selected - show upload button
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="portfolio"
+                  className={`px-4 py-3 border border-dashed rounded-lg cursor-pointer flex items-center justify-center hover:bg-gray-50 ${
+                    portfolioError ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  }`}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 text-gray-500">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                  <span className="text-sm">
+                    คลิกเพื่ออัพโหลดพอร์ตโฟลิโอ PDF
+                  </span>
+                </label>
+                
+                <input
+                  type="file"
+                  id="portfolio"
+                  accept=".pdf"
+                  className="hidden"
+                  onChange={handlePortfolioChange}
+                />
+                
+                {portfolioError && (
+                  <p className="text-red-500 text-xs">{portfolioError}</p>
+                )}
+                
+                <p className="text-xs text-gray-500">
+                  ไฟล์ PDF ขนาดไม่เกิน 5MB
+                </p>
+              </div>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

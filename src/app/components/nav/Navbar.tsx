@@ -258,7 +258,7 @@ function Navbar() {
             <div className="relative">
               <button 
                 id="profile-button"
-                className="rounded-full bg-gray-400 size-10 hover:shadow-md transition-all duration-300 cursor-pointer hover:scale-105 overflow-hidden"
+                className={`rounded-full outline-primary-blue-500 ${isUserMenuOpen ? 'outline-4 outline-double' : 'outline-3 outline-double'} hover:outline-4 hover:outline-double bg-gray-400 size-10 hover:shadow-md transition-all duration-100 cursor-pointer hover:scale-105 overflow-hidden`}
                 onClick={toggleUserMenu}
               >
                 {session.user?.profileImageUrl ? (
@@ -278,7 +278,7 @@ function Navbar() {
               {isUserMenuOpen && (
                 <div 
                   id="user-menu"
-                  className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg overflow-hidden z-50"
+                  className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50"
                 >
                   <div className="p-3 border-b border-gray-100">
                     <p className="font-medium truncate">{session.user?.name}</p>
