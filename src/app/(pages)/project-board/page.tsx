@@ -1,32 +1,135 @@
+'use client';
+
 import NewProjectButton from "../../components/buttons/NewProjectButton";
 import ProjectBoardList from "../../components/lists/ProjectBoardList";
-import React from "react"
+import ProjectFilter from "../../components/filters/ProjectFilter";
+import React, { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import axios from "axios";
+import { Toaster } from 'react-hot-toast';
+
+// รายชื่อทักษะตามหมวดหมู่
+const skillCategories = {
+  "IT": ["Web Development", "UX/UI Design", "Data Analysis", "Mobile App Development", "Game Development", "AI/Machine Learning"],
+  "Graphic": ["Figma", "Adobe Photoshop", "Adobe Illustrator", "Adobe After Effects", "3D Modeling"],
+  "Business": ["Marketing", "Content Writing", "Business Analysis", "Project Management", "Financial Analysis"],
+  "Video": ["Video Editing", "Animation", "Motion Graphics", "Videography"],
+  "Audio": ["Sound Design", "Music Production", "Voice Over"]
+};
 
 function ProjectBoardPage() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const [totalProjects, setTotalProjects] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
+    
+    // Filter states
+    const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+    const [selectedSkills, setSelectedSkills] = useState<string[]>(
+      searchParams.get('skills') ? searchParams.get('skills')!.split(',') : []
+    );
+    const [status, setStatus] = useState(searchParams.get('status') || 'open');
+    const [priceRange, setPriceRange] = useState({
+      min: parseInt(searchParams.get('minPrice') || '0', 10),
+      max: parseInt(searchParams.get('maxPrice') || '10000', 10)
+    });
+    
+    // Get all skills from all categories
+    const allSkills = Object.values(skillCategories).flat();
+    
+    // ดึงจำนวนโปรเจกต์ทั้งหมด
+    useEffect(() => {
+        const fetchTotalProjectsCount = async () => {
+            try {
+                const params: Record<string, string | number> = {};
+                
+                // Add filters if they exist
+                if (searchParams.get('q')) params.q = searchParams.get('q')!;
+                if (searchParams.get('skills')) params.skills = searchParams.get('skills')!;
+                if (searchParams.get('status')) params.status = searchParams.get('status')!;
+                if (searchParams.get('minPrice')) params.minPrice = searchParams.get('minPrice')!;
+                if (searchParams.get('maxPrice')) params.maxPrice = searchParams.get('maxPrice')!;
+                
+                const response = await axios.get('/api/projects', {
+                    params: { ...params, limit: 1 }
+                });
+                
+                setTotalProjects(response.data.totalCount);
+                setIsLoading(false);
+            } catch (error) {
+                console.error('Error fetching total projects count:', error);
+                setIsLoading(false);
+            }
+        };
+        
+        fetchTotalProjectsCount();
+    }, [searchParams]);
+    
+    // ฟังก์ชั่นประยุกต์ใช้ Filters
+    const applyFilters = () => {
+        const params = new URLSearchParams();
+        
+        // เพิ่มตัวกรองทั้งหมดเข้าไปใน URL
+        if (searchQuery) params.set('q', searchQuery);
+        if (selectedSkills.length > 0) params.set('skills', selectedSkills.join(','));
+        if (status !== 'open') params.set('status', status);
+        if (priceRange.min > 0) params.set('minPrice', priceRange.min.toString());
+        if (priceRange.max < 10000) params.set('maxPrice', priceRange.max.toString());
+        
+        // Reset to page 1
+        params.set('page', '1');
+        
+        router.push(`/project-board?${params.toString()}`);
+    };
+    
+    // ฟังก์ชั่นรีเซ็ตตัวกรอง
+    const resetFilters = () => {
+        setSearchQuery('');
+        setSelectedSkills([]);
+        setStatus('open');
+        setPriceRange({ min: 0, max: 10000 });
+        router.push('/project-board');
+    };
 
-    const totalProjects = 56;
+    return (
+        <div className="flex flex-col gap-3">
+            {/* Toaster component for showing notifications */}
+            <Toaster position="top-right" />
+            
+            {/* page title */}
+            <section className="mt-6 flex gap-6 flex-col md:flex-row justify-between place-items-end">
+                <div className="flex flex-col gap-2">
+                    <h1 className="font-medium text-xl text-primary-blue-500 whitespace-nowrap">
+                        โปรเจกต์บอร์ด
+                    </h1>
+                    <p className="text-gray-400 text-wrap">
+                        โพสต์งานหรือโปรเจกต์เพื่อหาฟรีแลนซ์สำหรับทำโปรเจกต์ของคุณ
+                    </p>
+                </div>
+                <NewProjectButton/>
+            </section>
+            
+            {/* Project Filter */}
+            <ProjectFilter
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                selectedSkills={selectedSkills}
+                onSkillsChange={setSelectedSkills}
+                status={status}
+                onStatusChange={setStatus}
+                priceRange={priceRange}
+                onPriceRangeChange={setPriceRange}
+                onApplyFilters={applyFilters}
+                onResetFilters={resetFilters}
+                availableSkills={allSkills}
+            />
 
-  return (
-    <div className="flex flex-col gap-3">
-        {/* page title */}
-        <section className="mt-6 flex gap-6 flex-col md:flex-row justify-between place-items-end">
-            <div className="flex flex-col gap-2">
-                <h1 className="font-medium text-xl text-primary-blue-500 whitespace-nowrap">
-                    โปรเจกต์บอร์ด
-                </h1>
-                <p className="text-gray-400 text-wrap">
-                    โพสต์งานหรือโปรเจกต์เพื่อหาฟรีแลนซ์สำหรับทำโปรเจกต์ของคุณ
-                </p>
-            </div>
-            <NewProjectButton/>
-        </section>
-
-        <hr className="text-gray-300 mt-4"/>
-
-        <ProjectBoardList 
-          totalItems={totalProjects} 
-        />
-    </div>
-  )
+            {/* ProjectBoardList with filters */}
+            <ProjectBoardList 
+                filter={status}
+            />
+        </div>
+    )
 }
+
 export default ProjectBoardPage

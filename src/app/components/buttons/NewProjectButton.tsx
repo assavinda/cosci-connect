@@ -1,5 +1,9 @@
 'use client'
 import React, { useState } from "react"
+import axios from "axios";
+import { useSession } from "next-auth/react";
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 
 interface ProjectFormData {
   title: string;
@@ -83,11 +87,20 @@ const NewProjectModal = ({ isOpen, onClose, onSubmit }) => {
     } else if (isNaN(Number(formData.budget))) {
       newErrors.budget = 'งบประมาณต้องเป็นตัวเลขเท่านั้น';
       valid = false;
+    } else if (Number(formData.budget) < 100) {
+      newErrors.budget = 'งบประมาณต้องไม่น้อยกว่า 100 บาท';
+      valid = false;
     }
     
     if (!formData.deadline.trim()) {
       newErrors.deadline = 'กรุณาระบุวันที่ต้องการให้งานเสร็จ';
       valid = false;
+    }
+    
+    // ตรวจสอบว่ามีการเลือกทักษะอย่างน้อย 1 ทักษะ
+    if (formData.requiredSkills.length === 0) {
+      valid = false;
+      // ไม่ต้องแสดง error message เพราะไม่มี field ให้แสดง
     }
     
     setErrors(newErrors);
@@ -102,11 +115,11 @@ const NewProjectModal = ({ isOpen, onClose, onSubmit }) => {
     setIsSubmitting(true);
     
     try {
-      // Simulate API call with timeout
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // ส่งข้อมูลไปยัง API
+      const response = await axios.post('/api/projects', formData);
       
-      // Call onSubmit prop with form data
-      onSubmit(formData);
+      // Call onSubmit prop with form data and API response
+      onSubmit(formData, response.data);
       
       // Reset form and close modal
       setFormData({
@@ -120,7 +133,13 @@ const NewProjectModal = ({ isOpen, onClose, onSubmit }) => {
       onClose();
     } catch (error) {
       console.error('Error submitting project:', error);
-      // Handle error here
+      
+      // Handle specific error responses from the API
+      if (error.response && error.response.data && error.response.data.error) {
+        toast.error(error.response.data.error);
+      } else {
+        toast.error('เกิดข้อผิดพลาดในการสร้างโปรเจกต์ กรุณาลองใหม่อีกครั้ง');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -304,6 +323,12 @@ const NewProjectModal = ({ isOpen, onClose, onSubmit }) => {
                         </button>
                       </span>
                     ))}
+                    
+                    {formData.requiredSkills.length === 0 && (
+                      <span className="text-gray-400 text-xs">
+                        ไม่ได้เลือกทักษะใด
+                      </span>
+                    )}
                   </div>
               </div>
             </div>
@@ -324,8 +349,8 @@ const NewProjectModal = ({ isOpen, onClose, onSubmit }) => {
               </div>
             </div>
           </div>
-        </form>
-        <div className="sticky bottom-0 bg-gray-50 p-3 flex justify-end gap-3">
+        
+          <div className="sticky bottom-0 bg-gray-50 p-3 flex justify-end gap-3 mt-6">
             <button
               type="button"
               onClick={onClose}
@@ -337,7 +362,7 @@ const NewProjectModal = ({ isOpen, onClose, onSubmit }) => {
             <button
               type="submit"
               className="btn-primary flex items-center justify-center min-w-28"
-              disabled={isSubmitting}
+              disabled={isSubmitting || formData.requiredSkills.length === 0}
             >
               {isSubmitting ? (
                 <>
@@ -347,29 +372,55 @@ const NewProjectModal = ({ isOpen, onClose, onSubmit }) => {
               ) : 'โพสต์งาน'}
             </button>
           </div>
+        </form>
       </div>
     </div>
   );
 };
 
 function NewProjectButton() {
+  const { data: session, status } = useSession();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const router = useRouter();
   
-  const handleSubmitProject = (projectData) => {
-    console.log('New project data:', projectData);
+  // Check if user is authorized to create projects
+  const canCreateProject = session && (
+    session.user?.role === 'teacher' || 
+    session.user?.role === 'alumni'
+  );
+  
+  const handleOpenModal = () => {
+    // If not logged in, redirect to login
+    if (status === 'unauthenticated') {
+      router.push('/auth?state=login&callbackUrl=/project-board');
+      return;
+    }
     
-    // ในแอพจริงจะส่งข้อมูลไปยัง API
-    // postProjectToAPI(projectData);
+    // If not authorized, show message
+    if (!canCreateProject) {
+      toast.error('เฉพาะอาจารย์และศิษย์เก่าเท่านั้นที่สามารถสร้างโปรเจกต์ได้');
+      return;
+    }
     
-    // แสดงข้อความแจ้งเตือนว่าโพสต์สำเร็จ (ในแอพจริงอาจใช้ toast notification)
-    alert('โพสต์งานสำเร็จ!');
+    // Open modal if authorized
+    setIsModalOpen(true);
+  };
+  
+  const handleSubmitProject = (projectData, apiResponse) => {
+    // แสดงข้อความแจ้งเตือนว่าโพสต์สำเร็จ
+    toast.success('โพสต์งานสำเร็จ!');
+    
+    // Refresh page after short delay to show new project
+    setTimeout(() => {
+      router.refresh();
+    }, 1000);
   };
   
   return (
     <div>
       <button 
         className="btn-primary w-full md:w-fit flex items-center justify-center gap-2"
-        onClick={() => setIsModalOpen(true)}
+        onClick={handleOpenModal}
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <line x1="12" y1="5" x2="12" y2="19"></line>
