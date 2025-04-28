@@ -160,6 +160,10 @@ function HireButton({ freelancerId, freelancerName, freelancerSkills, basePrice 
     }
   };
 
+  if(!canHireFreelancer) {
+    return null;
+  }
+
   // ปุ่ม Hire หลัก
   return (
     <>

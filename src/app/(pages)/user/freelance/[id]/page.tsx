@@ -112,19 +112,6 @@ export default function FreelancerProfilePage() {
       {/* Toast notification component */}
       <Toaster position="top-right" />
       
-      {/* ปุ่มกลับไปหน้าก่อนหน้า */}
-      <div className="mb-6">
-        <button 
-          onClick={() => window.history.back()}
-          className="flex items-center text-gray-500 hover:text-gray-700"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-            <path d="M19 12H5M12 19l-7-7 7-7"></path>
-          </svg>
-          กลับไปหน้ารายการฟรีแลนซ์
-        </button>
-      </div>
-      
       {/* ข้อมูลโปรไฟล์ */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
         <div className="flex flex-col md:flex-row gap-6">

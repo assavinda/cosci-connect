@@ -97,7 +97,7 @@ function ProjectBoardPage() {
             <Toaster position="top-right" />
             
             {/* page title */}
-            <section className="mt-6 flex gap-6 flex-col md:flex-row justify-between place-items-end">
+            <section className="mt-6 mb-4 flex gap-6 flex-col md:flex-row justify-between place-items-end">
                 <div className="flex flex-col gap-2">
                     <h1 className="font-medium text-xl text-primary-blue-500 whitespace-nowrap">
                         โปรเจกต์บอร์ด
@@ -123,6 +123,8 @@ function ProjectBoardPage() {
                 onResetFilters={resetFilters}
                 availableSkills={allSkills}
             />
+
+            <hr className="text-gray-300"/>
 
             {/* ProjectBoardList with filters */}
             <ProjectBoardList 

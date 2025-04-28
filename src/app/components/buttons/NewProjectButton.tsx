@@ -440,6 +440,10 @@ function NewProjectButton() {
       }
     }, 1000);
   };
+
+  if (!canCreateProject) {
+    return null
+  }  
   
   return (
     <div>
