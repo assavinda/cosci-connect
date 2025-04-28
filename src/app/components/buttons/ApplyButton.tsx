@@ -44,6 +44,7 @@ function ApplyButton({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [hasApplied, setHasApplied] = useState(false);
+  const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   
@@ -71,19 +72,21 @@ function ApplyButton({
   
   // ฟังก์ชันสำหรับตรวจสอบว่าได้สมัครโปรเจกต์นี้ไปแล้วหรือไม่
   useEffect(() => {
+    // เรียกตรวจสอบสถานะเมื่อคอมโพเนนต์โหลดครั้งแรก
     if (status === 'authenticated' && isFreelancer && isNotOwner) {
       checkApplicationStatus();
     } else {
       setLoading(false);
     }
-  }, [status, isFreelancer, isNotOwner, session?.user?.id, projectId]);
+  // รวมทุก dependencies ที่ใช้ในเงื่อนไข และเพิ่ม session?.user?.id เพื่อให้มั่นใจว่าจะทำงานเมื่อข้อมูล session เปลี่ยน
+  }, [status, isFreelancer, isNotOwner, session?.user?.id]);
   
   const checkApplicationStatus = async () => {
     setLoading(true);
     try {
       console.log('Checking application status for project:', projectId);
       
-      // แทนที่จะเรียก API โดยตรง ให้ใช้ withCredentials เพื่อส่ง cookie session ไปด้วย
+      // เรียก API เพื่อตรวจสอบสถานะการสมัคร
       const response = await axios.get(`/api/projects/${projectId}/applications/status`, {
         withCredentials: true,
         headers: {
@@ -92,16 +95,15 @@ function ApplyButton({
       });
       
       console.log('Application status response:', response.data);
+      
+      // อัพเดทสถานะการสมัคร
       setHasApplied(response.data.hasApplied);
+      setApplicationStatus(response.data.applicationStatus);
     } catch (error) {
       console.error('Error checking application status:', error);
-      
-      // ถ้าเกิดข้อผิดพลาด 401 แสดงว่าอาจไม่ได้ล็อกอินหรือ API ยังไม่พร้อมใช้งาน
-      // ในกรณีนี้ให้ตั้งค่า hasApplied เป็น false แทน
+      // กรณีเกิดข้อผิดพลาด ตั้งค่าเป็นยังไม่ได้สมัคร
       setHasApplied(false);
-      
-      // ในกรณีที่เกิดข้อผิดพลาด 401 ไม่ต้องแสดงข้อความแจ้งเตือน ให้ทำงานต่อไป
-      // เพราะเป็นไปได้ว่าผู้ใช้กำลังดูโปรเจกต์แต่ยังไม่ได้ล็อกอิน
+      setApplicationStatus(null);
     } finally {
       setLoading(false);
     }
@@ -170,12 +172,9 @@ function ApplyButton({
       });
       
       toast.success('ยกเลิกคำขอร่วมงานเรียบร้อยแล้ว');
-      setHasApplied(false);
       
-      // Refresh หน้าหลังจากยกเลิกคำขอสำเร็จ
-      setTimeout(() => {
-        router.refresh();
-      }, 1000);
+      // เรียกตรวจสอบสถานะอีกครั้งหลังจากยกเลิก
+      await checkApplicationStatus();
     } catch (error: any) {
       console.error('Error canceling application:', error);
       if (error.response?.data?.error) {
@@ -215,18 +214,13 @@ function ApplyButton({
         withCredentials: true
       });
       
-      // ตั้งค่า hasApplied เป็น true ทันที เพื่อป้องกันการกดซ้ำ
-      setHasApplied(true);
-      
       // ปิด Modal และแสดงข้อความสำเร็จ
       setIsModalOpen(false);
       toast.success('ส่งคำขอร่วมงานเรียบร้อยแล้ว');
       setMessage('');
       
-      // Refresh หน้าหลังจากส่งคำขอสำเร็จ
-      setTimeout(() => {
-        router.refresh();
-      }, 1000);
+      // เรียกตรวจสอบสถานะอีกครั้งหลังจากสมัคร
+      await checkApplicationStatus();
     } catch (error: any) {
       // แสดงข้อความความผิดพลาด
       if (error.response?.data?.error) {
@@ -257,24 +251,71 @@ function ApplyButton({
     );
   }
   
-  // แสดงปุ่มยกเลิกคำขอ ถ้าได้สมัครไปแล้ว
+  // แสดงข้อความสถานะการสมัคร ถ้าได้สมัครไปแล้ว
   if (hasApplied) {
+    // ถ้าสถานะเป็น pending ให้แสดงปุ่มยกเลิกคำขอ
+    if (applicationStatus === 'pending') {
+      return (
+        <button 
+          className="btn-danger w-full flex justify-center items-center gap-2"
+          onClick={handleCancelApplication}
+          disabled={sending}
+        >
+          {sending ? (
+            <span className="inline-block h-4 w-4 border-2 border-white border-r-transparent rounded-full animate-spin mr-2"></span>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6L6 18"></path>
+              <path d="M6 6l12 12"></path>
+            </svg>
+          )}
+          ยกเลิกคำขอร่วมงาน
+        </button>
+      );
+    }
+    
+    // ถ้าสถานะเป็น accepted แสดงข้อความ "รับงานแล้ว"
+    if (applicationStatus === 'accepted') {
+      return (
+        <div className="w-full p-2 text-center bg-green-100 text-green-700 rounded-lg border border-green-300">
+          <span className="flex justify-center items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            คุณได้รับงานนี้แล้ว
+          </span>
+        </div>
+      );
+    }
+    
+    // ถ้าสถานะเป็น rejected แสดงข้อความ "ไม่ได้รับการคัดเลือก"
+    if (applicationStatus === 'rejected') {
+      return (
+        <div className="w-full p-2 text-center bg-gray-100 text-gray-500 rounded-lg border border-gray-300">
+          <span className="flex justify-center items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="15" y1="9" x2="9" y2="15"></line>
+              <line x1="9" y1="9" x2="15" y2="15"></line>
+            </svg>
+            คุณไม่ได้รับการคัดเลือกสำหรับงานนี้
+          </span>
+        </div>
+      );
+    }
+    
+    // สำหรับกรณีอื่นๆ แสดงข้อความ "สมัครงานแล้ว"
     return (
-      <button 
-        className="btn-danger w-full flex justify-center items-center gap-2"
-        onClick={handleCancelApplication}
-        disabled={sending}
-      >
-        {sending ? (
-          <span className="inline-block h-4 w-4 border-2 border-white border-r-transparent rounded-full animate-spin mr-2"></span>
-        ) : (
+      <div className="w-full p-2 text-center bg-blue-100 text-blue-700 rounded-lg border border-blue-300">
+        <span className="flex justify-center items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 6L6 18"></path>
-            <path d="M6 6l12 12"></path>
+            <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"></path>
+            <path d="M8 12h8"></path>
           </svg>
-        )}
-        ยกเลิกคำขอร่วมงาน
-      </button>
+          คุณได้สมัครงานนี้แล้ว
+        </span>
+      </div>
     );
   }
   
