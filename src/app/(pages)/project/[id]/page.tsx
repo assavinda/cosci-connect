@@ -3,6 +3,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useParams } from "next/navigation";
 import Loading from "../../../components/common/Loading";
+import { Toaster } from 'react-hot-toast';
+import ApplyButton from "../../../components/buttons/ApplyButton";
 
 interface Project {
   id: string;
@@ -184,6 +186,9 @@ export default function ProjectDetailPage() {
   
   return (
     <div className="w-full mx-auto">
+      {/* Toast notification component */}
+      <Toaster position="top-right" />
+      
       {/* ปุ่มกลับไปหน้าก่อนหน้า */}
       <div className="mb-6">
         <button 
@@ -249,7 +254,7 @@ export default function ProjectDetailPage() {
         
         {/* คอลัมน์ขวา - ข้อมูลเพิ่มเติม */}
         <div>
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
             <h2 className="text-xl font-medium mb-4">ข้อมูลโปรเจกต์</h2>
             <div className="space-y-4">
               {/* งบประมาณ */}
@@ -294,6 +299,19 @@ export default function ProjectDetailPage() {
                   <p className="font-medium">{project.applicantNames.length} คน</p>
                 </div>
               )}
+              
+              {/* ปุ่มสมัครงาน (จะแสดงเฉพาะเมื่อผู้ใช้เป็นฟรีแลนซ์) */}
+              <div className="mt-6">
+                <ApplyButton 
+                  projectId={project.id}
+                  projectTitle={project.title}
+                  projectOwner={project.owner}
+                  projectOwnerName={project.ownerName}
+                  projectStatus={project.status}
+                  requiredSkills={project.requiredSkills}
+                  budget={project.budget}
+                />
+              </div>
             </div>
           </div>
         </div>

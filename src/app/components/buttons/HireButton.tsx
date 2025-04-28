@@ -12,6 +12,7 @@ interface Project {
   budget: number;
   status: string;
   requiredSkills: string[];
+  hasInvited?: boolean; // Flag to indicate if invitation exists
 }
 
 interface HireButtonProps {
@@ -60,6 +61,7 @@ function HireButton({ freelancerId, freelancerName, freelancerSkills, basePrice 
   const fetchUserProjects = async () => {
     setLoading(true);
     try {
+      // 1. ดึงข้อมูลโปรเจกต์ที่เปิดรับสมัคร
       const response = await axios.get('/api/projects', {
         params: {
           owner: session?.user?.id,
@@ -67,15 +69,49 @@ function HireButton({ freelancerId, freelancerName, freelancerSkills, basePrice 
         }
       });
 
-      // กรองโปรเจกต์ที่มี skills ตรงกับ freelancer อย่างน้อย 1 อย่าง
-      const matchingProjects = response.data.projects.filter((project: Project) => {
+      // เก็บข้อมูลโปรเจกต์ที่ดึงมาได้
+      let userProjects = response.data.projects;
+
+      // 2. ดึงข้อมูลคำเชิญที่มีอยู่แล้วสำหรับฟรีแลนซ์นี้
+      // ดึงข้อมูลจากทุกโปรเจกต์ที่ได้มาและตรวจสอบว่ามีคำเชิญหรือไม่
+      const projectsWithInviteStatus = await Promise.all(
+        userProjects.map(async (project: Project) => {
+          try {
+            const inviteResponse = await axios.get(`/api/projects/${project.id}/invite`);
+            
+            // ตรวจสอบว่ามีคำเชิญไปยังฟรีแลนซ์นี้หรือไม่
+            const hasInvitedThisFreelancer = inviteResponse.data.invitations.some(
+              (invitation: any) => invitation.freelancerId === freelancerId
+            );
+            
+            return {
+              ...project,
+              hasInvited: hasInvitedThisFreelancer
+            };
+          } catch (error) {
+            // กรณีเกิดข้อผิดพลาดในการดึงข้อมูลคำเชิญ ถือว่ายังไม่มีคำเชิญ
+            return {
+              ...project,
+              hasInvited: false
+            };
+          }
+        })
+      );
+
+      // 3. กรองโปรเจกต์ที่ยังไม่ได้ส่งคำเชิญไปยังฟรีแลนซ์นี้
+      const projectsWithoutInvites = projectsWithInviteStatus.filter(
+        project => !project.hasInvited
+      );
+
+      // 4. กรองโปรเจกต์ที่มี skills ตรงกับ freelancer อย่างน้อย 1 อย่าง
+      const matchingProjects = projectsWithoutInvites.filter((project: Project) => {
         // ตรวจสอบว่ามี skill ที่ตรงกันอย่างน้อย 1 อย่าง
         return project.requiredSkills.some(skill => 
           freelancerSkills.includes(skill)
         );
       });
 
-      // กรองโปรเจกต์ที่มีงบประมาณไม่น้อยกว่าราคาขั้นต่ำของฟรีแลนซ์
+      // 5. กรองโปรเจกต์ที่มีงบประมาณไม่น้อยกว่าราคาขั้นต่ำของฟรีแลนซ์
       const affordableProjects = matchingProjects.filter((project: Project) => 
         project.budget >= basePrice
       );
@@ -213,6 +249,9 @@ function HireButton({ freelancerId, freelancerName, freelancerSkills, basePrice 
                   <p className="text-gray-500 mb-2">ไม่พบโปรเจกต์ที่ตรงกับเงื่อนไข</p>
                   <p className="text-sm text-gray-400">
                     โปรเจกต์ต้องมีงบประมาณไม่น้อยกว่า {basePrice} บาท และมีทักษะที่ต้องการตรงกับฟรีแลนซ์อย่างน้อย 1 ทักษะ
+                    {/* อธิบายเพิ่มเกี่ยวกับการไม่แสดงโปรเจกต์ที่เคยส่งคำเชิญแล้ว */}
+                    <br/>
+                    โปรเจกต์ที่เคยส่งคำเชิญให้ฟรีแลนซ์คนนี้แล้วจะไม่ถูกแสดง
                   </p>
                 </div>
               )}
