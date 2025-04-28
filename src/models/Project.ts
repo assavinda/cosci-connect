@@ -1,14 +1,6 @@
 // src/models/Project.ts
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
-// Interface for message structure
-interface ProjectMessage {
-  from: mongoose.Types.ObjectId;
-  fromName: string;
-  content: string;
-  timestamp: Date;
-}
-
 export interface IProject extends Document {
   title: string;
   description: string;
@@ -22,9 +14,6 @@ export interface IProject extends Document {
   // ฟิลด์ที่เพิ่มเติม
   assignedTo?: mongoose.Types.ObjectId;  // ฟรีแลนซ์ที่ได้รับมอบหมายงาน
   assignedFreelancerName?: string;       // ชื่อของฟรีแลนซ์ที่ได้รับมอบหมายงาน
-  
-  // ข้อความในโปรเจกต์
-  messages?: ProjectMessage[];                   // ข้อความระหว่างเจ้าของโปรเจกต์และฟรีแลนซ์
   
   progress?: number;
   createdAt: Date;
