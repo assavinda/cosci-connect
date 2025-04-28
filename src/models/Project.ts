@@ -13,7 +13,6 @@ export interface IProject extends Document {
   
   // ฟิลด์ที่เพิ่มเติม
   assignedTo?: mongoose.Types.ObjectId;  // ฟรีแลนซ์ที่ได้รับมอบหมายงาน
-  assignedFreelancerName?: string;       // ชื่อของฟรีแลนซ์ที่ได้รับมอบหมายงาน
   
   progress?: number;
   createdAt: Date;
@@ -47,7 +46,6 @@ const ProjectSchema: Schema = new Schema(
     
     // ฟิลด์ที่เพิ่มเติม
     assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    assignedFreelancerName: { type: String },
     
     progress: { type: Number, min: 0, max: 100, default: 0 },
     createdAt: { type: Date, default: Date.now },
