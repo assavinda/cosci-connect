@@ -60,13 +60,8 @@ const ProjectSchema: Schema = new Schema(
     assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     assignedFreelancerName: { type: String },
     
-    // ข้อความในโปรเจกต์
-    messages: [MessageSchema],
-    
     progress: { type: Number, min: 0, max: 100, default: 0 },
     createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date },
-    completedAt: { type: Date }
   }
 );
 
