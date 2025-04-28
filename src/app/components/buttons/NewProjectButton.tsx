@@ -5,15 +5,18 @@ import { useSession } from "next-auth/react";
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 
+// กำหนด interface ให้ตรงกับโมเดล Project
 interface ProjectFormData {
   title: string;
   description: string;
   budget: string;
   deadline: string;
   requiredSkills: string[];
+  // ฟิลด์ต่อไปนี้จะถูกกำหนดโดยระบบ:
+  // owner, ownerName, status, progress, createdAt
 }
 
-// รายชื่อทักษะตามหมวดหมู่ (เหมือนกับใน RegisterForm)
+// รายชื่อทักษะตามหมวดหมู่
 const skillCategories = {
   "IT": ["Web Development", "UX/UI Design", "Data Analysis", "Mobile App Development", "Game Development", "AI/Machine Learning"],
   "Graphic": ["Figma", "Adobe Photoshop", "Adobe Illustrator", "Adobe After Effects", "3D Modeling"],
@@ -115,13 +118,28 @@ const NewProjectModal = ({ isOpen, onClose, onSubmit }) => {
     setIsSubmitting(true);
     
     try {
-      // ส่งข้อมูลไปยัง API
-      const response = await axios.post('/api/projects', formData);
+      // สร้างข้อมูลโปรเจกต์ตามโมเดล
+      const projectData = {
+        title: formData.title,
+        description: formData.description,
+        budget: formData.budget,
+        deadline: formData.deadline,
+        requiredSkills: formData.requiredSkills,
+        // ส่วนต่อไปนี้จะถูกจัดการโดย API:
+        // owner (จะได้จาก session)
+        // ownerName (จะได้จาก user object)
+        // status: 'open' (ค่าเริ่มต้น)
+        // progress: 0 (ค่าเริ่มต้น)
+        // createdAt (จะสร้างโดย API)
+      };
       
-      // Call onSubmit prop with form data and API response
+      // ส่งข้อมูลไปยัง API
+      const response = await axios.post('/api/projects', projectData);
+      
+      // เรียกฟังก์ชัน callback จาก prop
       onSubmit(formData, response.data);
       
-      // Reset form and close modal
+      // รีเซ็ตฟอร์ม
       setFormData({
         title: '',
         description: '',
@@ -130,11 +148,12 @@ const NewProjectModal = ({ isOpen, onClose, onSubmit }) => {
         requiredSkills: []
       });
       
+      // ปิด Modal
       onClose();
     } catch (error) {
       console.error('Error submitting project:', error);
       
-      // Handle specific error responses from the API
+      // จัดการข้อผิดพลาดจาก API
       if (error.response && error.response.data && error.response.data.error) {
         toast.error(error.response.data.error);
       } else {
@@ -392,6 +411,7 @@ function NewProjectButton() {
   const handleOpenModal = () => {
     // If not logged in, redirect to login
     if (status === 'unauthenticated') {
+      toast.error('กรุณาเข้าสู่ระบบก่อนสร้างโปรเจกต์');
       router.push('/auth?state=login&callbackUrl=/project-board');
       return;
     }
@@ -410,9 +430,14 @@ function NewProjectButton() {
     // แสดงข้อความแจ้งเตือนว่าโพสต์สำเร็จ
     toast.success('โพสต์งานสำเร็จ!');
     
-    // Refresh page after short delay to show new project
+    // Refresh the page to show the new project
     setTimeout(() => {
       router.refresh();
+      
+      // Optional: Navigate to the new project page
+      if (apiResponse && apiResponse.project && apiResponse.project.id) {
+        router.push(`/project/${apiResponse.project.id}`);
+      }
     }, 1000);
   };
   

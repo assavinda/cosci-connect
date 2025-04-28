@@ -6,7 +6,112 @@ import Project from '@/models/Project';
 import User from '@/models/User';
 import mongoose from 'mongoose';
 
-// POST - Create new project
+// GET - List projects with flexible filtering
+export async function GET(req: NextRequest) {
+  try {
+    // Parse query parameters
+    const url = new URL(req.url);
+    const page = parseInt(url.searchParams.get('page') || '1', 10);
+    const limit = parseInt(url.searchParams.get('limit') || '12', 10);
+    const searchQuery = url.searchParams.get('q');
+    const skills = url.searchParams.get('skills')?.split(',');
+    const status = url.searchParams.get('status') || 'open'; // Default to open projects
+    const minPrice = parseInt(url.searchParams.get('minPrice') || '0', 10);
+    const maxPrice = parseInt(url.searchParams.get('maxPrice') || '10000', 10);
+    const owner = url.searchParams.get('owner'); // Optional owner filter
+    
+    // Connect to the database
+    await connectToDatabase();
+    
+    // Build query
+    const query: any = {};
+    
+    // Add status filter (if not set to 'all')
+    if (status !== 'all') {
+      query.status = status;
+    }
+    
+    // Add owner filter if provided
+    if (owner) {
+      query.owner = new mongoose.Types.ObjectId(owner);
+    }
+    
+    // Add search query filter
+    if (searchQuery) {
+      query.$or = [
+        { title: { $regex: searchQuery, $options: 'i' } },
+        { description: { $regex: searchQuery, $options: 'i' } },
+        { ownerName: { $regex: searchQuery, $options: 'i' } },
+        { requiredSkills: { $in: [new RegExp(searchQuery, 'i')] } }
+      ];
+    }
+    
+    // Add skill filter
+    if (skills && skills.length > 0 && skills[0] !== '') {
+      query.requiredSkills = { $in: skills };
+    }
+    
+    // Add budget range filter
+    if (minPrice > 0 || maxPrice < 10000) {
+      query.budget = {
+        $gte: minPrice,
+        $lte: maxPrice
+      };
+    }
+    
+    // Calculate skip for pagination
+    const skip = (page - 1) * limit;
+    
+    // Get total count for pagination
+    const totalCount = await Project.countDocuments(query);
+    
+    // Get projects with pagination
+    const projects = await Project.find(query)
+      .sort({ createdAt: -1 }) // Sort by newest first
+      .skip(skip)
+      .limit(limit)
+      .lean()
+      .exec();
+    
+    // Map projects to a clean format
+    const mappedProjects = projects.map(project => ({
+      id: project._id.toString(),
+      title: project.title,
+      description: project.description,
+      budget: project.budget,
+      deadline: project.deadline,
+      requiredSkills: project.requiredSkills,
+      ownerName: project.ownerName,
+      owner: project.owner.toString(),
+      status: project.status,
+      progress: project.progress || 0,
+      createdAt: project.createdAt,
+      assignedTo: project.assignedTo ? project.assignedTo.toString() : null,
+      assignedFreelancerName: project.assignedFreelancerName || null,
+      applicants: project.applicants ? project.applicants.map(id => id.toString()) : [],
+      applicantNames: project.applicantNames || [],
+      invitations: project.invitations ? project.invitations.map(id => id.toString()) : [],
+      invitationNames: project.invitationNames || []
+    }));
+    
+    // Return response with pagination info
+    return NextResponse.json({
+      projects: mappedProjects,
+      totalCount,
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit)
+    });
+  } catch (error) {
+    console.error('Error fetching projects:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch projects' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST - Create a new project
 export async function POST(req: NextRequest) {
   try {
     // Get the authenticated user
@@ -61,7 +166,12 @@ export async function POST(req: NextRequest) {
       owner: user._id,
       ownerName: user.name,
       status: 'open', // Initial status
+      progress: 0,
       createdAt: new Date(),
+      applicants: [],
+      applicantNames: [],
+      invitations: [],
+      invitationNames: []
     });
 
     // Save the project
@@ -79,7 +189,9 @@ export async function POST(req: NextRequest) {
         deadline: project.deadline,
         requiredSkills: project.requiredSkills,
         ownerName: project.ownerName,
+        owner: project.owner.toString(),
         status: project.status,
+        progress: project.progress,
         createdAt: project.createdAt
       }
     }, { status: 201 });
@@ -96,97 +208,6 @@ export async function POST(req: NextRequest) {
     
     return NextResponse.json(
       { error: 'Something went wrong' },
-      { status: 500 }
-    );
-  }
-}
-
-// GET - List all projects with extended filtering
-export async function GET(req: NextRequest) {
-  try {
-    // Parse query parameters
-    const url = new URL(req.url);
-    const page = parseInt(url.searchParams.get('page') || '1', 10);
-    const limit = parseInt(url.searchParams.get('limit') || '12', 10);
-    const searchQuery = url.searchParams.get('q');
-    const skills = url.searchParams.get('skills')?.split(',');
-    const status = url.searchParams.get('status') || 'open'; // Default to open projects
-    const minPrice = parseInt(url.searchParams.get('minPrice') || '0', 10);
-    const maxPrice = parseInt(url.searchParams.get('maxPrice') || '10000', 10);
-    
-    // Connect to the database
-    await connectToDatabase();
-    
-    // Build query
-    const query: any = {};
-    
-    // Add status filter (if not set to 'all')
-    if (status !== 'all') {
-      query.status = status;
-    }
-    
-    // Add search query filter
-    if (searchQuery) {
-      query.$or = [
-        { title: { $regex: searchQuery, $options: 'i' } },
-        { description: { $regex: searchQuery, $options: 'i' } },
-        { ownerName: { $regex: searchQuery, $options: 'i' } },
-        { requiredSkills: { $in: [new RegExp(searchQuery, 'i')] } }
-      ];
-    }
-    
-    // Add skill filter
-    if (skills && skills.length > 0 && skills[0] !== '') {
-      query.requiredSkills = { $in: skills };
-    }
-    
-    // Add budget range filter
-    if (minPrice > 0 || maxPrice < 10000) {
-      query.budget = {
-        $gte: minPrice,
-        $lte: maxPrice
-      };
-    }
-    
-    // Calculate skip for pagination
-    const skip = (page - 1) * limit;
-    
-    // Get total count for pagination
-    const totalCount = await Project.countDocuments(query);
-    
-    // Get projects with pagination
-    const projects = await Project.find(query)
-      .sort({ createdAt: -1 }) // Sort by newest first
-      .skip(skip)
-      .limit(limit)
-      .lean()
-      .exec();
-    
-    // Map projects to a clean format
-    const mappedProjects = projects.map(project => ({
-      id: project._id.toString(),
-      title: project.title,
-      description: project.description,
-      budget: project.budget,
-      deadline: project.deadline,
-      requiredSkills: project.requiredSkills,
-      ownerName: project.ownerName,
-      status: project.status,
-      createdAt: project.createdAt
-    }));
-    
-    // Return response with pagination info
-    return NextResponse.json({
-      projects: mappedProjects,
-      totalCount,
-      page,
-      limit,
-      totalPages: Math.ceil(totalCount / limit)
-    });
-  } catch (error) {
-    console.error('Error fetching projects:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch projects' },
       { status: 500 }
     );
   }

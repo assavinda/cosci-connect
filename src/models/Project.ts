@@ -1,6 +1,14 @@
 // src/models/Project.ts
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+// Interface for message structure
+interface ProjectMessage {
+  from: mongoose.Types.ObjectId;
+  fromName: string;
+  content: string;
+  timestamp: Date;
+}
+
 export interface IProject extends Document {
   title: string;
   description: string;
@@ -23,11 +31,22 @@ export interface IProject extends Document {
   invitations?: mongoose.Types.ObjectId[];      // อาร์เรย์ของ ID ของฟรีแลนซ์ที่เจ้าของส่งคำขอไป
   invitationNames?: string[];                   // อาร์เรย์ของชื่อฟรีแลนซ์ที่เจ้าของส่งคำขอไป
   
+  // ข้อความในโปรเจกต์
+  messages?: ProjectMessage[];                   // ข้อความระหว่างเจ้าของโปรเจกต์และฟรีแลนซ์
+  
   progress?: number;
   createdAt: Date;
   updatedAt?: Date;
   completedAt?: Date;
 }
+
+// Schema for message
+const MessageSchema = new Schema({
+  from: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  fromName: { type: String, required: true },
+  content: { type: String, required: true },
+  timestamp: { type: Date, default: Date.now }
+});
 
 const ProjectSchema: Schema = new Schema(
   {
@@ -56,6 +75,9 @@ const ProjectSchema: Schema = new Schema(
     // คำขอที่เจ้าของโปรเจกต์ส่งให้ฟรีแลนซ์
     invitations: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     invitationNames: [{ type: String }],
+    
+    // ข้อความในโปรเจกต์
+    messages: [MessageSchema],
     
     progress: { type: Number, min: 0, max: 100, default: 0 },
     createdAt: { type: Date, default: Date.now },
