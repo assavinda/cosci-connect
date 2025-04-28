@@ -23,14 +23,6 @@ export interface IProject extends Document {
   assignedTo?: mongoose.Types.ObjectId;  // ฟรีแลนซ์ที่ได้รับมอบหมายงาน
   assignedFreelancerName?: string;       // ชื่อของฟรีแลนซ์ที่ได้รับมอบหมายงาน
   
-  // คำขอจากฟรีแลนซ์ที่ยื่นขอทำงานนี้
-  applicants?: mongoose.Types.ObjectId[];        // อาร์เรย์ของ ID ของฟรีแลนซ์ที่ขอร่วมงาน
-  applicantNames?: string[];                    // อาร์เรย์ของชื่อฟรีแลนซ์ที่ขอร่วมงาน
-  
-  // คำขอที่เจ้าของโปรเจกต์ส่งให้ฟรีแลนซ์
-  invitations?: mongoose.Types.ObjectId[];      // อาร์เรย์ของ ID ของฟรีแลนซ์ที่เจ้าของส่งคำขอไป
-  invitationNames?: string[];                   // อาร์เรย์ของชื่อฟรีแลนซ์ที่เจ้าของส่งคำขอไป
-  
   // ข้อความในโปรเจกต์
   messages?: ProjectMessage[];                   // ข้อความระหว่างเจ้าของโปรเจกต์และฟรีแลนซ์
   
@@ -68,14 +60,6 @@ const ProjectSchema: Schema = new Schema(
     assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     assignedFreelancerName: { type: String },
     
-    // ฟรีแลนซ์ที่ยื่นขอทำงานนี้
-    applicants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-    applicantNames: [{ type: String }],
-    
-    // คำขอที่เจ้าของโปรเจกต์ส่งให้ฟรีแลนซ์
-    invitations: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-    invitationNames: [{ type: String }],
-    
     // ข้อความในโปรเจกต์
     messages: [MessageSchema],
     
@@ -90,8 +74,6 @@ const ProjectSchema: Schema = new Schema(
 ProjectSchema.index({ status: 1 });
 ProjectSchema.index({ owner: 1 });
 ProjectSchema.index({ assignedTo: 1 });
-ProjectSchema.index({ applicants: 1 });
-ProjectSchema.index({ invitations: 1 });
 ProjectSchema.index({ requiredSkills: 1 });
 ProjectSchema.index({ createdAt: -1 });
 

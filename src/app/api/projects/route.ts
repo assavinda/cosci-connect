@@ -75,23 +75,19 @@ export async function GET(req: NextRequest) {
     
     // Map projects to a clean format
     const mappedProjects = projects.map(project => ({
-      id: project._id.toString(),
-      title: project.title,
-      description: project.description,
-      budget: project.budget,
-      deadline: project.deadline,
-      requiredSkills: project.requiredSkills,
-      ownerName: project.ownerName,
-      owner: project.owner.toString(),
-      status: project.status,
-      progress: project.progress || 0,
-      createdAt: project.createdAt,
-      assignedTo: project.assignedTo ? project.assignedTo.toString() : null,
-      assignedFreelancerName: project.assignedFreelancerName || null,
-      applicants: project.applicants ? project.applicants.map(id => id.toString()) : [],
-      applicantNames: project.applicantNames || [],
-      invitations: project.invitations ? project.invitations.map(id => id.toString()) : [],
-      invitationNames: project.invitationNames || []
+        id: project._id.toString(),
+        title: project.title,
+        description: project.description,
+        budget: project.budget,
+        deadline: project.deadline,
+        requiredSkills: project.requiredSkills,
+        ownerName: project.ownerName,
+        owner: project.owner.toString(),
+        status: project.status,
+        progress: project.progress || 0,
+        createdAt: project.createdAt,
+        assignedTo: project.assignedTo ? project.assignedTo.toString() : null,
+        assignedFreelancerName: project.assignedFreelancerName || null
     }));
     
     // Return response with pagination info

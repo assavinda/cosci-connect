@@ -3,6 +3,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useParams } from "next/navigation";
 import Loading from "../../../../components/common/Loading";
+import HireButton from "../../../../components/buttons/HireButton";
+import { Toaster } from 'react-hot-toast';
 
 interface Freelancer {
   id: string;
@@ -107,8 +109,11 @@ export default function FreelancerProfilePage() {
   
   return (
     <div className="w-full mt-6">
+      {/* Toast notification component */}
+      <Toaster position="top-right" />
+      
       {/* ปุ่มกลับไปหน้าก่อนหน้า */}
-      {/* <div className="mb-6 mt-6">
+      <div className="mb-6">
         <button 
           onClick={() => window.history.back()}
           className="flex items-center text-gray-500 hover:text-gray-700"
@@ -118,7 +123,7 @@ export default function FreelancerProfilePage() {
           </svg>
           กลับไปหน้ารายการฟรีแลนซ์
         </button>
-      </div> */}
+      </div>
       
       {/* ข้อมูลโปรไฟล์ */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
@@ -140,32 +145,45 @@ export default function FreelancerProfilePage() {
           
           {/* ข้อมูลพื้นฐาน */}
           <div className="flex-grow">
-            <h1 className="text-l font-medium mb-2 text-center md:text-left">{freelancer.name}</h1>
-            
-            <div className="mb-4">
-              <span className="text-gray-500">{freelancer.major}</span>
-            </div>
-            
-            <div className="mb-4">
-              <span className="text-gray-500">ราคาเริ่มต้น:</span>
-              <span className="ml-2 text-lg font-medium text-blue-600">{formatCurrency(freelancer.basePrice)}</span>
-            </div>
-            
-            <div>
-              <span className="text-gray-500 block mb-2">ทักษะ:</span>
-              <div className="flex flex-wrap gap-2">
-                {freelancer.skills.length > 0 ? (
-                  freelancer.skills.map((skill, index) => (
-                    <span 
-                      key={index}
-                      className="bg-primary-blue-100 text-primary-blue-500 px-2 py-1 rounded-md text-sm"
-                    >
-                      {skill}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-gray-400">ไม่ระบุทักษะ</span>
-                )}
+            <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+              <div>
+                <h1 className="text-xl font-medium mb-2 text-center md:text-left">{freelancer.name}</h1>
+                <div className="mb-4">
+                  <span className="text-gray-500">{freelancer.major}</span>
+                </div>
+                
+                <div className="mb-4">
+                  <span className="text-gray-500">ราคาเริ่มต้น:</span>
+                  <span className="ml-2 text-lg font-medium text-blue-600">{formatCurrency(freelancer.basePrice)}</span>
+                </div>
+                
+                <div>
+                  <span className="text-gray-500 block mb-2">ทักษะ:</span>
+                  <div className="flex flex-wrap gap-2">
+                    {freelancer.skills.length > 0 ? (
+                      freelancer.skills.map((skill, index) => (
+                        <span 
+                          key={index}
+                          className="bg-primary-blue-100 text-primary-blue-500 px-2 py-1 rounded-md text-sm"
+                        >
+                          {skill}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-gray-400">ไม่ระบุทักษะ</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {/* ปุ่มจ้างฟรีแลนซ์ */}
+              <div className="flex justify-center md:justify-end mt-4 md:mt-0">
+                <HireButton 
+                  freelancerId={freelancer.id}
+                  freelancerName={freelancer.name}
+                  freelancerSkills={freelancer.skills}
+                  basePrice={freelancer.basePrice}
+                />
               </div>
             </div>
           </div>
@@ -174,7 +192,7 @@ export default function FreelancerProfilePage() {
       
       {/* ข้อมูลเกี่ยวกับ */}
       <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-        <h2 className="text-m font-medium mb-4">เกี่ยวกับ</h2>
+        <h2 className="text-xl font-medium mb-4">เกี่ยวกับ</h2>
         {freelancer.bio ? (
           <p className="text-gray-700 whitespace-pre-line">{freelancer.bio}</p>
         ) : (
@@ -195,6 +213,30 @@ export default function FreelancerProfilePage() {
                 alt={`ตัวอย่างผลงานของ ${freelancer.name}`}
                 className="w-full h-full object-contain"
               />
+              
+              {/* ปุ่มนำทางรูปภาพ - แสดงเฉพาะเมื่อมีรูปภาพมากกว่า 1 รูป */}
+              {freelancer.galleryImages.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setCurrentImageIndex(prevImageIndex)}
+                    className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white rounded-full p-2 transition-colors"
+                    aria-label="Previous image"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setCurrentImageIndex(nextImageIndex)}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white rounded-full p-2 transition-colors"
+                    aria-label="Next image"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                  </button>
+                </>
+              )}
               
               {/* ข้อความแสดงจำนวนรูปภาพ */}
               <div className="absolute bottom-2 right-2 bg-black/50 text-white px-2 py-1 rounded-md text-sm">

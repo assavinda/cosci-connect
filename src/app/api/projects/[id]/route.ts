@@ -35,27 +35,22 @@ export async function GET(
     
     // Map to response object
     const projectData = {
-      id: project._id.toString(),
-      title: project.title,
-      description: project.description,
-      budget: project.budget,
-      deadline: project.deadline,
-      requiredSkills: project.requiredSkills || [],
-      owner: project.owner.toString(),
-      ownerName: project.ownerName,
-      status: project.status,
-      progress: project.progress || 0,
-      createdAt: project.createdAt,
-      updatedAt: project.updatedAt,
-      completedAt: project.completedAt,
-      assignedTo: project.assignedTo ? project.assignedTo.toString() : null,
-      assignedFreelancerName: project.assignedFreelancerName || null,
-      applicants: project.applicants ? project.applicants.map(id => id.toString()) : [],
-      applicantNames: project.applicantNames || [],
-      invitations: project.invitations ? project.invitations.map(id => id.toString()) : [],
-      invitationNames: project.invitationNames || [],
-      messages: project.messages || []
-    };
+        id: project._id.toString(),
+        title: project.title,
+        description: project.description,
+        budget: project.budget,
+        deadline: project.deadline,
+        requiredSkills: project.requiredSkills || [],
+        owner: project.owner.toString(),
+        ownerName: project.ownerName,
+        status: project.status,
+        progress: project.progress || 0,
+        createdAt: project.createdAt,
+        updatedAt: project.updatedAt,
+        completedAt: project.completedAt,
+        assignedTo: project.assignedTo ? project.assignedTo.toString() : null,
+        assignedFreelancerName: project.assignedFreelancerName || null
+      };
     
     return NextResponse.json(projectData);
   } catch (error) {
