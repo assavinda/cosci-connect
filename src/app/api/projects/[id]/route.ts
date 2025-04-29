@@ -52,9 +52,7 @@ export async function GET(
       updatedAt: project.updatedAt,
       completedAt: project.completedAt,
       assignedTo: project.assignedTo ? project.assignedTo.toString() : null,
-      // เพิ่ม requestToFreelancer ในการส่งข้อมูลกลับ
       requestToFreelancer: project.requestToFreelancer ? project.requestToFreelancer.toString() : null,
-      // เพิ่ม freelancersRequested ในการส่งข้อมูลกลับ
       freelancersRequested: project.freelancersRequested ? project.freelancersRequested.map(id => id.toString()) : []
     };
     
@@ -121,8 +119,14 @@ export async function PATCH(
     // Check if user has permission to update the project
     const isOwner = project.owner.toString() === user._id.toString();
     const isAssignedFreelancer = project.assignedTo && project.assignedTo.toString() === user._id.toString();
+    const isRequestedFreelancer = project.requestToFreelancer && 
+                                project.requestToFreelancer.toString() === user._id.toString();
+    const isAppliedFreelancer = project.freelancersRequested.some(
+      freelancerId => freelancerId.toString() === user._id.toString()
+    );
     
-    if (!isOwner && !isAssignedFreelancer && user.role !== 'student') {
+    // ต้องเป็นเจ้าของโปรเจกต์หรือฟรีแลนซ์ที่เกี่ยวข้องเท่านั้น
+    if (!isOwner && !isAssignedFreelancer && !isRequestedFreelancer && !isAppliedFreelancer) {
       return NextResponse.json(
         { error: 'Permission denied - You do not have permission to update this project' },
         { status: 403 }
@@ -131,11 +135,11 @@ export async function PATCH(
     
     // Get update data from request
     const data = await req.json();
-    console.log("Update request data:", data); // เพิ่ม log เพื่อตรวจสอบข้อมูลที่ส่งมา
+    console.log("Update request data:", data);
     
     const updateData: any = {};
     
-    // Owner can update these fields
+    // ===== เจ้าของโปรเจกต์สามารถอัปเดตได้ =====
     if (isOwner) {
       // Basic project information
       if (data.title !== undefined) updateData.title = data.title;
@@ -173,27 +177,18 @@ export async function PATCH(
         }
       }
       
-      // Handle freelancer assignment
-      if (data.assignFreelancer === true && data.freelancerId) {
-        // Validate freelancer ID
-        if (!mongoose.Types.ObjectId.isValid(data.freelancerId)) {
-          return NextResponse.json(
-            { error: 'Invalid freelancer ID format' },
-            { status: 400 }
-          );
-        }
-        
-        // Check if project is in a state that can be assigned
+      // เจ้าของโปรเจกต์กำหนดฟรีแลนซ์โดยตรง (เช่น การยอมรับคำขอจากฟรีแลนซ์)
+      if (data.assignedTo && mongoose.Types.ObjectId.isValid(data.assignedTo)) {
+        // ตรวจสอบว่าโปรเจกต์เปิดรับสมัครอยู่หรือไม่
         if (project.status !== 'open') {
           return NextResponse.json(
-            { error: 'This project is not open for assignment' },
+            { error: 'Cannot assign freelancer: project is not open' },
             { status: 400 }
           );
         }
         
-        // Get freelancer data
-        const freelancer = await User.findById(data.freelancerId).exec();
-        
+        // ตรวจสอบว่าฟรีแลนซ์มีอยู่จริงและเป็น student
+        const freelancer = await User.findById(data.assignedTo).exec();
         if (!freelancer) {
           return NextResponse.json(
             { error: 'Freelancer not found' },
@@ -201,7 +196,6 @@ export async function PATCH(
           );
         }
         
-        // Check if freelancer is a student
         if (freelancer.role !== 'student') {
           return NextResponse.json(
             { error: 'Only students can be assigned to projects' },
@@ -209,70 +203,103 @@ export async function PATCH(
           );
         }
         
-        // Update assignment
-        updateData.assignedTo = freelancer._id;
+        // อัปเดตโปรเจกต์
+        updateData.assignedTo = new mongoose.Types.ObjectId(data.assignedTo);
         updateData.status = 'assigned';
+        // ล้างคำขอทั้งหมด
+        updateData.requestToFreelancer = null;
+        updateData.freelancersRequested = [];
       }
       
-      // สำหรับการส่งคำขอถึงฟรีแลนซ์
+      // Handle freelancer request
       if (data.requestToFreelancer !== undefined) {
-        // ตรวจสอบว่า freelancer ID ถูกต้อง
-        if (!mongoose.Types.ObjectId.isValid(data.requestToFreelancer)) {
+        // If null, remove the request
+        if (data.requestToFreelancer === null) {
+          updateData.requestToFreelancer = null;
+        } 
+        // If there's a new request, validate and set it
+        else if (mongoose.Types.ObjectId.isValid(data.requestToFreelancer)) {
+          // Ensure project is open
+          if (project.status !== 'open') {
+            return NextResponse.json(
+              { error: 'Cannot send request to freelancer: project is not open' },
+              { status: 400 }
+            );
+          }
+          
+          // Verify freelancer exists and is a student
+          const freelancer = await User.findById(data.requestToFreelancer).exec();
+          if (!freelancer) {
+            return NextResponse.json(
+              { error: 'Freelancer not found' },
+              { status: 404 }
+            );
+          }
+          
+          if (freelancer.role !== 'student') {
+            return NextResponse.json(
+              { error: 'Can only send requests to student freelancers' },
+              { status: 400 }
+            );
+          }
+          
+          updateData.requestToFreelancer = new mongoose.Types.ObjectId(data.requestToFreelancer);
+        } else {
+          return NextResponse.json(
+            { error: 'Invalid freelancer ID format' },
+            { status: 400 }
+          );
+        }
+      }
+      
+      // ลบฟรีแลนซ์ออกจาก freelancersRequested (การปฏิเสธคำขอ)
+      if (data.action === 'removeFreelancerRequest' && data.freelancerId) {
+        // ตรวจสอบรูปแบบ ID
+        if (!mongoose.Types.ObjectId.isValid(data.freelancerId)) {
           return NextResponse.json(
             { error: 'Invalid freelancer ID format' },
             { status: 400 }
           );
         }
         
-        // ตรวจสอบว่าโปรเจกต์สามารถส่งคำขอได้ (ต้องมีสถานะเป็น open)
-        if (project.status !== 'open') {
+        // ตรวจสอบว่าฟรีแลนซ์อยู่ในรายการคำขอจริงหรือไม่
+        const freelancerIdObj = new mongoose.Types.ObjectId(data.freelancerId);
+        const isInRequestList = project.freelancersRequested.some(id => id.equals(freelancerIdObj));
+        
+        if (!isInRequestList) {
           return NextResponse.json(
-            { error: 'This project is not open for requests' },
+            { error: 'Freelancer is not in the request list' },
             { status: 400 }
           );
         }
         
-        // ตรวจสอบว่าฟรีแลนซ์ที่จะส่งคำขอมีอยู่จริง
-        const freelancer = await User.findById(data.requestToFreelancer).exec();
-        if (!freelancer) {
-          return NextResponse.json(
-            { error: 'Freelancer not found' },
-            { status: 404 }
-          );
+        // ลบฟรีแลนซ์ออกจากรายการคำขอ
+        await Project.updateOne(
+          { _id: id },
+          { $pull: { freelancersRequested: freelancerIdObj } }
+        );
+        
+        // หลังจากอัปเดตสำเร็จแล้ว ดึงโปรเจกต์ที่อัปเดตมาแล้วและส่งกลับ
+        const updatedProject = await Project.findById(id).lean();
+        
+        const responseData = {
+          success: true,
+          message: 'Freelancer removed from request list',
+          project: {
+            ...updatedProject,
+            id: updatedProject._id.toString(),
+            freelancersRequested: updatedProject.freelancersRequested.map(id => id.toString())
+          }
+        };
+        
+        // ถ้าไม่มีการอัปเดตอื่น ให้ส่งผลลัพธ์กลับเลย
+        if (Object.keys(updateData).length === 0) {
+          return NextResponse.json(responseData);
         }
-        
-        // ตรวจสอบว่าฟรีแลนซ์เป็น student
-        if (freelancer.role !== 'student') {
-          return NextResponse.json(
-            { error: 'Can only send requests to student freelancers' },
-            { status: 400 }
-          );
-        }
-        
-        // อัปเดตค่า requestToFreelancer
-        updateData.requestToFreelancer = new mongoose.Types.ObjectId(data.requestToFreelancer);
-        console.log("Setting requestToFreelancer to:", updateData.requestToFreelancer);
-        
-        // พิมพ์ข้อมูลโปรเจคปัจจุบันเพื่อตรวจสอบ
-        console.log("Current project data before update:", JSON.stringify(project.toObject(), null, 2));
-      }
-      
-      // Remove freelancer assignment
-      if (data.removeFreelancer === true && project.assignedTo) {
-        // Only allow removing if project is not completed
-        if (project.status === 'completed') {
-          return NextResponse.json(
-            { error: 'Cannot remove freelancer from completed project' },
-            { status: 400 }
-          );
-        }
-        
-        updateData.assignedTo = null;
-        updateData.status = 'open';
       }
     }
     
-    // Freelancer can update these fields
+    // ===== ฟรีแลนซ์ที่ได้รับการกำหนดให้ทำงานแล้วสามารถอัปเดตได้ =====
     if (isAssignedFreelancer) {
       // Update progress (restricted to freelancer and within 0-100)
       if (data.progress !== undefined) {
@@ -286,7 +313,7 @@ export async function PATCH(
         updateData.progress = progress;
       }
       
-      // Freelancer can change status with some restrictions
+      // ฟรีแลนซ์ที่ได้รับมอบหมายงานแล้วสามารถเปลี่ยนสถานะได้
       if (data.status !== undefined) {
         const currentStatus = project.status;
         const newStatus = data.status;
@@ -308,53 +335,63 @@ export async function PATCH(
       }
     }
     
-    // สำหรับฟรีแลนซ์ที่ต้องการส่งคำขอร่วมงาน
-    if (user.role === 'student' && data.applyToProject === true) {
-      // ตรวจสอบว่าโปรเจกต์เปิดรับสมัครหรือไม่
-      if (project.status !== 'open') {
-        return NextResponse.json(
-          { error: 'This project is not open for applications' },
-          { status: 400 }
-        );
-      }
-      
-      // ตรวจสอบว่าฟรีแลนซ์ได้ส่งคำขอไปแล้วหรือไม่
-      const hasAlreadyApplied = project.freelancersRequested.some(
-        id => id.toString() === user._id.toString()
-      );
-      
-      if (hasAlreadyApplied) {
-        return NextResponse.json(
-          { error: 'You have already applied to this project' },
-          { status: 400 }
-        );
-      }
-      
-      // เพิ่ม ID ของฟรีแลนซ์เข้าไปในอาเรย์ freelancersRequested
-      // เราทำการอัปเดตแยกต่างหากเนื่องจากเป็นการใช้ $push
-      await Project.findByIdAndUpdate(
-        id,
-        { $push: { freelancersRequested: user._id } },
-        { new: true }
-      );
-      
-      // ดึงโปรเจกต์ที่อัปเดตแล้ว
-      const updatedProject = await Project.findById(id).lean();
-      
-      // ส่งข้อมูลกลับ
-      return NextResponse.json({
-        success: true,
-        message: 'Applied to project successfully',
-        project: {
-          id: updatedProject._id.toString(),
-          title: updatedProject.title,
-          status: updatedProject.status,
-          freelancersRequested: updatedProject.freelancersRequested.map(id => id.toString())
+    // ===== ฟรีแลนซ์ที่ได้รับคำขอสามารถตอบรับหรือปฏิเสธได้ =====
+    if (isRequestedFreelancer) {
+      // ฟรีแลนซ์ตอบรับคำขอ
+      if (data.status === 'assigned') {
+        // ตรวจสอบว่าโปรเจกต์ยังเปิดรับอยู่หรือไม่
+        if (project.status !== 'open') {
+          return NextResponse.json(
+            { error: 'Cannot accept request: project is not open' },
+            { status: 400 }
+          );
         }
-      });
+        
+        // อัปเดตสถานะโปรเจกต์
+        updateData.status = 'assigned';
+        updateData.assignedTo = user._id;
+        updateData.requestToFreelancer = null;
+        updateData.freelancersRequested = [];
+      }
     }
     
-    // Common updates (for both roles)
+    // ===== ฟรีแลนซ์ที่ส่งคำขอเข้ามาสามารถยกเลิกได้ =====
+    if (isAppliedFreelancer) {
+      // ฟรีแลนซ์ยกเลิกคำขอของตนเอง
+      if (data.action === 'removeFreelancerRequest' && data.freelancerId) {
+        // ตรวจสอบว่า freelancerId ตรงกับ user._id หรือไม่
+        if (data.freelancerId !== user._id.toString()) {
+          return NextResponse.json(
+            { error: 'You can only cancel your own application' },
+            { status: 400 }
+          );
+        }
+        
+        // ลบฟรีแลนซ์ออกจากรายการคำขอ
+        await Project.updateOne(
+          { _id: id },
+          { $pull: { freelancersRequested: user._id } }
+        );
+        
+        // หลังจากอัปเดตสำเร็จแล้ว ดึงโปรเจกต์ที่อัปเดตมาแล้วและส่งกลับ
+        const updatedProject = await Project.findById(id).lean();
+        
+        return NextResponse.json({
+          success: true,
+          message: 'Application canceled successfully',
+          project: {
+            ...updatedProject,
+            id: updatedProject._id.toString(),
+            owner: updatedProject.owner.toString(),
+            assignedTo: updatedProject.assignedTo ? updatedProject.assignedTo.toString() : null,
+            requestToFreelancer: updatedProject.requestToFreelancer ? updatedProject.requestToFreelancer.toString() : null,
+            freelancersRequested: updatedProject.freelancersRequested.map(id => id.toString())
+          }
+        });
+      }
+    }
+    
+    // Common updates (for all roles)
     updateData.updatedAt = new Date();
     
     // Check if there are any updates to apply
@@ -365,7 +402,7 @@ export async function PATCH(
       );
     }
     
-    console.log("Final update data:", updateData); // เพิ่ม log เพื่อตรวจสอบข้อมูลที่จะอัปเดต
+    console.log("Final update data:", updateData);
     
     // Perform the update
     const updatedProject = await Project.findByIdAndUpdate(
@@ -374,7 +411,7 @@ export async function PATCH(
       { new: true }
     ).lean().exec();
     
-    console.log("Updated project result:", updatedProject); // เพิ่ม log เพื่อตรวจสอบผลลัพธ์หลังอัปเดต
+    console.log("Updated project result:", updatedProject);
     
     // Convert ObjectId to string for response
     const responseData: any = { ...updatedProject };
@@ -392,6 +429,8 @@ export async function PATCH(
     } else {
       responseData.requestToFreelancer = null;
     }
+    
+    responseData.freelancersRequested = updatedProject.freelancersRequested.map(id => id.toString());
     
     delete responseData._id;
     
@@ -617,6 +656,8 @@ export async function PUT(
     } else {
       responseData.requestToFreelancer = null;
     }
+    
+    responseData.freelancersRequested = updatedProject.freelancersRequested.map(id => id.toString());
     
     delete responseData._id;
     
