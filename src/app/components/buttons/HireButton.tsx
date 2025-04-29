@@ -32,7 +32,6 @@ const HireButton: React.FC<HireButtonProps> = ({
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   // ตรวจสอบว่าผู้ใช้ปัจจุบันไม่ใช่ student และไม่ใช่ฟรีแลนซ์คนเดียวกัน
   const canHire = session?.user?.role !== 'student' && session?.user?.id !== freelancerId;
@@ -55,23 +54,19 @@ const HireButton: React.FC<HireButtonProps> = ({
     setError(null);
     try {
       // ดึงโปรเจกต์ของผู้ใช้ปัจจุบันที่มีสถานะ open
+      // และใช้พารามิเตอร์ noRequest เพื่อกรองโปรเจกต์ที่ไม่มี requestToFreelancer
       const response = await axios.get('/api/projects', {
         params: {
           status: 'open',
           owner: session?.user?.id,
+          noRequest: true // เพิ่มพารามิเตอร์นี้
         }
       });
 
-      console.log("Raw projects:", response.data.projects);
+      console.log("Raw projects data:", response.data);
 
-      // กรองโปรเจกต์ที่ตรงเงื่อนไข
+      // กรองโปรเจกต์ที่ตรงเงื่อนไข (เฉพาะทักษะที่ตรงกัน)
       const filteredProjects = response.data.projects.filter((project: any) => {
-        // ตรวจสอบว่า assignedTo และ requestToFreelancer ไม่มีข้อมูล
-        if (project.assignedTo != null || project.requestToFreelancer != null) {
-          console.log(`Project ${project.id} skipped: has assignedTo or requestToFreelancer`);
-          return false;
-        }
-
         // ตรวจสอบว่ามีทักษะที่ตรงกันอย่างน้อย 1 อย่าง
         const hasMatchingSkill = project.requiredSkills.some((skill: string) =>
           freelancerSkills.includes(skill)
@@ -137,7 +132,7 @@ const HireButton: React.FC<HireButtonProps> = ({
         }
       }, 2000);
 
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error sending hire request:', err);
       setError(`เกิดข้อผิดพลาดในการส่งคำขอ: ${err.response?.data?.error || 'กรุณาลองใหม่อีกครั้ง'}`);
     } finally {
@@ -146,7 +141,7 @@ const HireButton: React.FC<HireButtonProps> = ({
   };
 
   // ฟอร์แมตราคาเป็นสกุลเงินบาท
-  const formatPrice = (price) => {
+  const formatPrice = (price: number) => {
     return new Intl.NumberFormat('th-TH', {
       style: 'currency',
       currency: 'THB',
@@ -165,6 +160,7 @@ const HireButton: React.FC<HireButtonProps> = ({
       <button
         onClick={() => setIsModalOpen(true)}
         className="btn-primary flex items-center gap-2"
+        aria-label="จ้างฟรีแลนซ์"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M20 16V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4"></path>
@@ -312,6 +308,6 @@ const HireButton: React.FC<HireButtonProps> = ({
       )}
     </>
   );
-};
+}
 
 export default HireButton;

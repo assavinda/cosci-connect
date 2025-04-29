@@ -52,8 +52,8 @@ export async function GET(
       updatedAt: project.updatedAt,
       completedAt: project.completedAt,
       assignedTo: project.assignedTo ? project.assignedTo.toString() : null,
-      // Remove assignedFreelancerName as it does not exist on the project type
-      // assignedFreelancerName: project.assignedFreelancerName || null
+      // เพิ่ม requestToFreelancer ในการส่งข้อมูลกลับ
+      requestToFreelancer: project.requestToFreelancer ? project.requestToFreelancer.toString() : null
     };
     
     return NextResponse.json(projectData);
@@ -65,8 +65,6 @@ export async function GET(
     );
   }
 }
-
-// src/app/api/projects/[id]/route.ts - แก้ไขส่วนของ PATCH method
 
 // PATCH - Update a project by ID
 export async function PATCH(
@@ -252,6 +250,9 @@ export async function PATCH(
         // อัปเดตค่า requestToFreelancer
         updateData.requestToFreelancer = new mongoose.Types.ObjectId(data.requestToFreelancer);
         console.log("Setting requestToFreelancer to:", updateData.requestToFreelancer);
+        
+        // พิมพ์ข้อมูลโปรเจคปัจจุบันเพื่อตรวจสอบ
+        console.log("Current project data before update:", JSON.stringify(project.toObject(), null, 2));
       }
       
       // Remove freelancer assignment
@@ -328,14 +329,23 @@ export async function PATCH(
     console.log("Updated project result:", updatedProject); // เพิ่ม log เพื่อตรวจสอบผลลัพธ์หลังอัปเดต
     
     // Convert ObjectId to string for response
-    const responseData = {
-      ...updatedProject,
-      id: updatedProject._id.toString(),
-      owner: updatedProject.owner.toString(),
-      assignedTo: updatedProject.assignedTo ? updatedProject.assignedTo.toString() : null,
-      requestToFreelancer: updatedProject.requestToFreelancer ? updatedProject.requestToFreelancer.toString() : null,
-      _id: undefined
-    };
+    const responseData: any = { ...updatedProject };
+    responseData.id = updatedProject._id.toString();
+    responseData.owner = updatedProject.owner.toString();
+    
+    if (updatedProject.assignedTo) {
+      responseData.assignedTo = updatedProject.assignedTo.toString();
+    } else {
+      responseData.assignedTo = null;
+    }
+    
+    if (updatedProject.requestToFreelancer) {
+      responseData.requestToFreelancer = updatedProject.requestToFreelancer.toString();
+    } else {
+      responseData.requestToFreelancer = null;
+    }
+    
+    delete responseData._id;
     
     return NextResponse.json({
       success: true,
@@ -544,13 +554,23 @@ export async function PUT(
     ).lean().exec();
     
     // Convert ObjectId to string for response
-    const responseData = {
-      ...updatedProject,
-      id: updatedProject._id.toString(),
-      owner: updatedProject.owner.toString(),
-      assignedTo: updatedProject.assignedTo ? updatedProject.assignedTo.toString() : null,
-      _id: undefined
-    };
+    const responseData: any = { ...updatedProject };
+    responseData.id = updatedProject._id.toString();
+    responseData.owner = updatedProject.owner.toString();
+    
+    if (updatedProject.assignedTo) {
+      responseData.assignedTo = updatedProject.assignedTo.toString();
+    } else {
+      responseData.assignedTo = null;
+    }
+    
+    if (updatedProject.requestToFreelancer) {
+      responseData.requestToFreelancer = updatedProject.requestToFreelancer.toString();
+    } else {
+      responseData.requestToFreelancer = null;
+    }
+    
+    delete responseData._id;
     
     return NextResponse.json({
       success: true,

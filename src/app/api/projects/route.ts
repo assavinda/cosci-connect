@@ -20,6 +20,9 @@ export async function GET(req: NextRequest) {
     const maxPrice = parseInt(url.searchParams.get('maxPrice') || '10000', 10);
     const owner = url.searchParams.get('owner'); // Optional owner filter
     
+    // พารามิเตอร์ใหม่: noRequest - สำหรับกรองโปรเจกต์ที่ไม่มี requestToFreelancer
+    const noRequest = url.searchParams.get('noRequest') === 'true';
+    
     // Connect to the database
     await connectToDatabase();
     
@@ -34,6 +37,14 @@ export async function GET(req: NextRequest) {
     // Add owner filter if provided
     if (owner) {
       query.owner = new mongoose.Types.ObjectId(owner);
+    }
+    
+    // Add noRequest filter - ดึงเฉพาะโปรเจกต์ที่ไม่มี requestToFreelancer
+    if (noRequest) {
+      query.$or = [
+        { requestToFreelancer: { $exists: false } },
+        { requestToFreelancer: null }
+      ];
     }
     
     // Add search query filter
@@ -87,7 +98,8 @@ export async function GET(req: NextRequest) {
         progress: project.progress || 0,
         createdAt: project.createdAt,
         assignedTo: project.assignedTo ? project.assignedTo.toString() : null,
-        assignedFreelancerName: project.assignedFreelancerName || null
+        // ต้องแน่ใจว่าส่ง requestToFreelancer กลับไปด้วยเพื่อตรวจสอบที่ frontend
+        requestToFreelancer: project.requestToFreelancer ? project.requestToFreelancer.toString() : null
     }));
     
     // Return response with pagination info
@@ -164,10 +176,8 @@ export async function POST(req: NextRequest) {
       status: 'open', // Initial status
       progress: 0,
       createdAt: new Date(),
-      applicants: [],
-      applicantNames: [],
-      invitations: [],
-      invitationNames: []
+      // ตั้งค่าเริ่มต้น requestToFreelancer เป็น null ชัดเจน
+      requestToFreelancer: null
     });
 
     // Save the project
@@ -188,7 +198,8 @@ export async function POST(req: NextRequest) {
         owner: project.owner.toString(),
         status: project.status,
         progress: project.progress,
-        createdAt: project.createdAt
+        createdAt: project.createdAt,
+        requestToFreelancer: null
       }
     }, { status: 201 });
   } catch (error) {
