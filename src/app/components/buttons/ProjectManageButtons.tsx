@@ -35,9 +35,9 @@ function ProjectManageButtons({ project, isFreelancer, userId }: ProjectManageBu
     setIsLoading(true);
     
     try {
-      // For freelancer accepting a direct request from project owner
+      // ส่งคำขอเปลี่ยนสถานะเป็น in_progress แทน assigned
       const response = await axios.patch(`/api/projects/${project.id}`, {
-        status: 'assigned',
+        status: 'in_progress',
         assignedTo: userId
       });
       
@@ -192,8 +192,9 @@ function ProjectManageButtons({ project, isFreelancer, userId }: ProjectManageBu
     setIsLoading(true);
     
     try {
+      // เปลี่ยนสถานะเป็น in_progress แทน assigned
       const response = await axios.patch(`/api/projects/${project.id}`, {
-        status: 'assigned',
+        status: 'in_progress',
         assignedTo: freelancerId
       });
       

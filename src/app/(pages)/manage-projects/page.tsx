@@ -116,7 +116,7 @@ export default function ManageProjectsPage() {
     };
 
     projectList.forEach(project => {
-      // For freelancers
+      // สำหรับฟรีแลนซ์ (นิสิต)
       if (isFreelancer) {
         // Waiting Response: Projects where the freelancer has applied
         if (project.freelancersRequested.includes(userId) && project.status === 'open') {
@@ -143,7 +143,7 @@ export default function ManageProjectsPage() {
           grouped.completed.push(project);
         }
       } 
-      // For teachers/alumni (project owners)
+      // สำหรับอาจารย์หรือศิษย์เก่า (เจ้าของโปรเจกต์)
       else {
         // Waiting Response: Projects where the owner has sent a request to a freelancer
         if (project.requestToFreelancer && project.status === 'open') {
@@ -278,7 +278,7 @@ export default function ManageProjectsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <ProjectManageList 
           title="กำลังดำเนินการ" 
-          status="active" 
+          status="in_progress" 
           projects={projects.active}
           emptyMessage="ไม่มีโปรเจกต์ที่กำลังดำเนินการ" 
           onUpdateProgress={updateProgress}

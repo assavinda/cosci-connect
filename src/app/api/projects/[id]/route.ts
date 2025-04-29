@@ -155,8 +155,7 @@ export async function PATCH(
         const newStatus = data.status;
         
         const validTransitions: Record<string, string[]> = {
-          'open': ['cancelled'],
-          'assigned': ['in_progress', 'cancelled'],
+          'open': ['in_progress', 'cancelled'],
           'in_progress': ['revision', 'completed', 'cancelled'],
           'revision': ['in_progress', 'completed', 'cancelled'],
           'awaiting': ['completed', 'revision']
@@ -205,7 +204,7 @@ export async function PATCH(
         
         // อัปเดตโปรเจกต์
         updateData.assignedTo = new mongoose.Types.ObjectId(data.assignedTo);
-        updateData.status = 'assigned';
+        updateData.status = 'in_progress';  // เปลี่ยนจาก 'assigned' เป็น 'in_progress'
         // ล้างคำขอทั้งหมด
         updateData.requestToFreelancer = null;
         updateData.freelancersRequested = [];
@@ -319,7 +318,6 @@ export async function PATCH(
         const newStatus = data.status;
         
         const validFreelancerTransitions: Record<string, string[]> = {
-          'assigned': ['in_progress'],
           'in_progress': ['awaiting'],
           'revision': ['awaiting']
         };
@@ -337,8 +335,8 @@ export async function PATCH(
     
     // ===== ฟรีแลนซ์ที่ได้รับคำขอสามารถตอบรับหรือปฏิเสธได้ =====
     if (isRequestedFreelancer) {
-      // ฟรีแลนซ์ตอบรับคำขอ
-      if (data.status === 'assigned') {
+      // ฟรีแลนซ์ตอบรับคำขอ (ใช้ in_progress แทน assigned)
+      if (data.status === 'in_progress') {
         // ตรวจสอบว่าโปรเจกต์ยังเปิดรับอยู่หรือไม่
         if (project.status !== 'open') {
           return NextResponse.json(
@@ -347,8 +345,8 @@ export async function PATCH(
           );
         }
         
-        // อัปเดตสถานะโปรเจกต์
-        updateData.status = 'assigned';
+        // อัปเดตสถานะโปรเจกต์เป็น in_progress เลย
+        updateData.status = 'in_progress';
         updateData.assignedTo = user._id;
         updateData.requestToFreelancer = null;
         updateData.freelancersRequested = [];
@@ -389,6 +387,51 @@ export async function PATCH(
           }
         });
       }
+    }
+    
+    // ฟรีแลนซ์ที่ยื่นคำขอร่วมงาน
+    if (data.applyToProject === true && user.role === 'student') {
+      // ตรวจสอบว่าโปรเจกต์ยังเปิดรับอยู่หรือไม่
+      if (project.status !== 'open') {
+        return NextResponse.json(
+          { error: 'Cannot apply: project is not open' },
+          { status: 400 }
+        );
+      }
+      
+      // ตรวจสอบว่าฟรีแลนซ์ได้ส่งคำขอไปแล้วหรือยัง
+      const alreadyRequested = project.freelancersRequested.some(
+        id => id.toString() === user._id.toString()
+      );
+      
+      if (alreadyRequested) {
+        return NextResponse.json(
+          { error: 'You have already applied to this project' },
+          { status: 400 }
+        );
+      }
+      
+      // เพิ่มฟรีแลนซ์เข้าไปในรายการคำขอ
+      await Project.updateOne(
+        { _id: id },
+        { $push: { freelancersRequested: user._id } }
+      );
+      
+      // หลังจากอัปเดตสำเร็จแล้ว ดึงโปรเจกต์ที่อัปเดตมาแล้วและส่งกลับ
+      const updatedProject = await Project.findById(id).lean();
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Applied to project successfully',
+        project: {
+          ...updatedProject,
+          id: updatedProject._id.toString(),
+          owner: updatedProject.owner.toString(),
+          assignedTo: updatedProject.assignedTo ? updatedProject.assignedTo.toString() : null,
+          requestToFreelancer: updatedProject.requestToFreelancer ? updatedProject.requestToFreelancer.toString() : null,
+          freelancersRequested: updatedProject.freelancersRequested.map(id => id.toString())
+        }
+      });
     }
     
     // Common updates (for all roles)
@@ -507,7 +550,7 @@ export async function DELETE(
     }
     
     // Check if the project can be deleted
-    if (['assigned', 'in_progress', 'revision', 'awaiting'].includes(project.status)) {
+    if (['in_progress', 'revision', 'awaiting'].includes(project.status)) {
       return NextResponse.json(
         { error: 'Cannot delete a project that is currently in progress or assigned' },
         { status: 400 }
