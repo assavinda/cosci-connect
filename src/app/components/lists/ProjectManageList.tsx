@@ -1,12 +1,18 @@
 import React from "react";
 import ProjectManageCard from "../cards/ProjectManageCard";
+import Link from "next/link";
 
 interface Project {
   id: string;
   title: string;
   owner: string;
+  ownerName: string;
   status: string;
   progress: number;
+  assignedTo?: string;
+  assignedFreelancerName?: string;
+  requestToFreelancer?: string;
+  freelancersRequested: string[];
 }
 
 interface ProjectManageListProps {
@@ -15,6 +21,8 @@ interface ProjectManageListProps {
   projects: Project[];
   emptyMessage: string;
   onUpdateProgress: (id: string, progress: number) => void;
+  isFreelancer: boolean;
+  userId?: string;
 }
 
 function ProjectManageList({ 
@@ -22,8 +30,63 @@ function ProjectManageList({
   status, 
   projects, 
   emptyMessage, 
-  onUpdateProgress 
+  onUpdateProgress,
+  isFreelancer,
+  userId
 }: ProjectManageListProps) {
+  // Function to get the appropriate name to display
+  const getDisplayName = (project: Project) => {
+    // For freelancers, show the project owner
+    if (isFreelancer) {
+      return project.ownerName;
+    } 
+    
+    // For project owners, show the freelancer name if available
+    if (project.assignedTo) {
+      return project.assignedFreelancerName || "ฟรีแลนซ์";
+    }
+    
+    // For project owners with freelancer requests, show "มีผู้ขอ X คน"
+    if (status === "requests" && project.freelancersRequested.length > 0) {
+      return `มีผู้ขอ ${project.freelancersRequested.length} คน`;
+    }
+    
+    // For project owners waiting for freelancer response
+    if (status === "waitingResponse" && project.requestToFreelancer) {
+      return "รอการตอบรับจากฟรีแลนซ์";
+    }
+    
+    // Default
+    return "ไม่มีผู้รับผิดชอบ";
+  };
+
+  // Function to determine the profile link target
+  const getProfileLink = (project: Project) => {
+    // For freelancers, link to the project owner
+    if (isFreelancer) {
+      return `/user/customer/${project.owner}`;
+    }
+    
+    // For project owners, link to the assigned freelancer if available
+    if (project.assignedTo) {
+      return `/user/freelance/${project.assignedTo}`;
+    }
+    
+    // For project owners with freelancer requests
+    if (status === "requests" && project.freelancersRequested.length > 0) {
+      // In a real app, this would go to a page to view all freelancers who applied
+      return `/project/${project.id}/applicants`;
+    }
+    
+    // For project owners waiting for a specific freelancer
+    if (status === "waitingResponse" && project.requestToFreelancer) {
+      return `/user/freelance/${project.requestToFreelancer}`;
+    }
+    
+    // Default, go to project page
+    return `/project/${project.id}`;
+  };
+
   return (
     <div className="bg-gray-50 rounded-xl p-4">
       <div className="flex justify-between items-center mb-4">
@@ -38,8 +101,16 @@ function ProjectManageList({
           {projects.map((project) => (
             <ProjectManageCard 
               key={project.id} 
-              {...project} 
+              id={project.id}
+              title={project.title}
+              owner={getDisplayName(project)}
+              status={project.status}
+              progress={project.progress}
               onUpdateProgress={onUpdateProgress}
+              isFreelancer={isFreelancer}
+              profileLink={getProfileLink(project)}
+              userId={userId}
+              project={project}
             />
           ))}
         </div>
