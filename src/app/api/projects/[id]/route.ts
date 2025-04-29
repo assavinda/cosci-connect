@@ -52,7 +52,8 @@ export async function GET(
       updatedAt: project.updatedAt,
       completedAt: project.completedAt,
       assignedTo: project.assignedTo ? project.assignedTo.toString() : null,
-      assignedFreelancerName: project.assignedFreelancerName || null
+      // Remove assignedFreelancerName as it does not exist on the project type
+      // assignedFreelancerName: project.assignedFreelancerName || null
     };
     
     return NextResponse.json(projectData);
@@ -64,6 +65,8 @@ export async function GET(
     );
   }
 }
+
+// src/app/api/projects/[id]/route.ts - แก้ไขส่วนของ PATCH method
 
 // PATCH - Update a project by ID
 export async function PATCH(
@@ -128,6 +131,8 @@ export async function PATCH(
     
     // Get update data from request
     const data = await req.json();
+    console.log("Update request data:", data); // เพิ่ม log เพื่อตรวจสอบข้อมูลที่ส่งมา
+    
     const updateData: any = {};
     
     // Owner can update these fields
@@ -206,8 +211,47 @@ export async function PATCH(
         
         // Update assignment
         updateData.assignedTo = freelancer._id;
-        updateData.assignedFreelancerName = freelancer.name;
         updateData.status = 'assigned';
+      }
+      
+      // สำหรับการส่งคำขอถึงฟรีแลนซ์
+      if (data.requestToFreelancer !== undefined) {
+        // ตรวจสอบว่า freelancer ID ถูกต้อง
+        if (!mongoose.Types.ObjectId.isValid(data.requestToFreelancer)) {
+          return NextResponse.json(
+            { error: 'Invalid freelancer ID format' },
+            { status: 400 }
+          );
+        }
+        
+        // ตรวจสอบว่าโปรเจกต์สามารถส่งคำขอได้ (ต้องมีสถานะเป็น open)
+        if (project.status !== 'open') {
+          return NextResponse.json(
+            { error: 'This project is not open for requests' },
+            { status: 400 }
+          );
+        }
+        
+        // ตรวจสอบว่าฟรีแลนซ์ที่จะส่งคำขอมีอยู่จริง
+        const freelancer = await User.findById(data.requestToFreelancer).exec();
+        if (!freelancer) {
+          return NextResponse.json(
+            { error: 'Freelancer not found' },
+            { status: 404 }
+          );
+        }
+        
+        // ตรวจสอบว่าฟรีแลนซ์เป็น student
+        if (freelancer.role !== 'student') {
+          return NextResponse.json(
+            { error: 'Can only send requests to student freelancers' },
+            { status: 400 }
+          );
+        }
+        
+        // อัปเดตค่า requestToFreelancer
+        updateData.requestToFreelancer = new mongoose.Types.ObjectId(data.requestToFreelancer);
+        console.log("Setting requestToFreelancer to:", updateData.requestToFreelancer);
       }
       
       // Remove freelancer assignment
@@ -221,7 +265,6 @@ export async function PATCH(
         }
         
         updateData.assignedTo = null;
-        updateData.assignedFreelancerName = null;
         updateData.status = 'open';
       }
     }
@@ -273,6 +316,8 @@ export async function PATCH(
       );
     }
     
+    console.log("Final update data:", updateData); // เพิ่ม log เพื่อตรวจสอบข้อมูลที่จะอัปเดต
+    
     // Perform the update
     const updatedProject = await Project.findByIdAndUpdate(
       id,
@@ -280,12 +325,15 @@ export async function PATCH(
       { new: true }
     ).lean().exec();
     
+    console.log("Updated project result:", updatedProject); // เพิ่ม log เพื่อตรวจสอบผลลัพธ์หลังอัปเดต
+    
     // Convert ObjectId to string for response
     const responseData = {
       ...updatedProject,
       id: updatedProject._id.toString(),
       owner: updatedProject.owner.toString(),
       assignedTo: updatedProject.assignedTo ? updatedProject.assignedTo.toString() : null,
+      requestToFreelancer: updatedProject.requestToFreelancer ? updatedProject.requestToFreelancer.toString() : null,
       _id: undefined
     };
     
@@ -297,7 +345,7 @@ export async function PATCH(
   } catch (error) {
     console.error('Error updating project:', error);
     return NextResponse.json(
-      { error: 'Failed to update project' },
+      { error: 'Failed to update project: ' + (error instanceof Error ? error.message : 'Unknown error') },
       { status: 500 }
     );
   }

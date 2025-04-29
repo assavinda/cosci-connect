@@ -9,10 +9,14 @@ export interface IProject extends Document {
   requiredSkills: string[];
   owner: mongoose.Types.ObjectId;
   ownerName: string;
-  status: 'open' | 'assigned' | 'in_progress' | 'revision' | 'completed' | 'cancelled';
+  status: 'open' | 'assigned' | 'in_progress' | 'revision' | 'awaiting' | 'completed' | 'cancelled';
   
   // ฟิลด์ที่เพิ่มเติม
   assignedTo?: mongoose.Types.ObjectId;  // ฟรีแลนซ์ที่ได้รับมอบหมายงาน
+  
+  // ฟิลด์สำหรับการจัดการคำขอร่วมงาน
+  freelancersRequested: mongoose.Types.ObjectId[];  // อาเรย์ของฟรีแลนซ์ ID ที่ส่งคำขอร่วมงานให้เจ้าของโปรเจกต์
+  requestToFreelancer?: mongoose.Types.ObjectId;  // ฟรีแลนซ์ ID ที่เจ้าของโปรเจกต์ส่งคำขอร่วมงานไป
   
   progress?: number;
   createdAt: Date;
@@ -25,7 +29,8 @@ const MessageSchema = new Schema({
   from: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   fromName: { type: String, required: true },
   content: { type: String, required: true },
-  timestamp: { type: Date, default: Date.now }
+  timestamp: { type: Date, default: Date.now },
+  isRead: { type: Boolean, default: false }
 });
 
 const ProjectSchema: Schema = new Schema(
@@ -40,15 +45,24 @@ const ProjectSchema: Schema = new Schema(
     status: { 
       type: String, 
       required: true, 
-      enum: ['open', 'assigned', 'in_progress', 'revision', 'completed', 'cancelled'],
+      enum: ['open', 'assigned', 'in_progress', 'revision', 'awaiting', 'completed', 'cancelled'],
       default: 'open'
     },
     
     // ฟิลด์ที่เพิ่มเติม
     assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     
+    // ฟิลด์สำหรับการจัดการคำขอร่วมงาน
+    freelancersRequested: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+      default: []
+    },
+    requestToFreelancer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    
     progress: { type: Number, min: 0, max: 100, default: 0 },
     createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date },
+    completedAt: { type: Date }
   }
 );
 
@@ -58,6 +72,8 @@ ProjectSchema.index({ owner: 1 });
 ProjectSchema.index({ assignedTo: 1 });
 ProjectSchema.index({ requiredSkills: 1 });
 ProjectSchema.index({ createdAt: -1 });
+ProjectSchema.index({ freelancersRequested: 1 });
+ProjectSchema.index({ requestToFreelancer: 1 });
 
 // Fix for TypeScript to handle mongoose models with Next.js hot reloading
 const ProjectModel: Model<IProject> = mongoose.models.Project || mongoose.model<IProject>('Project', ProjectSchema);
