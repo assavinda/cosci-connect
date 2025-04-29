@@ -35,7 +35,7 @@ function ProjectManageButtons({ project, isFreelancer, userId }: ProjectManageBu
     setIsLoading(true);
     
     try {
-      // ส่งคำขอเปลี่ยนสถานะเป็น in_progress แทน assigned
+      // ส่งคำขอเปลี่ยนสถานะเป็น in_progress
       const response = await axios.patch(`/api/projects/${project.id}`, {
         status: 'in_progress',
         assignedTo: userId
@@ -145,7 +145,6 @@ function ProjectManageButtons({ project, isFreelancer, userId }: ProjectManageBu
       const response = await axios.patch(`/api/projects/${project.id}`, {
         status: 'awaiting'
       });
-      
       if (response.data.success) {
         toast.success('ส่งงานแก้ไขเรียบร้อยแล้ว');
         router.refresh();
@@ -192,7 +191,7 @@ function ProjectManageButtons({ project, isFreelancer, userId }: ProjectManageBu
     setIsLoading(true);
     
     try {
-      // เปลี่ยนสถานะเป็น in_progress แทน assigned
+      // เปลี่ยนสถานะเป็น in_progress
       const response = await axios.patch(`/api/projects/${project.id}`, {
         status: 'in_progress',
         assignedTo: freelancerId
@@ -389,7 +388,7 @@ function ProjectManageButtons({ project, isFreelancer, userId }: ProjectManageBu
         );
       }
       
-      // Case 3: Project is in progress, owner can message freelancer
+      // Case 3: Project is in progress or revision, owner can message freelancer
       if (project.status === 'in_progress' || project.status === 'revision') {
         // ปุ่มส่งข้อความถูกเอาออกตามที่ร้องขอ
         return null;

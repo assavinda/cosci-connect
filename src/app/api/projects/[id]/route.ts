@@ -66,7 +66,7 @@ export async function GET(
   }
 }
 
-// PATCH - Update a project by ID
+// PATCH - Update a project by ID (เฉพาะส่วนที่สำคัญ)
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -155,9 +155,9 @@ export async function PATCH(
         const newStatus = data.status;
         
         const validTransitions: Record<string, string[]> = {
-          'open': ['in_progress', 'cancelled'],
-          'in_progress': ['revision', 'completed', 'cancelled'],
-          'revision': ['in_progress', 'completed', 'cancelled'],
+          'open': ['in_progress', 'completed'],
+          'in_progress': ['revision', 'awaiting', 'completed'],
+          'revision': ['in_progress', 'awaiting', 'completed'],
           'awaiting': ['completed', 'revision']
         };
         
@@ -204,7 +204,7 @@ export async function PATCH(
         
         // อัปเดตโปรเจกต์
         updateData.assignedTo = new mongoose.Types.ObjectId(data.assignedTo);
-        updateData.status = 'in_progress';  // เปลี่ยนจาก 'assigned' เป็น 'in_progress'
+        updateData.status = 'in_progress';  // เปลี่ยนเป็น 'in_progress'
         // ล้างคำขอทั้งหมด
         updateData.requestToFreelancer = null;
         updateData.freelancersRequested = [];
@@ -335,7 +335,7 @@ export async function PATCH(
     
     // ===== ฟรีแลนซ์ที่ได้รับคำขอสามารถตอบรับหรือปฏิเสธได้ =====
     if (isRequestedFreelancer) {
-      // ฟรีแลนซ์ตอบรับคำขอ (ใช้ in_progress แทน assigned)
+      // ฟรีแลนซ์ตอบรับคำขอจากเจ้าของโปรเจกต์
       if (data.status === 'in_progress') {
         // ตรวจสอบว่าโปรเจกต์ยังเปิดรับอยู่หรือไม่
         if (project.status !== 'open') {
@@ -345,7 +345,7 @@ export async function PATCH(
           );
         }
         
-        // อัปเดตสถานะโปรเจกต์เป็น in_progress เลย
+        // อัปเดตสถานะโปรเจกต์เป็น in_progress
         updateData.status = 'in_progress';
         updateData.assignedTo = user._id;
         updateData.requestToFreelancer = null;

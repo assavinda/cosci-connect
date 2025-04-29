@@ -9,7 +9,7 @@ export interface IProject extends Document {
   requiredSkills: string[];
   owner: mongoose.Types.ObjectId;
   ownerName: string;
-  status: 'open' | 'assigned' | 'in_progress' | 'revision' | 'awaiting' | 'completed' | 'cancelled';
+  status: 'open' | 'in_progress' | 'awaiting' | 'revision' | 'completed';
   
   // ฟิลด์ที่เพิ่มเติม
   assignedTo?: mongoose.Types.ObjectId;  // ฟรีแลนซ์ที่ได้รับมอบหมายงาน
@@ -45,7 +45,7 @@ const ProjectSchema: Schema = new Schema(
     status: { 
       type: String, 
       required: true, 
-      enum: ['open', 'assigned', 'in_progress', 'revision', 'awaiting', 'completed', 'cancelled'],
+      enum: ['open', 'in_progress', 'awaiting', 'revision', 'completed'],
       default: 'open'
     },
     

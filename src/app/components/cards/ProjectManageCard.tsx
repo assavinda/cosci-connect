@@ -51,7 +51,7 @@ function ProjectManageCard({
   // Function to determine if progress editing is allowed
   const canEditProgress = () => {
     // Only allow editing if the project is in progress and the user is a freelancer
-    return status === 'in_progress' && isFreelancer && project.assignedTo === userId;
+    return (status === 'in_progress' || status === 'revision') && isFreelancer && project.assignedTo === userId;
   };
   
   return (
@@ -59,18 +59,16 @@ function ProjectManageCard({
       <div className="flex justify-between items-start mb-3">
         <h3 className="font-medium text-primary-blue-500 truncate">{title}</h3>
         <span className={`text-xs px-2 py-1 rounded-full text-nowrap ${
-          status === 'waitingResponse' ? 'bg-yellow-100 text-yellow-800' : 
+          status === 'open' ? 'bg-yellow-100 text-yellow-800' : 
           status === 'revision' ? 'bg-orange-100 text-orange-800' :
-          status === 'active' || status === 'in_progress' ? 'bg-green-100 text-green-800' :
-          status === 'requests' ? 'bg-purple-100 text-purple-800' :
+          status === 'in_progress' ? 'bg-green-100 text-green-800' :
           status === 'awaiting' ? 'bg-indigo-100 text-indigo-800' :
           status === 'completed' ? 'bg-blue-100 text-blue-800' :
           'bg-gray-100 text-gray-800'
         }`}>
-          {status === 'waitingResponse' ? 'รอตอบรับ' : 
+          {status === 'open' ? 'เปิดรับสมัคร' : 
            status === 'revision' ? 'กำลังแก้ไข' :
-           status === 'active' || status === 'in_progress' ? 'กำลังดำเนินการ' :
-           status === 'requests' ? 'คำขอร่วมงาน' :
+           status === 'in_progress' ? 'กำลังดำเนินการ' :
            status === 'awaiting' ? 'รอการยืนยัน' :
            status === 'completed' ? 'เสร็จสิ้น' :
            status}
