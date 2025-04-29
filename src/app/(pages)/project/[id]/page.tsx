@@ -4,14 +4,19 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import Loading from '../../../components/common/Loading';
+import ApplyButton from '../../../components/buttons/ApplyButton';
+import { Toaster } from 'react-hot-toast';
 
 export default function ProjectPage() {
   const { id } = useParams();
   const router = useRouter();
+  const { data: session } = useSession();
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [hasApplied, setHasApplied] = useState(false);
 
   useEffect(() => {
     const fetchProjectData = async () => {
@@ -19,6 +24,13 @@ export default function ProjectPage() {
       try {
         const response = await axios.get(`/api/projects/${id}`);
         setProject(response.data);
+        
+        // ตรวจสอบว่าฟรีแลนซ์ได้ส่งคำขอร่วมงานไปแล้วหรือไม่
+        if (session?.user?.id && response.data.freelancersRequested) {
+          const applied = response.data.freelancersRequested.includes(session.user.id);
+          setHasApplied(applied);
+        }
+        
         setError('');
       } catch (err) {
         console.error('Error fetching project data:', err);
@@ -31,7 +43,7 @@ export default function ProjectPage() {
     if (id) {
       fetchProjectData();
     }
-  }, [id]);
+  }, [id, session?.user?.id]);
 
   // ฟอร์แมตราคาเป็นสกุลเงินบาท
   const formatPrice = (price) => {
@@ -116,7 +128,10 @@ export default function ProjectPage() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      {/* ปุ่มย้อนกลับ */}
+      {/* Toaster component for showing notifications */}
+      <Toaster position="top-right" />
+      
+      {/* ปุ่มย้อนกลับและปุ่มสมัคร */}
       <div className="flex justify-between items-center mb-6">
         <Link href="/project-board" className="text-primary-blue-500 hover:text-primary-blue-600 flex items-center gap-1">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -124,6 +139,25 @@ export default function ProjectPage() {
           </svg>
           กลับไปหน้าโปรเจกต์บอร์ด
         </Link>
+        
+        {/* ปุ่มสมัครสำหรับฟรีแลนซ์ */}
+        {session?.user?.role === 'student' && project?.status === 'open' && (
+          hasApplied ? (
+            <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              คุณได้ส่งคำขอร่วมงานแล้ว
+            </div>
+          ) : (
+            <ApplyButton 
+              projectId={project.id} 
+              projectTitle={project.title}
+              alreadyApplied={hasApplied}
+            />
+          )
+        )}
       </div>
 
       {/* ข้อมูลโปรเจกต์ */}

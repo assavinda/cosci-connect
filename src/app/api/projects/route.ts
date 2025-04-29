@@ -86,20 +86,22 @@ export async function GET(req: NextRequest) {
     
     // Map projects to a clean format
     const mappedProjects = projects.map(project => ({
-        id: project._id.toString(),
-        title: project.title,
-        description: project.description,
-        budget: project.budget,
-        deadline: project.deadline,
-        requiredSkills: project.requiredSkills,
-        ownerName: project.ownerName,
-        owner: project.owner.toString(),
-        status: project.status,
-        progress: project.progress || 0,
-        createdAt: project.createdAt,
-        assignedTo: project.assignedTo ? project.assignedTo.toString() : null,
-        // ต้องแน่ใจว่าส่ง requestToFreelancer กลับไปด้วยเพื่อตรวจสอบที่ frontend
-        requestToFreelancer: project.requestToFreelancer ? project.requestToFreelancer.toString() : null
+      id: project._id.toString(),
+      title: project.title,
+      description: project.description,
+      budget: project.budget,
+      deadline: project.deadline,
+      requiredSkills: project.requiredSkills,
+      ownerName: project.ownerName,
+      owner: project.owner.toString(),
+      status: project.status,
+      progress: project.progress || 0,
+      createdAt: project.createdAt,
+      assignedTo: project.assignedTo ? project.assignedTo.toString() : null,
+      // ต้องแน่ใจว่าส่ง requestToFreelancer กลับไปด้วยเพื่อตรวจสอบที่ frontend
+      requestToFreelancer: project.requestToFreelancer ? project.requestToFreelancer.toString() : null,
+      // เพิ่ม freelancersRequested เพื่อตรวจสอบว่าใครส่งคำขอร่วมงานบ้าง
+      freelancersRequested: project.freelancersRequested ? project.freelancersRequested.map(id => id.toString()) : []
     }));
     
     // Return response with pagination info

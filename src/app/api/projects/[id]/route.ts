@@ -53,7 +53,9 @@ export async function GET(
       completedAt: project.completedAt,
       assignedTo: project.assignedTo ? project.assignedTo.toString() : null,
       // เพิ่ม requestToFreelancer ในการส่งข้อมูลกลับ
-      requestToFreelancer: project.requestToFreelancer ? project.requestToFreelancer.toString() : null
+      requestToFreelancer: project.requestToFreelancer ? project.requestToFreelancer.toString() : null,
+      // เพิ่ม freelancersRequested ในการส่งข้อมูลกลับ
+      freelancersRequested: project.freelancersRequested ? project.freelancersRequested.map(id => id.toString()) : []
     };
     
     return NextResponse.json(projectData);
@@ -120,7 +122,7 @@ export async function PATCH(
     const isOwner = project.owner.toString() === user._id.toString();
     const isAssignedFreelancer = project.assignedTo && project.assignedTo.toString() === user._id.toString();
     
-    if (!isOwner && !isAssignedFreelancer) {
+    if (!isOwner && !isAssignedFreelancer && user.role !== 'student') {
       return NextResponse.json(
         { error: 'Permission denied - You do not have permission to update this project' },
         { status: 403 }
@@ -304,6 +306,52 @@ export async function PATCH(
         
         updateData.status = newStatus;
       }
+    }
+    
+    // สำหรับฟรีแลนซ์ที่ต้องการส่งคำขอร่วมงาน
+    if (user.role === 'student' && data.applyToProject === true) {
+      // ตรวจสอบว่าโปรเจกต์เปิดรับสมัครหรือไม่
+      if (project.status !== 'open') {
+        return NextResponse.json(
+          { error: 'This project is not open for applications' },
+          { status: 400 }
+        );
+      }
+      
+      // ตรวจสอบว่าฟรีแลนซ์ได้ส่งคำขอไปแล้วหรือไม่
+      const hasAlreadyApplied = project.freelancersRequested.some(
+        id => id.toString() === user._id.toString()
+      );
+      
+      if (hasAlreadyApplied) {
+        return NextResponse.json(
+          { error: 'You have already applied to this project' },
+          { status: 400 }
+        );
+      }
+      
+      // เพิ่ม ID ของฟรีแลนซ์เข้าไปในอาเรย์ freelancersRequested
+      // เราทำการอัปเดตแยกต่างหากเนื่องจากเป็นการใช้ $push
+      await Project.findByIdAndUpdate(
+        id,
+        { $push: { freelancersRequested: user._id } },
+        { new: true }
+      );
+      
+      // ดึงโปรเจกต์ที่อัปเดตแล้ว
+      const updatedProject = await Project.findById(id).lean();
+      
+      // ส่งข้อมูลกลับ
+      return NextResponse.json({
+        success: true,
+        message: 'Applied to project successfully',
+        project: {
+          id: updatedProject._id.toString(),
+          title: updatedProject.title,
+          status: updatedProject.status,
+          freelancersRequested: updatedProject.freelancersRequested.map(id => id.toString())
+        }
+      });
     }
     
     // Common updates (for both roles)
