@@ -5,6 +5,11 @@ import connectToDatabase from '@/libs/mongodb';
 import Project from '@/models/Project';
 import User from '@/models/User';
 import mongoose from 'mongoose';
+import pusherServer, { 
+  triggerProjectUpdate, 
+  triggerStatusChange,
+  triggerProjectListUpdate
+} from '@/libs/pusher';
 
 // GET - Retrieve a specific project by ID
 export async function GET(
