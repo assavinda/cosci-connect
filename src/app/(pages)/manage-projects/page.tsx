@@ -5,6 +5,7 @@ import ProjectManageList from "../../components/lists/ProjectManageList";
 import { useSession } from "next-auth/react";
 import axios from "axios";
 import Loading from "../../components/common/Loading";
+import { Toaster } from 'react-hot-toast';
 
 // Define project interface
 interface Project {
@@ -23,13 +24,16 @@ interface Project {
   assignedFreelancerName?: string;
   requestToFreelancer?: string;
   freelancersRequested: string[];
+  // เพิ่มฟิลด์สำหรับแสดงข้อมูลฟรีแลนซ์ที่ส่งคำขอเฉพาะรายการ
+  requestingFreelancerId?: string;
+  requestingFreelancerName?: string;
 }
 
 // Define the interface for grouped projects
 interface ProjectGroups {
   waitingResponse: Project[];
   requests: Project[];
-  in_progress: Project[]; // เปลี่ยนจาก active เป็น in_progress
+  in_progress: Project[];
   revision: Project[];
   awaiting: Project[];
   completed: Project[];
@@ -40,7 +44,7 @@ export default function ManageProjectsPage() {
   const [projects, setProjects] = useState<ProjectGroups>({
     waitingResponse: [],
     requests: [],
-    in_progress: [], // เปลี่ยนจาก active เป็น in_progress
+    in_progress: [],
     revision: [],
     awaiting: [],
     completed: []
@@ -95,6 +99,42 @@ export default function ManageProjectsPage() {
         });
       }
 
+      // ถ้าจำเป็นต้องดึงข้อมูลฟรีแลนซ์เพิ่มเติมสำหรับโปรเจกต์ที่มีคำขอ
+      if (!isFreelancer) {
+        // ดึงข้อมูลเพิ่มเติมของฟรีแลนซ์แต่ละคน
+        const projectsWithFreelancerRequests = response.data.projects.filter(
+          project => project.freelancersRequested && project.freelancersRequested.length > 0
+        );
+        
+        // ถ้ามีโปรเจกต์ที่มีฟรีแลนซ์ส่งคำขอ
+        if (projectsWithFreelancerRequests.length > 0) {
+          // ดึงข้อมูลรายชื่อฟรีแลนซ์ในอีกรีเควส (ในระบบจริงอาจจะต้องทำ API ใหม่)
+          try {
+            // ในตัวอย่างนี้เราสมมติว่ามี API สำหรับดึงข้อมูลฟรีแลนซ์หลายคนพร้อมกัน
+            // ตัดข้อมูลส่วนนี้ออกในกรณีที่ยังไม่มี API รองรับ
+            /*
+            const allFreelancerIds = [...new Set(projectsWithFreelancerRequests.flatMap(
+              project => project.freelancersRequested
+            ))];
+            
+            const freelancerResponse = await axios.get('/api/users/batch', {
+              params: { ids: allFreelancerIds.join(',') }
+            });
+            
+            const freelancersMap = {};
+            freelancerResponse.data.users.forEach(user => {
+              freelancersMap[user.id] = {
+                name: user.name,
+                profileImageUrl: user.profileImageUrl
+              };
+            });
+            */
+          } catch (error) {
+            console.error("Error fetching freelancer details:", error);
+          }
+        }
+      }
+
       // Group projects based on their status and role
       groupProjects(response.data.projects, isFreelancer);
     } catch (err) {
@@ -111,7 +151,7 @@ export default function ManageProjectsPage() {
     const grouped: ProjectGroups = {
       waitingResponse: [],
       requests: [],
-      in_progress: [], // เปลี่ยนจาก active เป็น in_progress
+      in_progress: [],
       revision: [],
       awaiting: [],
       completed: []
@@ -130,7 +170,7 @@ export default function ManageProjectsPage() {
         }
         // In Progress: Projects assigned to this freelancer with 'in_progress' status
         else if (project.assignedTo === userId && project.status === 'in_progress') {
-          grouped.in_progress.push(project); // เปลี่ยนจาก active เป็น in_progress
+          grouped.in_progress.push(project);
         }
         // Revision: Projects assigned to this freelancer with 'revision' status
         else if (project.assignedTo === userId && project.status === 'revision') {
@@ -153,11 +193,21 @@ export default function ManageProjectsPage() {
         }
         // Requests: Projects that have received requests from freelancers
         else if (project.freelancersRequested.length > 0 && project.status === 'open') {
-          grouped.requests.push(project);
+          // แยกโปรเจกต์ตามฟรีแลนซ์ที่ส่งคำขอ
+          project.freelancersRequested.forEach((freelancerId, index) => {
+            const projectCopy = { ...project };
+            
+            // เพิ่มข้อมูลฟรีแลนซ์ที่ส่งคำขอ
+            projectCopy.requestingFreelancerId = freelancerId;
+            // ในกรณีที่ไม่มีข้อมูลชื่อฟรีแลนซ์ ใช้ placeholder แทน
+            projectCopy.requestingFreelancerName = `ฟรีแลนซ์ ${index + 1}`;
+            
+            grouped.requests.push(projectCopy);
+          });
         }
         // In Progress: Owner's projects with 'in_progress' status
         else if (project.status === 'in_progress') {
-          grouped.in_progress.push(project); // เปลี่ยนจาก active เป็น in_progress
+          grouped.in_progress.push(project);
         }
         // Revision: Owner's projects with 'revision' status
         else if (project.status === 'revision') {
@@ -226,10 +276,22 @@ export default function ManageProjectsPage() {
   }
 
   const isFreelancer = session?.user?.role === 'student';
-  const totalProjects = Object.values(projects).reduce((acc, arr) => acc + arr.length, 0);
+  const totalProjects = 
+    projects.waitingResponse.length + 
+    projects.in_progress.length + 
+    projects.revision.length + 
+    projects.awaiting.length + 
+    projects.completed.length +
+    // สำหรับตัวเลขโปรเจกต์ เราต้องนับเฉพาะโปรเจกต์จริงๆ ไม่ใช่จำนวนการ์ดที่แยกแสดง
+    // ดังนั้นสำหรับ requests ให้ใช้ Set เพื่อนับจำนวนโปรเจกต์ที่ไม่ซ้ำกัน
+    (isFreelancer ? projects.requests.length : 
+      new Set(projects.requests.map(p => p.id)).size);
   
   return (
     <div className="flex flex-col gap-6">
+      {/* Toaster component for showing notifications */}
+      <Toaster position="top-right" />
+      
       {/* Header */}
       <section className="mt-6 p-6 flex flex-col gap-2 bg-primary-blue-500 rounded-xl">
         <h1 className="font-medium text-xl text-white">
@@ -247,7 +309,7 @@ export default function ManageProjectsPage() {
             </div>
             <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-lg">
               <p className="text-white text-sm">กำลังดำเนินการ: <span className="font-medium">
-                {projects.in_progress.length} {/* เปลี่ยนจาก active เป็น in_progress */}
+                {projects.in_progress.length}
               </span></p>
             </div>
           </div>

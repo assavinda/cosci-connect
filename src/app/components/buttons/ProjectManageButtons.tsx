@@ -15,6 +15,9 @@ interface Project {
   assignedFreelancerName?: string;
   requestToFreelancer?: string;
   freelancersRequested: string[];
+  // เพิ่มฟิลด์ใหม่สำหรับระบุฟรีแลนซ์เฉพาะราย
+  requestingFreelancerId?: string;
+  requestingFreelancerName?: string;
 }
 
 interface ProjectManageButtonsProps {
@@ -185,7 +188,7 @@ function ProjectManageButtons({ project, isFreelancer, userId }: ProjectManageBu
     }
   };
   
-  // Owner accepts a freelancer's application
+  // Owner accepts a specific freelancer's application
   const handleAcceptFreelancer = async (freelancerId: string) => {
     if (!userId) return;
     setIsLoading(true);
@@ -211,7 +214,7 @@ function ProjectManageButtons({ project, isFreelancer, userId }: ProjectManageBu
     }
   };
   
-  // Owner rejects a freelancer's application
+  // Owner rejects a specific freelancer's application
   const handleRejectFreelancer = async (freelancerId: string) => {
     if (!userId) return;
     setIsLoading(true);
@@ -364,22 +367,20 @@ function ProjectManageButtons({ project, isFreelancer, userId }: ProjectManageBu
       }
       
       // Case 2: Owner has received freelancer applications
-      if (project.freelancersRequested.length > 0 && project.status === 'open') {
-        // In a real app, this would open a modal to select a freelancer
-        // For simplicity, we'll just use the first freelancer in the list
-        const firstFreelancer = project.freelancersRequested[0];
+      if (project.status === 'open' && project.requestingFreelancerId) {
+        // ในกรณีที่มีการแยกแสดงฟรีแลนซ์แต่ละคน ใช้ requestingFreelancerId ที่ระบุในการ์ดนั้นๆ
         return (
           <div className="flex gap-3">
             <button 
               className="btn-primary" 
-              onClick={() => handleAcceptFreelancer(firstFreelancer)}
+              onClick={() => handleAcceptFreelancer(project.requestingFreelancerId)}
               disabled={isLoading}
             >
               {isLoading ? 'กำลังดำเนินการ...' : 'ยอมรับ'}
             </button>
             <button 
               className="btn-danger" 
-              onClick={() => handleRejectFreelancer(firstFreelancer)}
+              onClick={() => handleRejectFreelancer(project.requestingFreelancerId)}
               disabled={isLoading}
             >
               {isLoading ? 'กำลังดำเนินการ...' : 'ปฏิเสธ'}

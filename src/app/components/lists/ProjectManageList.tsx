@@ -13,6 +13,9 @@ interface Project {
   assignedFreelancerName?: string;
   requestToFreelancer?: string;
   freelancersRequested: string[];
+  // เพิ่มฟิลด์ใหม่สำหรับแสดงผลแยกการ์ด
+  requestingFreelancerId?: string;
+  requestingFreelancerName?: string;
 }
 
 interface ProjectManageListProps {
@@ -41,14 +44,14 @@ function ProjectManageList({
       return project.ownerName;
     } 
     
-    // For project owners, show the freelancer name if available
-    if (project.assignedTo) {
-      return project.assignedFreelancerName || "ฟรีแลนซ์";
+    // สำหรับคำขอฟรีแลนซ์ ใช้ชื่อฟรีแลนซ์ที่ส่งคำขอมา
+    if (status === "requests" && project.requestingFreelancerId) {
+      return project.requestingFreelancerName || "ฟรีแลนซ์";
     }
     
-    // For project owners with freelancer requests, show "มีผู้ขอ X คน"
-    if (status === "requests" && project.freelancersRequested.length > 0) {
-      return `มีผู้ขอ ${project.freelancersRequested.length} คน`;
+    // For project owners with assigned freelancer
+    if (project.assignedTo) {
+      return project.assignedFreelancerName || "ฟรีแลนซ์";
     }
     
     // For project owners waiting for freelancer response
@@ -67,15 +70,14 @@ function ProjectManageList({
       return `/user/customer/${project.owner}`;
     }
     
+    // สำหรับคำขอฟรีแลนซ์ ใช้ลิงก์ไปยังโปรไฟล์ของฟรีแลนซ์ที่ส่งคำขอมา
+    if (status === "requests" && project.requestingFreelancerId) {
+      return `/user/freelance/${project.requestingFreelancerId}`;
+    }
+    
     // For project owners, link to the assigned freelancer if available
     if (project.assignedTo) {
       return `/user/freelance/${project.assignedTo}`;
-    }
-    
-    // For project owners with freelancer requests
-    if (status === "requests" && project.freelancersRequested.length > 0) {
-      // In a real app, this would go to a page to view all freelancers who applied
-      return `/project/${project.id}/applicants`;
     }
     
     // For project owners waiting for a specific freelancer
@@ -100,7 +102,7 @@ function ProjectManageList({
         <div className="space-y-3">
           {projects.map((project) => (
             <ProjectManageCard 
-              key={project.id} 
+              key={`${project.id}${project.requestingFreelancerId || ''}`} // ใช้ key ที่ไม่ซ้ำกัน
               id={project.id}
               title={project.title}
               owner={getDisplayName(project)}
