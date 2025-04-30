@@ -29,7 +29,7 @@ interface Project {
 interface ProjectGroups {
   waitingResponse: Project[];
   requests: Project[];
-  active: Project[];
+  in_progress: Project[]; // เปลี่ยนจาก active เป็น in_progress
   revision: Project[];
   awaiting: Project[];
   completed: Project[];
@@ -40,7 +40,7 @@ export default function ManageProjectsPage() {
   const [projects, setProjects] = useState<ProjectGroups>({
     waitingResponse: [],
     requests: [],
-    active: [],
+    in_progress: [], // เปลี่ยนจาก active เป็น in_progress
     revision: [],
     awaiting: [],
     completed: []
@@ -78,6 +78,7 @@ export default function ManageProjectsPage() {
         response = await axios.get('/api/projects', {
           params: {
             limit: 100, // Get more projects at once
+            status: 'all', // ดึงทุกสถานะ
             assignedTo: userId, // Projects assigned to this freelancer
             requestToFreelancer: userId, // Projects that requested this freelancer
             freelancerRequested: userId // Projects where freelancer requested to join
@@ -88,6 +89,7 @@ export default function ManageProjectsPage() {
         response = await axios.get('/api/projects', {
           params: {
             limit: 100,
+            status: 'all', // ดึงทุกสถานะ
             owner: userId
           }
         });
@@ -109,7 +111,7 @@ export default function ManageProjectsPage() {
     const grouped: ProjectGroups = {
       waitingResponse: [],
       requests: [],
-      active: [],
+      in_progress: [], // เปลี่ยนจาก active เป็น in_progress
       revision: [],
       awaiting: [],
       completed: []
@@ -126,9 +128,9 @@ export default function ManageProjectsPage() {
         else if (project.requestToFreelancer === userId && project.status === 'open') {
           grouped.requests.push(project);
         }
-        // Active: Projects assigned to this freelancer with 'in_progress' status
+        // In Progress: Projects assigned to this freelancer with 'in_progress' status
         else if (project.assignedTo === userId && project.status === 'in_progress') {
-          grouped.active.push(project);
+          grouped.in_progress.push(project); // เปลี่ยนจาก active เป็น in_progress
         }
         // Revision: Projects assigned to this freelancer with 'revision' status
         else if (project.assignedTo === userId && project.status === 'revision') {
@@ -153,9 +155,9 @@ export default function ManageProjectsPage() {
         else if (project.freelancersRequested.length > 0 && project.status === 'open') {
           grouped.requests.push(project);
         }
-        // Active: Owner's projects with 'in_progress' status
+        // In Progress: Owner's projects with 'in_progress' status
         else if (project.status === 'in_progress') {
-          grouped.active.push(project);
+          grouped.in_progress.push(project); // เปลี่ยนจาก active เป็น in_progress
         }
         // Revision: Owner's projects with 'revision' status
         else if (project.status === 'revision') {
@@ -245,7 +247,7 @@ export default function ManageProjectsPage() {
             </div>
             <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-lg">
               <p className="text-white text-sm">กำลังดำเนินการ: <span className="font-medium">
-                {projects.active.length}
+                {projects.in_progress.length} {/* เปลี่ยนจาก active เป็น in_progress */}
               </span></p>
             </div>
           </div>
@@ -274,12 +276,12 @@ export default function ManageProjectsPage() {
         />
       </div>
       
-      {/* Row 2: Active, Revision, Awaiting */}
+      {/* Row 2: In Progress, Revision, Awaiting */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <ProjectManageList 
           title="กำลังดำเนินการ" 
           status="in_progress" 
-          projects={projects.active}
+          projects={projects.in_progress}
           emptyMessage="ไม่มีโปรเจกต์ที่กำลังดำเนินการ" 
           onUpdateProgress={updateProgress}
           isFreelancer={isFreelancer}

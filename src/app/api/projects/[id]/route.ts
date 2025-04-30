@@ -115,6 +115,10 @@ export async function PATCH(
         { status: 404 }
       );
     }
+
+     // Get update data from request
+     const data = await req.json();
+     console.log("Update request data:", data);
     
     // Check if user has permission to update the project
     const isOwner = project.owner.toString() === user._id.toString();
@@ -124,18 +128,17 @@ export async function PATCH(
     const isAppliedFreelancer = project.freelancersRequested.some(
       freelancerId => freelancerId.toString() === user._id.toString()
     );
-    
-    // ต้องเป็นเจ้าของโปรเจกต์หรือฟรีแลนซ์ที่เกี่ยวข้องเท่านั้น
-    if (!isOwner && !isAssignedFreelancer && !isRequestedFreelancer && !isAppliedFreelancer) {
+
+    // ตรวจสอบว่าเป็นการส่งคำขอร่วมงานจากฟรีแลนซ์หรือไม่
+    const isApplyingToProject = data.applyToProject === true && user.role === 'student';
+
+    // ต้องเป็นเจ้าของโปรเจกต์หรือฟรีแลนซ์ที่เกี่ยวข้อง หรือเป็นการสมัครเข้าร่วมโปรเจกต์ใหม่
+    if (!isOwner && !isAssignedFreelancer && !isRequestedFreelancer && !isAppliedFreelancer && !isApplyingToProject) {
       return NextResponse.json(
         { error: 'Permission denied - You do not have permission to update this project' },
         { status: 403 }
       );
     }
-    
-    // Get update data from request
-    const data = await req.json();
-    console.log("Update request data:", data);
     
     const updateData: any = {};
     
