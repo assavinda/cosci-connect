@@ -7,6 +7,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import axios from "axios";
 import { Toaster } from 'react-hot-toast';
+import { usePusher } from "../../../providers/PusherProvider";
 
 // รายชื่อทักษะตามหมวดหมู่
 const skillCategories = {
@@ -34,34 +35,57 @@ function ProjectBoardPage() {
       max: parseInt(searchParams.get('maxPrice') || '10000', 10)
     });
     
+    // เพิ่ม usePusher hook เพื่อใช้งาน Pusher
+    const { subscribeToProjectList } = usePusher();
+    
     // Get all skills from all categories
     const allSkills = Object.values(skillCategories).flat();
     
-    // ดึงจำนวนโปรเจกต์ทั้งหมด
+    // เพิ่ม Effect สำหรับการลงทะเบียนรับการอัปเดตรายการโปรเจกต์แบบ realtime
     useEffect(() => {
-        const fetchTotalProjectsCount = async () => {
-            try {
-                const params: Record<string, string | number> = {};
-                
-                // Add filters if they exist
-                if (searchParams.get('q')) params.q = searchParams.get('q')!;
-                if (searchParams.get('skills')) params.skills = searchParams.get('skills')!;
-                if (searchParams.get('status')) params.status = searchParams.get('status')!;
-                if (searchParams.get('minPrice')) params.minPrice = searchParams.get('minPrice')!;
-                if (searchParams.get('maxPrice')) params.maxPrice = searchParams.get('maxPrice')!;
-                
-                const response = await axios.get('/api/projects', {
-                    params: { ...params, limit: 1 }
-                });
-                
-                setTotalProjects(response.data.totalCount);
-                setIsLoading(false);
-            } catch (error) {
-                console.error('Error fetching total projects count:', error);
-                setIsLoading(false);
-            }
+        // ฟังก์ชัน callback สำหรับเมื่อได้รับการอัปเดตรายการโปรเจกต์
+        const handleProjectListUpdate = (data) => {
+            console.log('ได้รับการอัปเดตรายการโปรเจกต์:', data);
+            
+            // รีโหลดข้อมูลจำนวนโปรเจกต์
+            fetchTotalProjectsCount();
         };
         
+        // ลงทะเบียนรับการอัปเดตรายการโปรเจกต์
+        const unsubscribe = subscribeToProjectList(handleProjectListUpdate);
+        
+        // ยกเลิกการลงทะเบียนเมื่อ component unmount
+        return () => {
+            unsubscribe();
+        };
+    }, [subscribeToProjectList]);
+    
+    // ดึงจำนวนโปรเจกต์ทั้งหมด
+    const fetchTotalProjectsCount = async () => {
+        try {
+            const params: Record<string, string | number> = {};
+            
+            // Add filters if they exist
+            if (searchParams.get('q')) params.q = searchParams.get('q')!;
+            if (searchParams.get('skills')) params.skills = searchParams.get('skills')!;
+            if (searchParams.get('status')) params.status = searchParams.get('status')!;
+            if (searchParams.get('minPrice')) params.minPrice = searchParams.get('minPrice')!;
+            if (searchParams.get('maxPrice')) params.maxPrice = searchParams.get('maxPrice')!;
+            
+            const response = await axios.get('/api/projects', {
+                params: { ...params, limit: 1 }
+            });
+            
+            setTotalProjects(response.data.totalCount);
+            setIsLoading(false);
+        } catch (error) {
+            console.error('Error fetching total projects count:', error);
+            setIsLoading(false);
+        }
+    };
+    
+    // เรียก fetchTotalProjectsCount เมื่อ component โหลดครั้งแรกหรือเมื่อ searchParams เปลี่ยน
+    useEffect(() => {
         fetchTotalProjectsCount();
     }, [searchParams]);
     

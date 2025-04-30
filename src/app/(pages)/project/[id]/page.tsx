@@ -8,6 +8,7 @@ import { useSession } from 'next-auth/react';
 import Loading from '../../../components/common/Loading';
 import ApplyButton from '../../../components/buttons/ApplyButton';
 import { Toaster } from 'react-hot-toast';
+import { usePusher } from '../../../../providers/PusherProvider';
 
 export default function ProjectPage() {
   const { id } = useParams();
@@ -17,6 +18,9 @@ export default function ProjectPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [hasApplied, setHasApplied] = useState(false);
+  
+  // เพิ่ม usePusher hook เพื่อใช้งาน Pusher
+  const { subscribeToProject } = usePusher();
 
   useEffect(() => {
     const fetchProjectData = async () => {
@@ -44,6 +48,35 @@ export default function ProjectPage() {
       fetchProjectData();
     }
   }, [id, session?.user?.id]);
+
+  // เพิ่ม Effect สำหรับ subscribe การอัปเดตโปรเจกต์แบบ realtime
+  useEffect(() => {
+    if (!id) return;
+    
+    // ฟังก์ชัน callback สำหรับเมื่อได้รับข้อมูลอัปเดต
+    const handleProjectUpdate = (data) => {
+      console.log('ได้รับการอัปเดตข้อมูลโปรเจกต์:', data);
+      
+      // อัปเดตข้อมูลโปรเจกต์
+      if (data.project) {
+        setProject(data.project);
+        
+        // อัปเดต hasApplied ถ้ามีข้อมูล session
+        if (session?.user?.id && data.project.freelancersRequested) {
+          const applied = data.project.freelancersRequested.includes(session.user.id);
+          setHasApplied(applied);
+        }
+      }
+    };
+    
+    // ลงทะเบียนรับการอัปเดตโปรเจกต์
+    const unsubscribe = subscribeToProject(id.toString(), handleProjectUpdate);
+    
+    // ยกเลิกการลงทะเบียนเมื่อ component unmount
+    return () => {
+      unsubscribe();
+    };
+  }, [id, subscribeToProject, session?.user?.id]);
 
   // ฟอร์แมตราคาเป็นสกุลเงินบาท
   const formatPrice = (price) => {

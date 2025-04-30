@@ -7,6 +7,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import axios from "axios";
 import Loading from "../../components/common/Loading";
 import { skillCategories } from "../../components/auth/register/RegisterForm";
+import { usePusher } from "../../../providers/PusherProvider";
 
 export default function FindFreelancePage() {
     const searchParams = useSearchParams();
@@ -20,6 +21,9 @@ export default function FindFreelancePage() {
         min: parseInt(searchParams.get('minPrice') || '0', 10),
         max: parseInt(searchParams.get('maxPrice') || '10000', 10)
     });
+    
+    // เพิ่ม usePusher hook เพื่อใช้งาน Pusher
+    const { subscribeToFreelancerList } = usePusher();
     
     // Get all available skills from skill categories for the filter
     const allSkills: string[] = Object.values(skillCategories).flat();
@@ -52,35 +56,55 @@ export default function FindFreelancePage() {
         }
     }, [searchParams]);
     
-    // Fetch total count of available freelancers (students with isOpen=true)
+    // เพิ่ม Effect สำหรับการลงทะเบียนรับการอัปเดตรายการฟรีแลนซ์แบบ realtime
     useEffect(() => {
-        const fetchTotalCount = async () => {
-            try {
-                // Build params object for API call
-                const params: Record<string, string | number> = {};
-                
-                // Add filters if they exist
-                if (searchQuery) params.q = searchQuery;
-                if (selectedSkills.length > 0) params.skills = selectedSkills.join(',');
-                if (selectedMajor) params.major = selectedMajor;
-                if (priceRange.min > 0) params.minPrice = priceRange.min;
-                if (priceRange.max < 10000) params.maxPrice = priceRange.max;
-                
-                // Make HEAD request to get count
-                const response = await axios.head('/api/freelancers', { params });
-                const totalCount = parseInt(response.headers['x-total-count'], 10);
-                
-                if (!isNaN(totalCount)) {
-                    setTotalFreelancers(totalCount);
-                }
-                
-                setIsLoading(false);
-            } catch (error) {
-                console.error('Error fetching total freelancers count:', error);
-                setIsLoading(false);
-            }
+        // ฟังก์ชัน callback สำหรับเมื่อได้รับการอัปเดตรายการฟรีแลนซ์
+        const handleFreelancerListUpdate = (data) => {
+            console.log('ได้รับการอัปเดตรายการฟรีแลนซ์:', data);
+            
+            // รีโหลดข้อมูลจำนวนฟรีแลนซ์
+            fetchTotalCount();
         };
         
+        // ลงทะเบียนรับการอัปเดตรายการฟรีแลนซ์
+        const unsubscribe = subscribeToFreelancerList(handleFreelancerListUpdate);
+        
+        // ยกเลิกการลงทะเบียนเมื่อ component unmount
+        return () => {
+            unsubscribe();
+        };
+    }, [subscribeToFreelancerList]);
+    
+    // Fetch total count of available freelancers (students with isOpen=true)
+    const fetchTotalCount = async () => {
+        try {
+            // Build params object for API call
+            const params: Record<string, string | number> = {};
+            
+            // Add filters if they exist
+            if (searchQuery) params.q = searchQuery;
+            if (selectedSkills.length > 0) params.skills = selectedSkills.join(',');
+            if (selectedMajor) params.major = selectedMajor;
+            if (priceRange.min > 0) params.minPrice = priceRange.min;
+            if (priceRange.max < 10000) params.maxPrice = priceRange.max;
+            
+            // Make HEAD request to get count
+            const response = await axios.head('/api/freelancers', { params });
+            const totalCount = parseInt(response.headers['x-total-count'], 10);
+            
+            if (!isNaN(totalCount)) {
+                setTotalFreelancers(totalCount);
+            }
+            
+            setIsLoading(false);
+        } catch (error) {
+            console.error('Error fetching total freelancers count:', error);
+            setIsLoading(false);
+        }
+    };
+    
+    // เรียก fetchTotalCount เมื่อ component โหลดครั้งแรกหรือเมื่อตัวกรองเปลี่ยน
+    useEffect(() => {
         fetchTotalCount();
     }, [searchQuery, selectedSkills, selectedMajor, priceRange]);
     

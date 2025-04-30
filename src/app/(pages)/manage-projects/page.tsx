@@ -6,6 +6,8 @@ import { useSession } from "next-auth/react";
 import axios from "axios";
 import Loading from "../../components/common/Loading";
 import { Toaster } from 'react-hot-toast';
+import { usePusher } from "../../../providers/PusherProvider";
+import { toast } from "react-hot-toast";
 
 // Define project interface
 interface Project {
@@ -52,6 +54,9 @@ export default function ManageProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // เพิ่ม usePusher hook เพื่อใช้งาน Pusher
+  const { subscribeToUserEvents, subscribeToProjectList } = usePusher();
+
   // Fetch projects when session is loaded
   useEffect(() => {
     if (status === 'authenticated') {
@@ -61,6 +66,39 @@ export default function ManageProjectsPage() {
       setError("กรุณาเข้าสู่ระบบเพื่อจัดการโปรเจกต์");
     }
   }, [status]);
+
+  // Subscribe to real-time updates
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.id) {
+      // ลงทะเบียนรับการแจ้งเตือนเมื่อมีการอัปเดตโปรเจกต์ที่เกี่ยวข้องกับผู้ใช้
+      const unsubscribeUserEvents = subscribeToUserEvents(session.user.id, (data) => {
+        console.log('ได้รับการแจ้งเตือนสถานะโปรเจกต์:', data);
+        
+        // แจ้งเตือนและรีโหลดข้อมูล
+        toast.success(`มีการอัปเดตสถานะโปรเจกต์เป็น "${data.newStatus}"`, {
+          duration: 5000,
+          position: 'top-right',
+        });
+        
+        // รีโหลดข้อมูลโปรเจกต์
+        fetchProjects();
+      });
+      
+      // ลงทะเบียนรับการอัปเดตรายการโปรเจกต์ทั้งหมด
+      const unsubscribeProjectList = subscribeToProjectList((data) => {
+        console.log('ได้รับการอัปเดตรายการโปรเจกต์:', data);
+        
+        // รีโหลดข้อมูลโปรเจกต์
+        fetchProjects();
+      });
+      
+      // ยกเลิกการลงทะเบียนเมื่อ component unmount
+      return () => {
+        unsubscribeUserEvents();
+        unsubscribeProjectList();
+      };
+    }
+  }, [status, session?.user?.id, subscribeToUserEvents, subscribeToProjectList]);
 
   // Function to fetch projects from API
   const fetchProjects = async () => {
@@ -239,12 +277,11 @@ export default function ManageProjectsPage() {
         progress: newProgress
       });
 
-      // Refetch projects to update UI
-      fetchProjects();
+      // ไม่จำเป็นต้อง fetchProjects() ที่นี่ เพราะเราจะได้รับการอัปเดตผ่าน Pusher
 
     } catch (error) {
       console.error("Error updating progress:", error);
-      // You could add a toast notification here
+      toast.error('เกิดข้อผิดพลาดในการอัปเดตความคืบหน้า');
     }
   };
 

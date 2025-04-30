@@ -17,12 +17,13 @@ function ApplyButton({ projectId, projectTitle, alreadyApplied = false }: ApplyB
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [localApplied, setLocalApplied] = useState(alreadyApplied);
 
   // ตรวจสอบว่าผู้ใช้เป็น student (ฟรีแลนซ์) หรือไม่
   const isFreelancer = session?.user?.role === 'student';
 
   // ตรวจสอบว่าฟรีแลนซ์ได้ส่งคำขอไปแล้วหรือไม่
-  if (!isFreelancer || alreadyApplied) {
+  if (!isFreelancer || localApplied) {
     return null; // ไม่แสดงปุ่มถ้าไม่ใช่ฟรีแลนซ์หรือส่งคำขอไปแล้ว
   }
 
@@ -50,9 +51,11 @@ function ApplyButton({ projectId, projectTitle, alreadyApplied = false }: ApplyB
       // แสดงข้อความสำเร็จ
       toast.success('ส่งคำขอร่วมงานเรียบร้อยแล้ว');
       
-      // ปิด modal และ refresh หน้าเพื่อแสดงสถานะใหม่
+      // อัปเดตสถานะในหน้าปัจจุบัน (ไม่ต้อง refresh เพราะจะได้รับการอัปเดตผ่าน Pusher)
+      setLocalApplied(true);
+      
+      // ปิด modal
       setIsModalOpen(false);
-      router.refresh();
     } catch (error: any) {
       console.error('Error applying to project:', error);
       toast.error(error.response?.data?.error || 'เกิดข้อผิดพลาดในการส่งคำขอ');

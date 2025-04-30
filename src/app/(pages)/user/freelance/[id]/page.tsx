@@ -7,6 +7,7 @@ import axios from 'axios';
 import Link from 'next/link';
 import Loading from '../../../../components/common/Loading';
 import HireButton from '../../../../components/buttons/HireButton';
+import { usePusher } from '../../../../../providers/PusherProvider';
 
 export default function FreelancerProfilePage() {
   const { id } = useParams();
@@ -16,6 +17,9 @@ export default function FreelancerProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  // เพิ่ม usePusher hook เพื่อใช้งาน Pusher
+  const { subscribeToFreelancer } = usePusher();
 
   useEffect(() => {
     const fetchFreelancerData = async () => {
@@ -36,6 +40,29 @@ export default function FreelancerProfilePage() {
       fetchFreelancerData();
     }
   }, [freelancerId]);
+  
+  // เพิ่ม Effect สำหรับ subscribe การอัปเดตข้อมูลฟรีแลนซ์แบบ realtime
+  useEffect(() => {
+    if (!freelancerId) return;
+    
+    // ฟังก์ชัน callback สำหรับเมื่อได้รับข้อมูลอัปเดต
+    const handleFreelancerUpdate = (data) => {
+      console.log('ได้รับการอัปเดตข้อมูลฟรีแลนซ์:', data);
+      
+      // อัปเดตข้อมูลฟรีแลนซ์
+      if (data.freelancer) {
+        setFreelancer(data.freelancer);
+      }
+    };
+    
+    // ลงทะเบียนรับการอัปเดตข้อมูลฟรีแลนซ์
+    const unsubscribe = subscribeToFreelancer(freelancerId.toString(), handleFreelancerUpdate);
+    
+    // ยกเลิกการลงทะเบียนเมื่อ component unmount
+    return () => {
+      unsubscribe();
+    };
+  }, [freelancerId, subscribeToFreelancer]);
 
   // สำหรับเปลี่ยนรูปภาพในแกลเลอรี่
   const nextImage = () => {
