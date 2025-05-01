@@ -9,6 +9,7 @@ import SkillsEditor from './SkillsEditor';
 import PortfolioFileEditor from './PortfolioFileEditor';
 import GalleryImagesEditor from './GalleryImagesEditor';
 import ProfileImageEditor from './ProfileImageEditor';
+import { useUser } from '../../../providers/UserProvider'; // Import useUser hook
 
 interface EditProfileFormProps {
   userData: any;
@@ -17,6 +18,9 @@ interface EditProfileFormProps {
 }
 
 const EditProfileForm: React.FC<EditProfileFormProps> = ({ userData, onUpdateSuccess, onCancel }) => {
+  // Access the UserProvider context
+  const { updateUserData, refreshUserData } = useUser();
+
   // Form state
   const [firstName, setFirstName] = useState(userData?.firstName || '');
   const [lastName, setLastName] = useState(userData?.lastName || '');
@@ -99,10 +103,28 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ userData, onUpdateSuc
       }
       
       // Submit form
-      const response = await axios.patch('/api/user/profile', formData);
+      const response = await axios.patch('/api/user/profile', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       
       // Show success message
       setSuccessMessage('บันทึกข้อมูลสำเร็จ');
+      
+      // Update UserProvider state with new data
+      if (profileImage && response.data.profileImageUrl) {
+        // Update the user data in context
+        updateUserData({
+          profileImageUrl: response.data.profileImageUrl,
+          name: response.data.name,
+          firstName: response.data.firstName,
+          lastName: response.data.lastName
+        });
+      } else {
+        // Refresh all user data from server
+        await refreshUserData();
+      }
       
       // Notify parent component of updated data
       onUpdateSuccess(response.data);

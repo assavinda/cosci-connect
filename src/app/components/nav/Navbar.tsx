@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
+import { useUser } from "../../../providers/UserProvider"; // Import useUser hook
 
 interface NavItem {
   name: string;
@@ -120,6 +121,7 @@ function BellIcon() {
 
 function Navbar() {
   const { data: session, status } = useSession();
+  const { userData } = useUser(); // Use userData from UserProvider
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
   const [navHeight, setNavHeight] = useState<number>(72); // ประมาณความสูงของ navbar
@@ -261,15 +263,16 @@ function Navbar() {
                 className={`rounded-full outline-primary-blue-500 ${isUserMenuOpen ? 'outline-4 outline-double' : 'outline-3 outline-double'} hover:outline-4 hover:outline-double bg-gray-400 size-10 hover:shadow-md transition-all duration-100 cursor-pointer hover:scale-105 overflow-hidden`}
                 onClick={toggleUserMenu}
               >
-                {session.user?.profileImageUrl ? (
+                {/* Use userData for profile image if available, fallback to session */}
+                {(userData?.profileImageUrl || session.user?.profileImageUrl) ? (
                   <img 
-                    src={session.user.profileImageUrl} 
-                    alt={session.user.name || 'User profile'} 
+                    src={userData?.profileImageUrl || session.user?.profileImageUrl} 
+                    alt={userData?.name || session.user?.name || 'User profile'} 
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-primary-blue-500 text-white font-medium">
-                    {session.user?.name?.charAt(0) || '?'}
+                    {(userData?.name || session.user?.name)?.charAt(0) || '?'}
                   </div>
                 )}
               </button>
@@ -281,8 +284,8 @@ function Navbar() {
                   className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50"
                 >
                   <div className="p-3 border-b border-gray-100">
-                    <p className="font-medium truncate">{session.user?.name}</p>
-                    <p className="text-sm text-gray-500 truncate">{session.user?.email}</p>
+                    <p className="font-medium truncate">{userData?.name || session.user?.name}</p>
+                    <p className="text-sm text-gray-500 truncate">{userData?.email || session.user?.email}</p>
                   </div>
                   <ul>
                     <li>
@@ -392,21 +395,21 @@ function Navbar() {
             <div className="mt-2 pt-2 border-t border-gray-200">
               <div className="py-3 px-4 flex items-center gap-3">
                 <div className="rounded-full bg-gray-400 size-10 overflow-hidden">
-                  {session.user?.profileImageUrl ? (
+                  {(userData?.profileImageUrl || session.user?.profileImageUrl) ? (
                     <img 
-                      src={session.user.profileImageUrl} 
-                      alt={session.user.name || 'User profile'} 
+                      src={userData?.profileImageUrl || session.user?.profileImageUrl} 
+                      alt={userData?.name || session.user?.name || 'User profile'} 
                       className="w-full h-full object-cover"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-primary-blue-500 text-white font-medium">
-                      {session.user?.name?.charAt(0) || '?'}
+                      {(userData?.name || session.user?.name)?.charAt(0) || '?'}
                     </div>
                   )}
                 </div>
                 <div>
-                  <p className="font-medium truncate">{session.user?.name}</p>
-                  <p className="text-xs text-gray-500 truncate">{session.user?.email}</p>
+                  <p className="font-medium truncate">{userData?.name || session.user?.name}</p>
+                  <p className="text-xs text-gray-500 truncate">{userData?.email || session.user?.email}</p>
                 </div>
               </div>
               

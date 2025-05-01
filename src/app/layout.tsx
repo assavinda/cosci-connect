@@ -6,7 +6,8 @@ import { ReactNode } from "react";
 import Footer from "./components/footer/Footer";
 import InboxButton from "./components/float/InboxButton";
 import AuthProvider from "../providers/AuthProvider";
-import PusherProvider from "../providers/PusherProvider"; // เพิ่ม import
+import PusherProvider from "../providers/PusherProvider";
+import UserProvider from "../providers/UserProvider"; // Import UserProvider
 
 export const metadata = {
   title: "COSCI-CONNECT",
@@ -22,14 +23,16 @@ export default function RootLayout({ children }: RootLayoutProps) {
     <html lang="th">
       <body>
         <AuthProvider>
-          <PusherProvider>
-            <Navbar />
-            <div className="py-20 px-4 md:px-4 lg:px-4 xl:px-12 min-h-screen">
-              {children}
-            </div>
-            <Footer/>
-            <InboxButton/>
-          </PusherProvider>
+          <UserProvider> {/* Add UserProvider here */}
+            <PusherProvider>
+              <Navbar />
+              <div className="py-20 px-4 md:px-4 lg:px-4 xl:px-12 min-h-screen">
+                {children}
+              </div>
+              <Footer/>
+              <InboxButton/>
+            </PusherProvider>
+          </UserProvider>
         </AuthProvider>
       </body>
     </html>
