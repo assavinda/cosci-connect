@@ -71,7 +71,7 @@ export async function GET(
   }
 }
 
-// PATCH - Update a project by ID (เฉพาะส่วนที่สำคัญ)
+// PATCH - Update a project by ID
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -146,6 +146,8 @@ export async function PATCH(
     }
     
     const updateData: any = {};
+    let oldStatus = project.status;
+    let statusChanged = false;
     
     // ===== เจ้าของโปรเจกต์สามารถอัปเดตได้ =====
     if (isOwner) {
@@ -177,6 +179,7 @@ export async function PATCH(
         }
         
         updateData.status = newStatus;
+        statusChanged = true;
         
         // If project is completed, set completedAt
         if (newStatus === 'completed' && !project.completedAt) {
@@ -213,6 +216,8 @@ export async function PATCH(
         // อัปเดตโปรเจกต์
         updateData.assignedTo = new mongoose.Types.ObjectId(data.assignedTo);
         updateData.status = 'in_progress';  // เปลี่ยนเป็น 'in_progress'
+        statusChanged = true;
+        
         // ล้างคำขอทั้งหมด
         updateData.requestToFreelancer = null;
         updateData.freelancersRequested = [];
@@ -295,9 +300,16 @@ export async function PATCH(
           project: {
             ...updatedProject,
             id: updatedProject._id.toString(),
+            owner: updatedProject.owner.toString(),
+            assignedTo: updatedProject.assignedTo ? updatedProject.assignedTo.toString() : null,
+            requestToFreelancer: updatedProject.requestToFreelancer ? updatedProject.requestToFreelancer.toString() : null,
             freelancersRequested: updatedProject.freelancersRequested.map(id => id.toString())
           }
         };
+        
+        // ส่งการอัปเดตแบบเรียลไทม์
+        await triggerProjectUpdate(id, responseData.project);
+        await triggerProjectListUpdate();
         
         // ถ้าไม่มีการอัปเดตอื่น ให้ส่งผลลัพธ์กลับเลย
         if (Object.keys(updateData).length === 0) {
@@ -338,6 +350,7 @@ export async function PATCH(
         }
         
         updateData.status = newStatus;
+        statusChanged = true;
       }
     }
     
@@ -355,6 +368,7 @@ export async function PATCH(
         
         // อัปเดตสถานะโปรเจกต์เป็น in_progress
         updateData.status = 'in_progress';
+        statusChanged = true;
         updateData.assignedTo = user._id;
         updateData.requestToFreelancer = null;
         updateData.freelancersRequested = [];
@@ -382,7 +396,7 @@ export async function PATCH(
         // หลังจากอัปเดตสำเร็จแล้ว ดึงโปรเจกต์ที่อัปเดตมาแล้วและส่งกลับ
         const updatedProject = await Project.findById(id).lean();
         
-        return NextResponse.json({
+        const responseData = {
           success: true,
           message: 'Application canceled successfully',
           project: {
@@ -393,7 +407,13 @@ export async function PATCH(
             requestToFreelancer: updatedProject.requestToFreelancer ? updatedProject.requestToFreelancer.toString() : null,
             freelancersRequested: updatedProject.freelancersRequested.map(id => id.toString())
           }
-        });
+        };
+        
+        // ส่งการอัปเดตแบบเรียลไทม์
+        await triggerProjectUpdate(id, responseData.project);
+        await triggerProjectListUpdate();
+        
+        return NextResponse.json(responseData);
       }
     }
     
@@ -428,7 +448,7 @@ export async function PATCH(
       // หลังจากอัปเดตสำเร็จแล้ว ดึงโปรเจกต์ที่อัปเดตมาแล้วและส่งกลับ
       const updatedProject = await Project.findById(id).lean();
       
-      return NextResponse.json({
+      const responseData = {
         success: true,
         message: 'Applied to project successfully',
         project: {
@@ -439,7 +459,13 @@ export async function PATCH(
           requestToFreelancer: updatedProject.requestToFreelancer ? updatedProject.requestToFreelancer.toString() : null,
           freelancersRequested: updatedProject.freelancersRequested.map(id => id.toString())
         }
-      });
+      };
+      
+      // ส่งการอัปเดตแบบเรียลไทม์
+      await triggerProjectUpdate(id, responseData.project);
+      await triggerProjectListUpdate();
+      
+      return NextResponse.json(responseData);
     }
     
     // Common updates (for all roles)
@@ -484,6 +510,23 @@ export async function PATCH(
     responseData.freelancersRequested = updatedProject.freelancersRequested.map(id => id.toString());
     
     delete responseData._id;
+    
+    // ส่งการอัปเดตแบบเรียลไทม์
+    await triggerProjectUpdate(id, responseData);
+
+    // หากมีการเปลี่ยนสถานะโปรเจกต์ ให้แจ้งเตือนผู้ที่เกี่ยวข้องโดยตรง
+    if (statusChanged) {
+      const freelancerId = responseData.assignedTo;
+      await triggerStatusChange(
+        id, 
+        responseData.status, 
+        responseData.owner,
+        freelancerId  // ส่งเฉพาะเมื่อมีฟรีแลนซ์ที่ได้รับมอบหมาย
+      );
+    }
+
+    // อัปเดตรายการโปรเจกต์ทั้งหมด
+    await triggerProjectListUpdate();
     
     return NextResponse.json({
       success: true,
@@ -567,6 +610,9 @@ export async function DELETE(
     
     // Delete the project
     await Project.findByIdAndDelete(id);
+    
+    // แจ้งเตือนการลบโปรเจกต์ผ่าน Pusher
+    await triggerProjectListUpdate();
     
     return NextResponse.json({
       success: true,
@@ -711,6 +757,10 @@ export async function PUT(
     responseData.freelancersRequested = updatedProject.freelancersRequested.map(id => id.toString());
     
     delete responseData._id;
+    
+    // ส่งการอัปเดตแบบเรียลไทม์
+    await triggerProjectUpdate(id, responseData);
+    await triggerProjectListUpdate();
     
     return NextResponse.json({
       success: true,
