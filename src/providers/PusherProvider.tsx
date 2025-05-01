@@ -13,6 +13,9 @@ type PusherContextType = {
   subscribeToUserEvents: (userId: string, eventCallback: (data: any) => void) => () => void;
   subscribeToProjectList: (eventCallback: (data: any) => void) => () => void;
   subscribeToFreelancerList: (eventCallback: (data: any) => void) => () => void;
+  
+  // เพิ่มฟังก์ชันสำหรับรับการแจ้งเตือนเฉพาะ
+  subscribeToUserNotifications: (userId: string, eventCallback: (data: any) => void) => () => void;
 };
 
 const PusherContext = createContext<PusherContextType>({
@@ -24,6 +27,7 @@ const PusherContext = createContext<PusherContextType>({
   subscribeToUserEvents: () => () => {},
   subscribeToProjectList: () => () => {},
   subscribeToFreelancerList: () => () => {},
+  subscribeToUserNotifications: () => () => {},
 });
 
 export const usePusher = () => useContext(PusherContext);
@@ -104,10 +108,19 @@ export default function PusherProvider({ children }: { children: React.ReactNode
 
     const channel = pusherClient.subscribe(`user-${userId}`);
 
+    // รับการอัปเดตสถานะโปรเจกต์
     channel.bind('project-status-changed', eventCallback);
+
+    // รับการแจ้งเตือนคำขอโปรเจกต์
+    channel.bind('project-request', eventCallback);
+
+    // รับการแจ้งเตือนคำเชิญร่วมโปรเจกต์
+    channel.bind('project-invitation', eventCallback);
 
     return () => {
       channel.unbind('project-status-changed', eventCallback);
+      channel.unbind('project-request', eventCallback);
+      channel.unbind('project-invitation', eventCallback);
       pusherClient.unsubscribe(`user-${userId}`);
     };
   };
@@ -117,10 +130,19 @@ export default function PusherProvider({ children }: { children: React.ReactNode
 
     const channel = pusherClient.subscribe('project-updates');
 
+    // รับการอัปเดตรายการโปรเจกต์ทั่วไป
     channel.bind('project-list-updated', eventCallback);
+    
+    // รับการแจ้งเตือนโปรเจกต์ที่มีการร้องขอใหม่
+    channel.bind('project-request-new', eventCallback);
+    
+    // รับการแจ้งเตือนโปรเจกต์ที่มีการส่งคำเชิญใหม่
+    channel.bind('project-invitation-new', eventCallback);
 
     return () => {
       channel.unbind('project-list-updated', eventCallback);
+      channel.unbind('project-request-new', eventCallback);
+      channel.unbind('project-invitation-new', eventCallback);
     };
   };
 
@@ -135,25 +157,87 @@ export default function PusherProvider({ children }: { children: React.ReactNode
       channel.unbind('freelancer-list-updated', eventCallback);
     };
   };
+  
+  // ฟังก์ชั่นใหม่สำหรับรับการแจ้งเตือนเฉพาะบุคคล
+  const subscribeToUserNotifications = (userId: string, eventCallback: (data: any) => void) => {
+    if (!pusherClient) return () => {};
+
+    const channel = pusherClient.subscribe(`notifications-${userId}`);
+
+    // รับการแจ้งเตือนใหม่
+    channel.bind('new-notification', eventCallback);
+
+    return () => {
+      channel.unbind('new-notification', eventCallback);
+      pusherClient.unsubscribe(`notifications-${userId}`);
+    };
+  };
 
   // Subscribe to user-specific events (auto on login)
   useEffect(() => {
     if (!pusherClient || !isConnected || !session?.user?.id) return;
 
     const userId = session.user.id;
-    const channel = pusherClient.subscribe(`user-${userId}`);
+    const userRole = session.user.role;
+    const isFreelancer = userRole === 'student';
+    
+    console.log(`🔔 Auto-subscribing to notifications for user ${userId} (${userRole})`);
 
-    const onStatusChange = (data: any) => {
+    // ฟังก์ชันรับการแจ้งเตือนโปรเจกต์
+    const handleProjectStatusChange = (data: any) => {
       console.log('📢 User project-status-changed:', data);
     };
-
-    channel.bind('project-status-changed', onStatusChange);
+    
+    // ฟังก์ชันรับการแจ้งเตือนคำขอฟรีแลนซ์
+    const handleProjectRequest = (data: any) => {
+      console.log('📢 Received project request:', data);
+    };
+    
+    // ฟังก์ชันรับการแจ้งเตือนคำเชิญฟรีแลนซ์
+    const handleProjectInvitation = (data: any) => {
+      console.log('📢 Received project invitation:', data);
+    };
+    
+    // ลงทะเบียนรับการแจ้งเตือนส่วนตัว
+    const userChannel = pusherClient.subscribe(`user-${userId}`);
+    
+    // ลงทะเบียนรับการแจ้งเตือนทั่วไป
+    const notificationChannel = pusherClient.subscribe(`notifications-${userId}`);
+    
+    // ฟังการแจ้งเตือนสถานะโปรเจกต์
+    userChannel.bind('project-status-changed', handleProjectStatusChange);
+    
+    // ฟังการแจ้งเตือนที่แตกต่างกันตามบทบาท
+    if (isFreelancer) {
+      // สำหรับฟรีแลนซ์
+      userChannel.bind('project-invitation', handleProjectInvitation);
+    } else {
+      // สำหรับเจ้าของโปรเจกต์ (อาจารย์/ศิษย์เก่า)
+      userChannel.bind('project-request', handleProjectRequest);
+    }
+    
+    // รับการแจ้งเตือนทั่วไป
+    notificationChannel.bind('new-notification', (data: any) => {
+      console.log('📢 New notification:', data);
+    });
 
     return () => {
-      channel.unbind('project-status-changed', onStatusChange);
+      // ยกเลิกการฟังทั้งหมด
+      userChannel.unbind('project-status-changed', handleProjectStatusChange);
+      
+      if (isFreelancer) {
+        userChannel.unbind('project-invitation', handleProjectInvitation);
+      } else {
+        userChannel.unbind('project-request', handleProjectRequest);
+      }
+      
+      notificationChannel.unbind_all();
+      
+      // ยกเลิกการลงทะเบียน
       pusherClient.unsubscribe(`user-${userId}`);
+      pusherClient.unsubscribe(`notifications-${userId}`);
     };
-  }, [pusherClient, isConnected, session?.user?.id]);
+  }, [pusherClient, isConnected, session?.user?.id, session?.user?.role]);
 
   return (
     <PusherContext.Provider
@@ -165,6 +249,7 @@ export default function PusherProvider({ children }: { children: React.ReactNode
         subscribeToUserEvents,
         subscribeToProjectList,
         subscribeToFreelancerList,
+        subscribeToUserNotifications,
       }}
     >
       {children}

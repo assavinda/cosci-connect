@@ -5,7 +5,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { useUser } from "../../../providers/UserProvider"; // Import useUser hook
+import { useUser } from "../../../providers/UserProvider";
+import NotificationBell from "../notifications/NotificationBell";
+import NotificationPanel from "../notifications/NotificationPanel";
 
 interface NavItem {
   name: string;
@@ -97,31 +99,9 @@ function BurgerIcon({ isMenuOpen }: BurgerIconProps) {
   )
 }
 
-function BellIcon() {
-  return (
-    <svg
-      width={24}
-      height={24}
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="text-gray-400 transition-transform duration-300 hover:rotate-12 hover:scale-110"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      {/* กระดิ่ง - เส้นเดียวแบบมินิมอล */}
-      <path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" />
-      {/* ส่วนที่แกว่งไปมาข้างใน */}
-      <path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" />
-    </svg>
-  );
-}
-
 function Navbar() {
   const { data: session, status } = useSession();
-  const { userData } = useUser(); // Use userData from UserProvider
+  const { userData } = useUser();
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
   const [navHeight, setNavHeight] = useState<number>(72); // ประมาณความสูงของ navbar
@@ -247,9 +227,13 @@ function Navbar() {
           </div>
         </div>
         <div className="flex place-items-center gap-6">
-          <button className="p-1 rounded-full hover:bg-gray-100 transition-all duration-200">
-            <BellIcon/>
-          </button>
+          {/* แทนที่ BellIcon เดิมด้วย NotificationBell */}
+          {status === 'authenticated' && (
+            <div className="relative">
+              <NotificationBell />
+              <NotificationPanel />
+            </div>
+          )}
           
           {/* User Profile / Auth Button */}
           {status === 'loading' ? (

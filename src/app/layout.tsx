@@ -7,7 +7,9 @@ import Footer from "./components/footer/Footer";
 import InboxButton from "./components/float/InboxButton";
 import AuthProvider from "../providers/AuthProvider";
 import PusherProvider from "../providers/PusherProvider";
-import UserProvider from "../providers/UserProvider"; // Import UserProvider
+import UserProvider from "../providers/UserProvider";
+import NotificationProvider from "../providers/NotificationProvider";
+import { Toaster } from 'react-hot-toast';
 
 export const metadata = {
   title: "COSCI-CONNECT",
@@ -23,14 +25,17 @@ export default function RootLayout({ children }: RootLayoutProps) {
     <html lang="th">
       <body>
         <AuthProvider>
-          <UserProvider> {/* Add UserProvider here */}
+          <UserProvider>
             <PusherProvider>
-              <Navbar />
-              <div className="py-20 px-4 md:px-4 lg:px-4 xl:px-12 min-h-screen">
-                {children}
-              </div>
-              <Footer/>
-              <InboxButton/>
+              <NotificationProvider>
+                <Toaster position="top-right" />
+                <Navbar />
+                <div className="py-20 px-4 md:px-4 lg:px-4 xl:px-12 min-h-screen">
+                  {children}
+                </div>
+                <Footer/>
+                <InboxButton/>
+              </NotificationProvider>
             </PusherProvider>
           </UserProvider>
         </AuthProvider>
