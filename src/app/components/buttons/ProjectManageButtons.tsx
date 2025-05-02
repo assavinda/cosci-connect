@@ -66,6 +66,7 @@ function ProjectManageButtons({ project, isFreelancer, userId }: ProjectManageBu
     try {
       // For freelancer rejecting a direct request from project owner
       const response = await axios.patch(`/api/projects/${project.id}`, {
+        action: 'rejectProject',
         requestToFreelancer: null
       });
       

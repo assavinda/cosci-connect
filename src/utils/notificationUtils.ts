@@ -171,6 +171,43 @@ export async function createProjectResponseNotification(
 }
 
 /**
+ * Creates notification when a freelancer accepts/rejects an invitation
+ */
+export async function createFreelancerResponseNotification(
+  projectId: string, 
+  freelancerId: string, 
+  isAccepted: boolean
+) {
+  try {
+    // Get project and freelancer details
+    const [project, freelancer] = await Promise.all([
+      Project.findById(projectId).lean(),
+      User.findById(freelancerId).select('name').lean()
+    ]);
+
+    if (!project || !freelancer) {
+      return { success: false, error: 'Project or freelancer not found' };
+    }
+
+    // Notification to project owner
+    return await createNotification({
+      recipientId: project.owner.toString(),
+      senderId: freelancerId,
+      type: isAccepted ? 'project_accepted' : 'project_rejected',
+      title: isAccepted ? 'คำขอร่วมงานได้รับการตอบรับ' : 'คำขอร่วมงานถูกปฏิเสธ',
+      message: isAccepted 
+        ? `${freelancer.name} ได้ตอบรับคำขอร่วมงาน "${project.title}" ของคุณแล้ว`
+        : `${freelancer.name} ได้ปฏิเสธคำขอร่วมงาน "${project.title}" ของคุณ`,
+      projectId: projectId,
+      link: `/project/${projectId}`
+    });
+  } catch (error) {
+    console.error('Error creating freelancer response notification:', error);
+    return { success: false, error: 'Failed to create notification' };
+  }
+}
+
+/**
  * Creates notification for project status change
  */
 export async function createProjectStatusChangeNotification(

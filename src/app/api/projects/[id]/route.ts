@@ -15,9 +15,9 @@ import {
   createProjectInvitationNotification,
   createProjectResponseNotification,
   createProjectStatusChangeNotification,
-  createProjectProgressUpdateNotification
+  createProjectProgressUpdateNotification,
+  createFreelancerResponseNotification
 } from '@/utils/notificationUtils';
-
 // GET - Retrieve a specific project by ID
 export async function GET(
   req: NextRequest,
@@ -451,6 +451,13 @@ export async function PATCH(
         // สร้างการแจ้งเตือนเมื่อฟรีแลนซ์ยอมรับคำขอ
         try {
           // แจ้งเตือนเจ้าของโปรเจกต์ว่าฟรีแลนซ์ยอมรับคำขอแล้ว
+          await createFreelancerResponseNotification(
+            id,
+            user._id.toString(),
+            true // ตอบรับคำขอ
+          );
+          
+          // แจ้งเตือนเมื่อสถานะโปรเจกต์เปลี่ยน
           await createProjectStatusChangeNotification(
             id, 
             'in_progress', 
@@ -458,7 +465,25 @@ export async function PATCH(
             user._id.toString()
           );
         } catch (notificationError) {
-          console.error('Error creating status change notification:', notificationError);
+          console.error('Error creating freelancer response notification:', notificationError);
+          // ไม่ต้องหยุดการทำงานหลักหากการสร้างการแจ้งเตือนล้มเหลว
+        }
+      }
+      
+      // ฟรีแลนซ์ปฏิเสธคำขอจากเจ้าของโปรเจกต์
+      if (data.requestToFreelancer === null || (data.action === 'rejectProject' && project.requestToFreelancer?.toString() === user._id.toString())) {
+        // อัปเดต requestToFreelancer เป็น null
+        updateData.requestToFreelancer = null;
+        
+        try {
+          // แจ้งเตือนเจ้าของโปรเจกต์ว่าฟรีแลนซ์ปฏิเสธคำขอ
+          await createFreelancerResponseNotification(
+            id,
+            user._id.toString(),
+            false // ปฏิเสธคำขอ
+          );
+        } catch (notificationError) {
+          console.error('Error creating freelancer rejection notification:', notificationError);
           // ไม่ต้องหยุดการทำงานหลักหากการสร้างการแจ้งเตือนล้มเหลว
         }
       }
