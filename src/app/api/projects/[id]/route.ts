@@ -10,6 +10,13 @@ import pusherServer, {
   triggerStatusChange,
   triggerProjectListUpdate
 } from '@/libs/pusher';
+import {
+  createProjectRequestNotification,
+  createProjectInvitationNotification,
+  createProjectResponseNotification,
+  createProjectStatusChangeNotification,
+  createProjectProgressUpdateNotification
+} from '@/utils/notificationUtils';
 
 // GET - Retrieve a specific project by ID
 export async function GET(
@@ -185,6 +192,21 @@ export async function PATCH(
         if (newStatus === 'completed' && !project.completedAt) {
           updateData.completedAt = new Date();
         }
+        
+        // สร้างการแจ้งเตือนเมื่อมีการเปลี่ยนสถานะโปรเจกต์
+        try {
+          if (project.assignedTo) {
+            await createProjectStatusChangeNotification(
+              id, 
+              newStatus, 
+              project.assignedTo.toString(),
+              user._id.toString()
+            );
+          }
+        } catch (notificationError) {
+          console.error('Error creating status change notification:', notificationError);
+          // ไม่ต้องหยุดการทำงานหลักหากการสร้างการแจ้งเตือนล้มเหลว
+        }
       }
       
       // เจ้าของโปรเจกต์กำหนดฟรีแลนซ์โดยตรง (เช่น การยอมรับคำขอจากฟรีแลนซ์)
@@ -221,6 +243,14 @@ export async function PATCH(
         // ล้างคำขอทั้งหมด
         updateData.requestToFreelancer = null;
         updateData.freelancersRequested = [];
+        
+        // สร้างการแจ้งเตือนเมื่อยอมรับฟรีแลนซ์เข้าทำงาน
+        try {
+          await createProjectResponseNotification(id, data.assignedTo, true);
+        } catch (notificationError) {
+          console.error('Error creating project accepted notification:', notificationError);
+          // ไม่ต้องหยุดการทำงานหลักหากการสร้างการแจ้งเตือนล้มเหลว
+        }
       }
       
       // Handle freelancer request
@@ -256,6 +286,14 @@ export async function PATCH(
           }
           
           updateData.requestToFreelancer = new mongoose.Types.ObjectId(data.requestToFreelancer);
+          
+          // สร้างการแจ้งเตือนเมื่อส่งคำขอไปยังฟรีแลนซ์
+          try {
+            await createProjectInvitationNotification(id, data.requestToFreelancer);
+          } catch (notificationError) {
+            console.error('Error creating project invitation notification:', notificationError);
+            // ไม่ต้องหยุดการทำงานหลักหากการสร้างการแจ้งเตือนล้มเหลว
+          }
         } else {
           return NextResponse.json(
             { error: 'Invalid freelancer ID format' },
@@ -290,6 +328,14 @@ export async function PATCH(
           { _id: id },
           { $pull: { freelancersRequested: freelancerIdObj } }
         );
+        
+        // สร้างการแจ้งเตือนเมื่อปฏิเสธคำขอของฟรีแลนซ์
+        try {
+          await createProjectResponseNotification(id, data.freelancerId, false);
+        } catch (notificationError) {
+          console.error('Error creating project rejected notification:', notificationError);
+          // ไม่ต้องหยุดการทำงานหลักหากการสร้างการแจ้งเตือนล้มเหลว
+        }
         
         // หลังจากอัปเดตสำเร็จแล้ว ดึงโปรเจกต์ที่อัปเดตมาแล้วและส่งกลับ
         const updatedProject = await Project.findById(id).lean();
@@ -330,6 +376,22 @@ export async function PATCH(
           );
         }
         updateData.progress = progress;
+        
+        // สร้างการแจ้งเตือนเมื่อมีการอัปเดตความคืบหน้าที่สำคัญ
+        try {
+          // ส่งการแจ้งเตือนเฉพาะเมื่อความคืบหน้าเป็นเลขหลักสิบหรือ 100%
+          if (progress % 10 === 0 || progress === 100) {
+            await createProjectProgressUpdateNotification(
+              id,
+              progress,
+              project.owner.toString(),
+              user._id.toString()
+            );
+          }
+        } catch (notificationError) {
+          console.error('Error creating progress update notification:', notificationError);
+          // ไม่ต้องหยุดการทำงานหลักหากการสร้างการแจ้งเตือนล้มเหลว
+        }
       }
       
       // ฟรีแลนซ์ที่ได้รับมอบหมายงานแล้วสามารถเปลี่ยนสถานะได้
@@ -351,6 +413,19 @@ export async function PATCH(
         
         updateData.status = newStatus;
         statusChanged = true;
+        
+        // สร้างการแจ้งเตือนเมื่อฟรีแลนซ์เปลี่ยนสถานะโปรเจกต์
+        try {
+          await createProjectStatusChangeNotification(
+            id, 
+            newStatus, 
+            project.owner.toString(),
+            user._id.toString()
+          );
+        } catch (notificationError) {
+          console.error('Error creating status change notification:', notificationError);
+          // ไม่ต้องหยุดการทำงานหลักหากการสร้างการแจ้งเตือนล้มเหลว
+        }
       }
     }
     
@@ -372,6 +447,20 @@ export async function PATCH(
         updateData.assignedTo = user._id;
         updateData.requestToFreelancer = null;
         updateData.freelancersRequested = [];
+        
+        // สร้างการแจ้งเตือนเมื่อฟรีแลนซ์ยอมรับคำขอ
+        try {
+          // แจ้งเตือนเจ้าของโปรเจกต์ว่าฟรีแลนซ์ยอมรับคำขอแล้ว
+          await createProjectStatusChangeNotification(
+            id, 
+            'in_progress', 
+            project.owner.toString(),
+            user._id.toString()
+          );
+        } catch (notificationError) {
+          console.error('Error creating status change notification:', notificationError);
+          // ไม่ต้องหยุดการทำงานหลักหากการสร้างการแจ้งเตือนล้มเหลว
+        }
       }
     }
     
@@ -444,6 +533,14 @@ export async function PATCH(
         { _id: id },
         { $push: { freelancersRequested: user._id } }
       );
+      
+      // สร้างการแจ้งเตือนเมื่อฟรีแลนซ์ส่งคำขอร่วมงาน
+      try {
+        await createProjectRequestNotification(id, user._id.toString());
+      } catch (notificationError) {
+        console.error('Error creating project request notification:', notificationError);
+        // ไม่ต้องหยุดการทำงานหลักหากการสร้างการแจ้งเตือนล้มเหลว
+      }
       
       // หลังจากอัปเดตสำเร็จแล้ว ดึงโปรเจกต์ที่อัปเดตมาแล้วและส่งกลับ
       const updatedProject = await Project.findById(id).lean();

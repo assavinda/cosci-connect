@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import Pusher from 'pusher-js';
 import { useSession } from 'next-auth/react';
+import { toast } from 'react-hot-toast';
 
 type PusherContextType = {
   pusherClient: Pusher | null;
@@ -14,7 +15,7 @@ type PusherContextType = {
   subscribeToProjectList: (eventCallback: (data: any) => void) => () => void;
   subscribeToFreelancerList: (eventCallback: (data: any) => void) => () => void;
   
-  // เพิ่มฟังก์ชันสำหรับรับการแจ้งเตือนเฉพาะ
+  // Modified function for user notifications
   subscribeToUserNotifications: (userId: string, eventCallback: (data: any) => void) => () => void;
 };
 
@@ -158,14 +159,56 @@ export default function PusherProvider({ children }: { children: React.ReactNode
     };
   };
   
-  // ฟังก์ชั่นใหม่สำหรับรับการแจ้งเตือนเฉพาะบุคคล
+  // Updated function for subscribing to user notifications
   const subscribeToUserNotifications = (userId: string, eventCallback: (data: any) => void) => {
     if (!pusherClient) return () => {};
 
     const channel = pusherClient.subscribe(`notifications-${userId}`);
 
     // รับการแจ้งเตือนใหม่
-    channel.bind('new-notification', eventCallback);
+    channel.bind('new-notification', (data: any) => {
+      // Show toast notification
+      if (data.notification) {
+        toast.custom((t) => (
+          <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
+            <div className="flex-1 w-0 p-4">
+              <div className="flex items-start">
+                <div className="flex-shrink-0 pt-0.5">
+                  <div className="h-10 w-10 rounded-full bg-primary-blue-100 flex items-center justify-center text-primary-blue-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" />
+                      <path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="ml-3 flex-1">
+                  <p className="text-sm font-medium text-gray-900">
+                    {data.notification.title}
+                  </p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {data.notification.message}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex border-l border-gray-200">
+              <button
+                onClick={() => toast.dismiss(t.id)}
+                className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-primary-blue-600 hover:text-primary-blue-500 focus:outline-none"
+              >
+                ปิด
+              </button>
+            </div>
+          </div>
+        ), {
+          duration: 5000,
+          position: 'top-right',
+        });
+      }
+      
+      // Call the provided callback
+      eventCallback(data);
+    });
 
     return () => {
       channel.unbind('new-notification', eventCallback);

@@ -106,3 +106,36 @@ export async function triggerFreelancerListUpdate() {
     return false;
   }
 }
+
+// เพิ่มฟังก์ชัน: ส่งการแจ้งเตือนถึงผู้ใช้โดยตรง
+export async function triggerUserNotification(userId: string, notification: any) {
+  try {
+    // ส่งการแจ้งเตือนไปยัง channel ของผู้ใช้คนนั้น
+    await pusherServer.trigger(`notifications-${userId}`, 'new-notification', {
+      notification,
+      timestamp: new Date().toISOString()
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Pusher notification error:', error);
+    return false;
+  }
+}
+
+// เพิ่มฟังก์ชันสำหรับส่งการแจ้งเตือนระบบ (เช่น การบำรุงรักษา)
+export async function triggerSystemNotification(message: string, link?: string) {
+  try {
+    // ส่งการแจ้งเตือนไปยัง channel ทั้งหมด
+    await pusherServer.trigger('system-notifications', 'system-message', {
+      message,
+      link,
+      timestamp: new Date().toISOString()
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Pusher system notification error:', error);
+    return false;
+  }
+}

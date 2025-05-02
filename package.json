@@ -12,6 +12,7 @@
     "@auth/mongodb-adapter": "^3.9.0",
     "axios": "^1.8.4",
     "cloudinary": "^1.41.3",
+    "date-fns": "^4.1.0",
     "mongoose": "^8.13.2",
     "multer": "^1.4.5-lts.2",
     "multer-storage-cloudinary": "^4.0.0",
