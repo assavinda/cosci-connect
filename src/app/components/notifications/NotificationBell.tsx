@@ -4,7 +4,7 @@ import React from 'react';
 import { useNotifications } from '../../../providers/NotificationProvider';
 
 const NotificationBell: React.FC = () => {
-  const { unreadCount, isOpen, setIsOpen } = useNotifications();
+  const { unreadCount, isOpen, setIsOpen, isLoading } = useNotifications();
 
   // ฟังก์ชันสลับการแสดง/ซ่อนพาเนลการแจ้งเตือน
   const toggleNotificationPanel = () => {
@@ -16,6 +16,7 @@ const NotificationBell: React.FC = () => {
       className="p-1 rounded-full hover:bg-gray-100 transition-all duration-200 relative"
       onClick={toggleNotificationPanel}
       aria-label={`การแจ้งเตือน ${unreadCount > 0 ? unreadCount + ' รายการที่ยังไม่ได้อ่าน' : ''}`}
+      disabled={isLoading}
     >
       <svg
         width={24}
@@ -39,6 +40,11 @@ const NotificationBell: React.FC = () => {
         <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
           {unreadCount > 9 ? '9+' : unreadCount}
         </span>
+      )}
+      
+      {/* แสดงสถานะกำลังโหลด */}
+      {isLoading && (
+        <span className="absolute -top-1 -right-1 w-5 h-5 border-2 border-primary-blue-300 border-t-primary-blue-600 rounded-full animate-spin"></span>
       )}
     </button>
   );
