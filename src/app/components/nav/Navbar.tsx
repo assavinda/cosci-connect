@@ -106,6 +106,7 @@ function Navbar() {
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
   const [navHeight, setNavHeight] = useState<number>(72); // ประมาณความสูงของ navbar
   const [isUserMenuOpen, setIsUserMenuOpen] = useState<boolean>(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState<boolean>(false);
   
   const toggleMenuOpen = (): void => {
     setIsMenuOpen(!isMenuOpen);
@@ -160,6 +161,16 @@ function Navbar() {
   // Handle user menu toggle
   const toggleUserMenu = () => {
     setIsUserMenuOpen(!isUserMenuOpen);
+  };
+
+  // Handle notification toggle
+  const toggleNotification = () => {
+    setIsNotificationOpen(!isNotificationOpen);
+  };
+
+  // Handle closing notification
+  const closeNotification = () => {
+    setIsNotificationOpen(false);
   };
 
   // Close user menu if clicked outside
@@ -227,11 +238,16 @@ function Navbar() {
           </div>
         </div>
         <div className="flex place-items-center gap-6">
-          {/* แทนที่ BellIcon เดิมด้วย NotificationBell */}
           {status === 'authenticated' && (
             <div className="relative">
-              <NotificationBell />
-              <NotificationPanel />
+              <NotificationBell 
+                onClick={toggleNotification}
+                isOpen={isNotificationOpen}
+              />
+              <NotificationPanel 
+                isOpen={isNotificationOpen}
+                onClose={closeNotification}
+              />
             </div>
           )}
           
