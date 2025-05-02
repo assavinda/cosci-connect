@@ -10,7 +10,6 @@ import pusherServer, {
   triggerStatusChange,
   triggerProjectListUpdate
 } from '@/libs/pusher';
-import { handleProjectStatusChange, handleFreelancerRequest, handleProjectInvitation } from './update-notifications';
 
 // GET - Retrieve a specific project by ID
 export async function GET(
@@ -528,41 +527,6 @@ export async function PATCH(
 
     // อัปเดตรายการโปรเจกต์ทั้งหมด
     await triggerProjectListUpdate();
-
-    // ส่งการแจ้งเตือนการเปลี่ยนสถานะโปรเจกต์ผ่านฐานข้อมูล
-if (statusChanged) {
-  await handleProjectStatusChange(
-    id,
-    oldStatus,
-    responseData.status,
-    responseData.owner,
-    responseData.assignedTo,
-    responseData.title
-  );
-}
-
-// ตรวจสอบว่าเป็นการส่งคำขอร่วมงานจากฟรีแลนซ์หรือไม่
-if (data.applyToProject && user.role === 'student') {
-  await handleFreelancerRequest(
-    id,
-    project.title,
-    project.owner.toString(),
-    user._id.toString()
-  );
-}
-
-// ตรวจสอบว่าเป็นการเชิญฟรีแลนซ์โดยเจ้าของโปรเจกต์หรือไม่
-if (data.requestToFreelancer && 
-    mongoose.Types.ObjectId.isValid(data.requestToFreelancer) && 
-    project.status === 'open') {
-  await handleProjectInvitation(
-    id,
-    project.title,
-    project.owner.toString(),
-    data.requestToFreelancer
-  );
-}
-
     
     return NextResponse.json({
       success: true,

@@ -3,20 +3,9 @@
 import React, { useRef, useEffect } from 'react';
 import { useNotifications, Notification } from '../../../providers/NotificationProvider';
 import { useRouter } from 'next/navigation';
-import Loading from '../common/Loading';
 
 const NotificationPanel: React.FC = () => {
-  const { 
-    notifications, 
-    isOpen, 
-    isLoading,
-    setIsOpen, 
-    markAsRead, 
-    markAllAsRead, 
-    clearNotifications,
-    refreshNotifications 
-  } = useNotifications();
-  
+  const { notifications, isOpen, setIsOpen, markAsRead, markAllAsRead, clearNotifications } = useNotifications();
   const panelRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -67,17 +56,10 @@ const NotificationPanel: React.FC = () => {
     };
   }, [isOpen, setIsOpen]);
 
-  // ดึงข้อมูลการแจ้งเตือนเมื่อเปิดพาเนล
-  useEffect(() => {
-    if (isOpen) {
-      refreshNotifications();
-    }
-  }, [isOpen, refreshNotifications]);
-
   // จัดการคลิกที่การแจ้งเตือน
-  const handleNotificationClick = async (notification: Notification) => {
+  const handleNotificationClick = (notification: Notification) => {
     // ทำเครื่องหมายว่าอ่านแล้ว
-    await markAsRead(notification.id);
+    markAsRead(notification.id);
     
     // นำทางไปยังหน้าที่เกี่ยวข้อง
     if (notification.data?.projectId) {
@@ -192,14 +174,12 @@ const NotificationPanel: React.FC = () => {
           <button 
             onClick={markAllAsRead}
             className="text-xs text-primary-blue-500 hover:text-primary-blue-600"
-            disabled={isLoading}
           >
             อ่านทั้งหมด
           </button>
           <button 
             onClick={clearNotifications}
             className="text-xs text-gray-500 hover:text-gray-600"
-            disabled={isLoading}
           >
             ล้างทั้งหมด
           </button>
@@ -207,12 +187,7 @@ const NotificationPanel: React.FC = () => {
       </div>
       
       <div className="overflow-y-auto max-h-[calc(70vh-48px)]">
-        {isLoading ? (
-          <div className="p-6 flex flex-col items-center justify-center">
-            <Loading size="medium" color="primary" />
-            <p className="mt-3 text-gray-500 text-sm">กำลังโหลดการแจ้งเตือน...</p>
-          </div>
-        ) : notifications.length > 0 ? (
+        {notifications.length > 0 ? (
           <div>
             {notifications.map((notification) => (
               <div
@@ -250,18 +225,6 @@ const NotificationPanel: React.FC = () => {
           </div>
         )}
       </div>
-      
-      {/* ปุ่มโหลดเพิ่มเติม */}
-      {!isLoading && notifications.length >= 30 && (
-        <div className="p-2 border-t border-gray-100 text-center">
-          <button 
-            onClick={() => refreshNotifications()}
-            className="text-xs text-primary-blue-500 hover:text-primary-blue-600 px-4 py-1 rounded-lg hover:bg-gray-50"
-          >
-            โหลดเพิ่มเติม
-          </button>
-        </div>
-      )}
     </div>
   );
 };

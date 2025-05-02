@@ -1,11 +1,5 @@
 // src/libs/pusher.ts
 import Pusher from 'pusher';
-import {
-  sendNotificationToUser,
-  sendProjectStatusNotification,
-  sendProjectRequestNotification,
-  sendProjectInvitationNotification
-} from './notification-helpers';
 
 // ตรวจสอบว่ามีค่า environment variables ที่จำเป็นหรือไม่
 if (!process.env.PUSHER_APP_ID || 
@@ -43,26 +37,29 @@ export async function triggerProjectUpdate(projectId: string, project: any) {
 }
 
 // ฟังก์ชันส่งการอัปเดตสถานะโปรเจกต์ไปยังผู้ใช้ที่เกี่ยวข้อง
-export async function triggerStatusChange(
-  projectId: string, 
-  newStatus: string, 
-  ownerId: string, 
-  freelancerId?: string,
-  projectTitle?: string
-) {
+export async function triggerStatusChange(projectId: string, newStatus: string, ownerId: string, freelancerId?: string) {
   try {
-    // ใช้ฟังก์ชันใหม่ที่บันทึกการแจ้งเตือนลงฐานข้อมูล
-    await sendProjectStatusNotification(
+    // ข้อมูลที่จะส่ง
+    const data = {
       projectId,
       newStatus,
-      ownerId,
-      freelancerId,
-      projectTitle
-    );
+      updatedAt: new Date().toISOString()
+    };
+    
+    // ส่งข้อมูลไปยัง channel ของเจ้าของโปรเจกต์
+    await pusherServer.trigger(`user-${ownerId}`, 'project-status-changed', data);
+    
+    // ส่งข้อมูลไปยัง channel ของฟรีแลนซ์ถ้ามี
+    if (freelancerId) {
+      await pusherServer.trigger(`user-${freelancerId}`, 'project-status-changed', data);
+    }
+    
+    // ส่งข้อมูลให้ทุกคนที่กำลังดูโปรเจกต์นี้อยู่
+    await pusherServer.trigger('project-updates', `project-${projectId}-status-changed`, data);
     
     return true;
   } catch (error) {
-    console.error('Status change notification error:', error);
+    console.error('Pusher trigger error:', error);
     return false;
   }
 }
