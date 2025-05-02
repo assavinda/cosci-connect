@@ -4,7 +4,6 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useSession } from 'next-auth/react';
 import { usePusher } from './PusherProvider';
 import axios from 'axios';
-import { toast } from 'react-hot-toast';
 
 // นิยามประเภทการแจ้งเตือน
 export type NotificationType = 
@@ -161,10 +160,6 @@ export default function NotificationProvider({ children }: { children: ReactNode
         
         // เพิ่มการแจ้งเตือนและแสดง toast
         addNotification(newNotification);
-        toast(message, {
-          icon: '🔔',
-          duration: 5000
-        });
       }
     };
     
@@ -189,10 +184,6 @@ export default function NotificationProvider({ children }: { children: ReactNode
       };
       
       addNotification(newNotification);
-      toast(`${data.freelancerName || 'ฟรีแลนซ์'} ต้องการร่วมงานกับคุณ`, {
-        icon: '🤝',
-        duration: 5000
-      });
     };
     
     // รับการแจ้งเตือนคำเชิญทำโปรเจกต์ (สำหรับฟรีแลนซ์)
@@ -216,10 +207,6 @@ export default function NotificationProvider({ children }: { children: ReactNode
       };
       
       addNotification(newNotification);
-      toast(`คุณได้รับเชิญให้ร่วมทำโปรเจกต์`, {
-        icon: '📨',
-        duration: 5000
-      });
     };
     
     // ลงทะเบียนรับการแจ้งเตือนสำหรับผู้ใช้นี้
