@@ -1,3 +1,4 @@
+// src/providers/PusherProvider.tsx
 'use client';
 
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
@@ -38,6 +39,9 @@ export default function PusherProvider({ children }: { children: React.ReactNode
   const [isConnected, setIsConnected] = useState(false);
   const { data: session } = useSession();
   const hasInitializedRef = useRef(false);
+  
+  // Add a ref to track notification subscriptions - prevent duplicate toasts
+  const notificationSubscriptionsRef = useRef<Record<string, boolean>>({});
 
   useEffect(() => {
     if (
@@ -75,6 +79,8 @@ export default function PusherProvider({ children }: { children: React.ReactNode
     return () => {
       client.disconnect();
       hasInitializedRef.current = false;
+      // Also clear notification subscriptions on unmount
+      notificationSubscriptionsRef.current = {};
     };
   }, []);
 
@@ -163,9 +169,24 @@ export default function PusherProvider({ children }: { children: React.ReactNode
   const subscribeToUserNotifications = (userId: string, eventCallback: (data: any) => void) => {
     if (!pusherClient) return () => {};
 
-    const channel = pusherClient.subscribe(`notifications-${userId}`);
+    // ใช้ channel ID ที่เฉพาะเจาะจงเพื่อป้องกันการซ้ำซ้อน
+    const channelId = `notifications-${userId}`;
+    const channel = pusherClient.subscribe(channelId);
 
-    // รับการแจ้งเตือนใหม่
+    // ตรวจสอบว่าเคยลงทะเบียนกับ channel นี้แล้วหรือไม่
+    if (notificationSubscriptionsRef.current[channelId]) {
+      // ถ้าเคยลงทะเบียนแล้ว ให้เรียก callback โดยไม่แสดง toast ซ้ำ
+      channel.bind('new-notification', eventCallback);
+      
+      return () => {
+        channel.unbind('new-notification', eventCallback);
+      };
+    }
+
+    // ถ้ายังไม่เคยลงทะเบียน ให้บันทึกว่าได้ลงทะเบียนแล้ว
+    notificationSubscriptionsRef.current[channelId] = true;
+
+    // รับการแจ้งเตือนใหม่ และแสดง toast
     channel.bind('new-notification', (data: any) => {
       // Show toast notification
       if (data.notification) {
@@ -212,7 +233,9 @@ export default function PusherProvider({ children }: { children: React.ReactNode
 
     return () => {
       channel.unbind('new-notification', eventCallback);
-      pusherClient.unsubscribe(`notifications-${userId}`);
+      // ในกรณีที่ยกเลิกการสมัครทั้งหมด อย่าลืมลบบันทึกการลงทะเบียนด้วย
+      delete notificationSubscriptionsRef.current[channelId];
+      pusherClient.unsubscribe(channelId);
     };
   };
 
@@ -244,9 +267,6 @@ export default function PusherProvider({ children }: { children: React.ReactNode
     // ลงทะเบียนรับการแจ้งเตือนส่วนตัว
     const userChannel = pusherClient.subscribe(`user-${userId}`);
     
-    // ลงทะเบียนรับการแจ้งเตือนทั่วไป
-    const notificationChannel = pusherClient.subscribe(`notifications-${userId}`);
-    
     // ฟังการแจ้งเตือนสถานะโปรเจกต์
     userChannel.bind('project-status-changed', handleProjectStatusChange);
     
@@ -259,10 +279,8 @@ export default function PusherProvider({ children }: { children: React.ReactNode
       userChannel.bind('project-request', handleProjectRequest);
     }
     
-    // รับการแจ้งเตือนทั่วไป
-    notificationChannel.bind('new-notification', (data: any) => {
-      console.log('📢 New notification:', data);
-    });
+    // ช่องทางรับการแจ้งเตือนทั่วไป ไม่จำเป็นต้องลงทะเบียนที่นี่เพื่อหลีกเลี่ยงการซ้ำซ้อน
+    // เนื่องจากจะมีการเรียกใช้ subscribeToUserNotifications ในส่วนอื่นๆ ของแอปอยู่แล้ว
 
     return () => {
       // ยกเลิกการฟังทั้งหมด
@@ -274,11 +292,8 @@ export default function PusherProvider({ children }: { children: React.ReactNode
         userChannel.unbind('project-request', handleProjectRequest);
       }
       
-      notificationChannel.unbind_all();
-      
       // ยกเลิกการลงทะเบียน
       pusherClient.unsubscribe(`user-${userId}`);
-      pusherClient.unsubscribe(`notifications-${userId}`);
     };
   }, [pusherClient, isConnected, session?.user?.id, session?.user?.role]);
 
