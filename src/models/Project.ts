@@ -13,25 +13,19 @@ export interface IProject extends Document {
   
   // ฟิลด์ที่เพิ่มเติม
   assignedTo?: mongoose.Types.ObjectId;  // ฟรีแลนซ์ที่ได้รับมอบหมายงาน
+  assignedFreelancerName?: string;  // ชื่อของฟรีแลนซ์ที่ได้รับมอบหมายงาน (เพิ่มใหม่)
   
   // ฟิลด์สำหรับการจัดการคำขอร่วมงาน
   freelancersRequested: mongoose.Types.ObjectId[];  // อาเรย์ของฟรีแลนซ์ ID ที่ส่งคำขอร่วมงานให้เจ้าของโปรเจกต์
+  freelancersRequestedNames?: Map<string, string>;  // Map ของ ID ฟรีแลนซ์และชื่อ (เพิ่มใหม่)
   requestToFreelancer?: mongoose.Types.ObjectId;  // ฟรีแลนซ์ ID ที่เจ้าของโปรเจกต์ส่งคำขอร่วมงานไป
+  requestToFreelancerName?: string;  // ชื่อของฟรีแลนซ์ที่ส่งคำขอไป (เพิ่มใหม่)
   
   progress?: number;
   createdAt: Date;
   updatedAt?: Date;
   completedAt?: Date;
 }
-
-// Schema for message
-const MessageSchema = new Schema({
-  from: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  fromName: { type: String, required: true },
-  content: { type: String, required: true },
-  timestamp: { type: Date, default: Date.now },
-  isRead: { type: Boolean, default: false }
-});
 
 const ProjectSchema: Schema = new Schema(
   {
@@ -51,13 +45,20 @@ const ProjectSchema: Schema = new Schema(
     
     // ฟิลด์ที่เพิ่มเติม
     assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    assignedFreelancerName: { type: String }, // เพิ่มใหม่
     
     // ฟิลด์สำหรับการจัดการคำขอร่วมงาน
     freelancersRequested: {
       type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
       default: []
     },
+    freelancersRequestedNames: {
+      type: Map,
+      of: String,
+      default: new Map()
+    }, // เพิ่มใหม่
     requestToFreelancer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    requestToFreelancerName: { type: String }, // เพิ่มใหม่
     
     progress: { type: Number, min: 0, max: 100, default: 0 },
     createdAt: { type: Date, default: Date.now },
