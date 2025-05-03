@@ -1,17 +1,80 @@
 'use client'
-import React, { useState } from "react"
-import ChatWindow from "../chat/ChatWindow"
+import React, { useEffect, useState } from "react";
+import ChatWindow from "../chat/ChatWindow";
+import axios from 'axios';
+import { useSession } from "next-auth/react";
 
 function InboxButton() {
+  const { data: session, status } = useSession();
   const [isOpen, setIsOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  const toggleChatWindow = () => {
-    setIsOpen(!isOpen);
+  // เช็คจำนวนข้อความที่ยังไม่ได้อ่านเมื่อล็อกอินแล้ว
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetchUnreadCount();
+    } else {
+      setUnreadCount(0);
+    }
+  }, [status]);
+
+  // เช็คจำนวนข้อความที่ยังไม่ได้อ่านเมื่อระยะเวลาผ่านไป (30 วินาที)
+  useEffect(() => {
+    if (status === 'authenticated') {
+      const interval = setInterval(() => {
+        if (!isOpen) { // ตรวจสอบเฉพาะเมื่อไม่ได้เปิดหน้าต่างแชท
+          fetchUnreadCount();
+        }
+      }, 30000); // 30 วินาที
+      
+      return () => clearInterval(interval);
+    }
+  }, [status, isOpen]);
+
+  // ดึงจำนวนข้อความที่ยังไม่ได้อ่าน
+  const fetchUnreadCount = async () => {
+    if (status !== 'authenticated') return;
+    
+    setLoading(true);
+    try {
+      const response = await axios.get('/api/messages');
+      
+      // นับจำนวนข้อความที่ยังไม่ได้อ่าน
+      let count = 0;
+      if (response.data.chatList && Array.isArray(response.data.chatList)) {
+        response.data.chatList.forEach((chat) => {
+          count += chat.unreadCount || 0;
+        });
+      }
+      
+      setUnreadCount(count);
+    } catch (err) {
+      console.error('Error fetching unread count:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // เปิด/ปิดหน้าต่างแชท
+  const toggleChatWindow = () => {
+    setIsOpen(!isOpen);
+    
+    // เมื่อเปิดหน้าต่างแชท ตั้งค่าจำนวนข้อความที่ยังไม่ได้อ่านเป็น 0
+    if (!isOpen) {
+      setUnreadCount(0);
+    }
+  };
+
+  // ปิดหน้าต่างแชท
   const handleCloseChat = () => {
     setIsOpen(false);
   };
+
+  // หากยังไม่ได้ล็อกอินหรือกำลังโหลด ไม่ต้องแสดงปุ่ม
+  if (status === 'unauthenticated' || status === 'loading') {
+    return null;
+  }
 
   return (
     <>
@@ -19,7 +82,7 @@ function InboxButton() {
         <button 
           className="bg-white/80 backdrop-blur-md text-primary-blue-500 border-2 border-primary-blue-500 shadow-lg hover:text-primary-blue-400 hover:border-primary-blue-400 p-3 w-[56px] font-medium rounded-full relative"
           onClick={toggleChatWindow}
-          aria-label="Open chat inbox"
+          aria-label="เปิดข้อความ"
         >
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path 
@@ -56,15 +119,24 @@ function InboxButton() {
             />
           </svg>
           
-          {/* Notification Badge */}
-          <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-            <span className="text-white text-xs font-bold">2</span>
-          </div>
+          {/* แสดงจำนวนข้อความที่ยังไม่ได้อ่าน */}
+          {unreadCount > 0 && (
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+              <span className="text-white text-xs font-bold">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            </div>
+          )}
         </button>
       </div>
       
-      {/* Chat Window Component */}
-      {isOpen && <ChatWindow isOpen={isOpen} onClose={handleCloseChat} />}
+      {/* หน้าต่างแชท */}
+      {isOpen && (
+        <ChatWindow 
+          isOpen={isOpen} 
+          onClose={handleCloseChat} 
+        />
+      )}
     </>
   )
 }

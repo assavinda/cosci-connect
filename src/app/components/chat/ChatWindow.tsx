@@ -1,120 +1,186 @@
-'use client'
+'use client';
+
 import Link from "next/link";
-import React, { useState, useRef, useEffect } from "react"
+import React, { useState, useRef, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import axios from "axios";
+import { format } from "date-fns";
+import { th } from "date-fns/locale";
+import Loading from "../common/Loading";
 
-// ข้อมูลตัวอย่างสำหรับการแสดงผล
-const sampleMessages = [
-  {
-    id: 1,
-    name: "จอห์น โด",
-    lastMessage: "สวัสดีครับ เกี่ยวกับโปรเจกต์เว็บแอพที่คุยกันไว้...",
-    timestamp: "12:30",
-    avatar: "/placeholder-avatar.png",
-    unread: true,
-  },
-  {
-    id: 2,
-    name: "มาริสา อิ่มสุข",
-    lastMessage: "เรื่องแบบจำลอง 3 มิติเสร็จแล้วค่ะ",
-    timestamp: "10:45",
-    avatar: "/placeholder-avatar.png",
-    unread: false,
-  },
-  {
-    id: 3,
-    name: "ดร.สมชาย วิทยา",
-    lastMessage: "นัดประชุมพรุ่งนี้เวลา 14.00 น. นะครับ",
-    timestamp: "เมื่อวาน",
-    avatar: "/placeholder-avatar.png",
-    unread: false,
-  },
-  {
-    id: 4,
-    name: "วรรณา สมบูรณ์",
-    lastMessage: "งานออกแบบโลโก้เสร็จแล้วครับ รบกวนช่วยดูให้ด้วย",
-    timestamp: "เมื่อวาน",
-    avatar: "/placeholder-avatar.png",
-    unread: true,
-  },
-];
+interface ChatMessage {
+  id: string;
+  sender: 'me' | 'other';
+  content: string;
+  timestamp: string;
+  isRead: boolean;
+}
 
-// ข้อมูลตัวอย่างสำหรับการแชทกับ user ที่เลือก
-const sampleChatHistory = [
-  {
-    id: 1,
-    sender: "other",
-    message: "สวัสดีครับ ผมสนใจโปรเจกต์ของคุณมากครับ",
-    timestamp: "12:10",
-  },
-  {
-    id: 2,
-    sender: "me",
-    message: "สวัสดีครับ ขอบคุณที่สนใจครับ คุณมีประสบการณ์ด้านไหนบ้างครับ?",
-    timestamp: "12:15",
-  },
-  {
-    id: 3,
-    sender: "other",
-    message: "ผมมีประสบการณ์ทำเว็บแอพพลิเคชั่นมา 3 ปีครับ ถนัดด้าน React, Next.js และ Node.js ครับ",
-    timestamp: "12:20",
-  },
-  {
-    id: 4,
-    sender: "other",
-    message: "เคยทำโปรเจกต์ที่คล้ายกันให้กับอาจารย์ท่านอื่นด้วยครับ",
-    timestamp: "12:21",
-  },
-  {
-    id: 5,
-    sender: "me",
-    message: "เยี่ยมเลยครับ งั้นเรานัดคุยรายละเอียดเพิ่มเติมไหมครับ?",
-    timestamp: "12:25",
-  },
-  {
-    id: 6,
-    sender: "other",
-    message: "ได้ครับ ผมว่างวันพรุ่งนี้ช่วงบ่ายครับ",
-    timestamp: "12:28",
-  },
-  {
-    id: 7,
-    sender: "me",
-    message: "โอเคครับ งั้นพรุ่งนี้บ่าย 2 โมงนะครับ",
-    timestamp: "12:30",
-  },
-];
+interface ChatContact {
+  userId: string;
+  name: string;
+  profileImageUrl: string | null;
+  lastMessage: string;
+  timestamp: string; 
+  unreadCount: number;
+}
 
 interface ChatWindowProps {
   isOpen: boolean;
   onClose: () => void;
+  recipientId?: string;
+  recipientName?: string;
+  initialView?: 'inbox' | 'chat';
 }
 
-function ChatWindow({ isOpen, onClose }: ChatWindowProps) {
-  const [view, setView] = useState("inbox"); // "inbox" or "chat"
-  const [selectedChat, setSelectedChat] = useState(null);
-  const [messages, setMessages] = useState(sampleMessages);
-  const [chatHistory, setChatHistory] = useState(sampleChatHistory);
+function ChatWindow({ 
+  isOpen, 
+  onClose, 
+  recipientId, 
+  recipientName,
+  initialView = 'inbox' 
+}: ChatWindowProps) {
+  const { data: session, status } = useSession();
+  const [view, setView] = useState<'inbox' | 'chat'>(initialView);
+  const [selectedChat, setSelectedChat] = useState<ChatContact | null>(null);
+  const [chatList, setChatList] = useState<ChatContact[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const chatEndRef = useRef(null);
-  const chatWindowRef = useRef(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatWindowRef = useRef<HTMLDivElement>(null);
+  
+  // โหลดรายการแชททั้งหมดเมื่อเปิดหน้าต่าง
+  useEffect(() => {
+    if (isOpen && status === 'authenticated') {
+      if (initialView === 'inbox') {
+        fetchChatList();
+      } else if (initialView === 'chat' && recipientId) {
+        // เปิดแชทกับผู้รับที่ระบุโดยตรง
+        fetchMessages(recipientId, recipientName);
+      }
+    }
+  }, [isOpen, status, initialView, recipientId, recipientName]);
 
-  // เมธอดสำหรับส่งข้อความใหม่
-  const sendMessage = () => {
-    if (newMessage.trim() === "") return;
+  // ดึงรายการแชททั้งหมด
+  const fetchChatList = async () => {
+    setLoading(true);
+    setError(null);
     
-    // สร้างข้อความใหม่
-    const newChatMessage = {
-      id: chatHistory.length + 1,
-      sender: "me",
-      message: newMessage,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
+    try {
+      const response = await axios.get('/api/messages');
+      setChatList(response.data.chatList || []);
+    } catch (err) {
+      console.error('Error fetching chat list:', err);
+      setError('ไม่สามารถโหลดรายการแชทได้');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ดึงข้อความในแชทกับผู้ใช้ที่กำหนด
+  const fetchMessages = async (userId: string, userName?: string) => {
+    setLoading(true);
+    setError(null);
     
-    // อัปเดตประวัติการแชท
-    setChatHistory([...chatHistory, newChatMessage]);
+    try {
+      const response = await axios.get(`/api/messages?userId=${userId}`);
+      
+      setMessages(response.data.messages || []);
+      
+      if (response.data.otherUser) {
+        setSelectedChat({
+          userId: response.data.otherUser.id,
+          name: response.data.otherUser.name,
+          profileImageUrl: response.data.otherUser.profileImageUrl,
+          lastMessage: response.data.messages.length > 0 ? 
+            response.data.messages[response.data.messages.length - 1].content : '',
+          timestamp: response.data.messages.length > 0 ? 
+            response.data.messages[response.data.messages.length - 1].timestamp : new Date().toISOString(),
+          unreadCount: 0
+        });
+      } else if (userId && userName) {
+        // ใช้ข้อมูลที่ส่งมาจาก props ในกรณีที่ไม่มีข้อมูลจาก API
+        setSelectedChat({
+          userId: userId,
+          name: userName,
+          profileImageUrl: null,
+          lastMessage: '',
+          timestamp: new Date().toISOString(),
+          unreadCount: 0
+        });
+      }
+      
+      setView('chat');
+    } catch (err) {
+      console.error('Error fetching messages:', err);
+      setError('ไม่สามารถโหลดข้อความแชทได้');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ส่งข้อความใหม่
+  const sendMessage = async () => {
+    if (newMessage.trim() === "" || !selectedChat) return;
     
-    // ล้างฟอร์ม
-    setNewMessage("");
+    try {
+      const response = await axios.post('/api/messages', {
+        receiverId: selectedChat.userId,
+        content: newMessage
+      });
+      
+      if (response.data.success) {
+        // เพิ่มข้อความใหม่ลงในรายการข้อความ
+        setMessages([...messages, response.data.message]);
+        
+        // อัปเดตข้อความล่าสุดในรายการแชท
+        updateChatListWithNewMessage(selectedChat.userId, newMessage);
+        
+        // ล้างฟอร์ม
+        setNewMessage("");
+      }
+    } catch (err) {
+      console.error('Error sending message:', err);
+      alert('ไม่สามารถส่งข้อความได้ กรุณาลองใหม่อีกครั้ง');
+    }
+  };
+  
+  // อัปเดตรายการแชทเมื่อมีข้อความใหม่
+  const updateChatListWithNewMessage = (userId: string, content: string) => {
+    setChatList(prevList => {
+      // ค้นหาแชทที่ต้องการอัปเดต
+      const existingChatIndex = prevList.findIndex(chat => chat.userId === userId);
+      
+      if (existingChatIndex >= 0) {
+        // สร้างรายการแชทใหม่โดยอัปเดตข้อความล่าสุด
+        const updatedList = [...prevList];
+        updatedList[existingChatIndex] = {
+          ...updatedList[existingChatIndex],
+          lastMessage: content,
+          timestamp: new Date().toISOString(),
+          unreadCount: 0 // เป็นข้อความที่เราส่งเอง จึงไม่มีการแจ้งเตือน
+        };
+        
+        // ย้ายแชทนี้ไปด้านบนสุด
+        const chat = updatedList.splice(existingChatIndex, 1)[0];
+        return [chat, ...updatedList];
+      } else {
+        // ถ้าไม่มีแชทนี้ในรายการ ให้สร้างใหม่
+        if (selectedChat) {
+          const newChat = {
+            ...selectedChat,
+            lastMessage: content,
+            timestamp: new Date().toISOString(),
+            unreadCount: 0
+          };
+          return [newChat, ...prevList];
+        }
+      }
+      
+      return prevList;
+    });
   };
 
   // เลื่อนไปยังข้อความล่าสุดเมื่อมีข้อความใหม่
@@ -122,30 +188,23 @@ function ChatWindow({ isOpen, onClose }: ChatWindowProps) {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [chatHistory]);
+  }, [messages]);
 
   // จัดการกับการกดปุ่ม Enter
-  const handleKeyPress = (e) => {
+  const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
   };
 
-  // เปิดหน้าต่างแชทเมื่อคลิกที่ InboxButton
+  // จัดการกับการคลิกนอกหน้าต่างแชทเพื่อปิด
   useEffect(() => {
-    const inboxButton = document.querySelector('button[class*="bg-white/80"]');
-    if (inboxButton) {
-      // ไม่ต้องจัดการกับปุ่ม InboxButton ที่นี่
-      // เพราะการเปิดปิดถูกควบคุมโดย InboxButton component แล้ว
-    }
-
-    // จัดการกับการคลิกนอกหน้าต่างแชทเพื่อปิด
-    const handleClickOutside = (event) => {
-      if (chatWindowRef.current && !chatWindowRef.current.contains(event.target)) {
-        // ตรวจสอบว่าคลิกที่ InboxButton หรือไม่
-        const isInboxButton = event.target.closest('button[class*="bg-white/80"]');
-        if (!isInboxButton && isOpen) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (chatWindowRef.current && !chatWindowRef.current.contains(event.target as Node)) {
+        // ตรวจสอบว่าคลิกที่ปุ่ม "ส่งข้อความ" หรือไม่
+        const isSendMessageButton = (event.target as Element).closest('button[aria-label="ส่งข้อความ"]');
+        if (!isSendMessageButton && isOpen) {
           onClose();
         }
       }
@@ -159,22 +218,50 @@ function ChatWindow({ isOpen, onClose }: ChatWindowProps) {
   }, [isOpen, onClose]);
 
   // แสดงหน้าแชทกับผู้ใช้ที่เลือก
-  const openChat = (chatId) => {
-    const selectedChatData = messages.find(msg => msg.id === chatId);
-    setSelectedChat(selectedChatData);
+  const openChat = (chat: ChatContact) => {
+    setSelectedChat(chat);
+    fetchMessages(chat.userId);
     setView("chat");
-    
-    // อัปเดตสถานะการอ่านข้อความ
-    setMessages(messages.map(msg => 
-      msg.id === chatId ? { ...msg, unread: false } : msg
-    ));
   };
 
   // กลับไปหน้า inbox
   const backToInbox = () => {
     setView("inbox");
     setSelectedChat(null);
+    fetchChatList(); // รีเฟรชรายการแชท
   };
+
+  // ฟอร์แมตวันที่เวลาให้อ่านง่าย
+  const formatTime = (timestamp: string) => {
+    try {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      // ถ้าเป็นวันนี้ ให้แสดงเวลาเท่านั้น
+      if (date >= today) {
+        return format(date, 'HH:mm', { locale: th });
+      } 
+      // ถ้าเป็นเมื่อวาน ให้แสดง "เมื่อวาน"
+      else if (date >= yesterday) {
+        return 'เมื่อวาน';
+      } 
+      // นอกจากนั้น ให้แสดงวันที่
+      else {
+        return format(date, 'dd/MM/yyyy', { locale: th });
+      }
+    } catch (error) {
+      return "ไม่ระบุเวลา";
+    }
+  };
+
+  // ถ้ายังไม่ได้เข้าสู่ระบบ ให้แสดงข้อความและซ่อนหน้าต่างแชท
+  if (status === 'unauthenticated') {
+    onClose();
+    return null;
+  }
 
   return (
     <div 
@@ -205,17 +292,17 @@ function ChatWindow({ isOpen, onClose }: ChatWindowProps) {
               </svg>
             </button>
           )}
-        {view === "inbox" ? 
-        (<h3 className="font-medium text-s ml-1">
-            ข้อความ
-        </h3>) : (
-        <Link href={`/user/userid`}>
-            <h3 className="font-medium text-s ml-1 cursor-pointer">
-                {selectedChat?.name}
+          {view === "inbox" ? (
+            <h3 className="font-medium text-s ml-1">
+              ข้อความ
             </h3>
-        </Link>
-        
-        )}
+          ) : (
+            <Link href={`/user/${selectedChat?.userId ? (selectedChat.userId) : ''}`}>
+              <h3 className="font-medium text-s ml-1 cursor-pointer">
+                {selectedChat?.name || recipientName || "ข้อความ"}
+              </h3>
+            </Link>
+          )}
         </div>
         <button 
           className="p-1 rounded-full hover:bg-primary-blue-400" 
@@ -240,35 +327,58 @@ function ChatWindow({ isOpen, onClose }: ChatWindowProps) {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
-        {view === "inbox" ? (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center h-full">
+            <Loading size="medium" color="primary" />
+            <p className="mt-2 text-gray-500 text-sm">กำลังโหลดข้อความ...</p>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center h-full p-4">
+            <p className="text-red-500 text-center">{error}</p>
+            <button 
+              className="mt-2 text-primary-blue-500 hover:underline"
+              onClick={() => view === 'inbox' ? fetchChatList() : fetchMessages(selectedChat?.userId || recipientId || '')}
+            >
+              ลองใหม่
+            </button>
+          </div>
+        ) : view === "inbox" ? (
           // Inbox View
           <div className="p-0">
-            {messages.length > 0 ? (
-              messages.map((message) => (
+            {chatList.length > 0 ? (
+              chatList.map((chat) => (
                 <div 
-                  key={message.id} 
-                  className={`p-3 flex items-center gap-3 cursor-pointer border-b border-gray-100 hover:bg-gray-500/5 transition-colors relative ${message.unread ? 'bg-primary-blue-400/10' : ''}`}
-                  onClick={() => openChat(message.id)}
+                  key={chat.userId} 
+                  className={`p-3 flex items-center gap-3 cursor-pointer border-b border-gray-100 hover:bg-gray-500/5 transition-colors relative ${chat.unreadCount > 0 ? 'bg-primary-blue-400/10' : ''}`}
+                  onClick={() => openChat(chat)}
                 >
-                  <div className="size-10 bg-gray-300 rounded-full flex-shrink-0 relative">
-                    {/* ใช้รูปโปรไฟล์จริงเมื่อมีข้อมูล */}
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary-blue-400 to-primary-blue-600 opacity-20"></div>
+                  <div className="size-10 bg-gray-300 rounded-full flex-shrink-0 relative overflow-hidden">
+                    {chat.profileImageUrl ? (
+                      <img 
+                        src={chat.profileImageUrl} 
+                        alt={chat.name} 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary-blue-400 to-primary-blue-600 flex items-center justify-center text-white font-medium">
+                        {chat.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center">
-                      <p className="font-medium truncate">{message.name}</p>
-                      <span className="text-xs text-gray-500">{message.timestamp}</span>
+                      <p className="font-medium truncate">{chat.name}</p>
+                      <span className="text-xs text-gray-500">{formatTime(chat.timestamp)}</span>
                     </div>
                     <div className="flex gap-2">
-                        <p className="text-sm text-gray-600 truncate">{message.lastMessage}</p>
-                        {message.unread && (
-                            <div className="size-fit px-2 bg-red-500 rounded-full">
-                                <p className="text-xs text-white font-medium">
-                                    {/* จำนวนข้อความที่ยังไม่ได้อ่านของแชทนี้ */}
-                                    1
-                                </p>
-                            </div>
-                        )}
+                      <p className="text-sm text-gray-600 truncate">{chat.lastMessage}</p>
+                      {chat.unreadCount > 0 && (
+                        <div className="size-fit px-2 bg-red-500 rounded-full">
+                          <p className="text-xs text-white font-medium">
+                            {chat.unreadCount}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -282,23 +392,36 @@ function ChatWindow({ isOpen, onClose }: ChatWindowProps) {
         ) : (
           // Chat View
           <div className="p-3 flex flex-col gap-1 h-full">
-            {chatHistory.map((msg) => (
-              <div 
-                key={msg.id} 
-                className={`flex place-items-end justify-end ${msg.sender === "me" ? "flex-row" : "flex-row-reverse"}`}
-              >
-                <p className={`text-xs text-gray-500 mb-2 mx-1`}>
-                    {msg.timestamp}
-                </p>
-                <div className={`max-w-[75%] p-2 rounded-2xl mb-2 ${ 
-                  msg.sender === "me" 
-                    ? "bg-primary-blue-400 text-white rounded-br-none" 
-                    : "bg-gray-200 text-gray-800 rounded-tl-none"
-                }`}>
-                  <p>{msg.message}</p>
+            {messages.length > 0 ? (
+              messages.map((msg) => (
+                <div 
+                  key={msg.id} 
+                  className={`flex place-items-end ${msg.sender === "me" ? "justify-end" : "justify-start"}`}
+                >
+                  {msg.sender === "other" && (
+                    <p className={`text-xs text-gray-500 mb-2 mx-1`}>
+                      {formatTime(msg.timestamp)}
+                    </p>
+                  )}
+                  <div className={`max-w-[75%] p-2 rounded-2xl mb-2 ${ 
+                    msg.sender === "me" 
+                      ? "bg-primary-blue-400 text-white rounded-br-none" 
+                      : "bg-gray-200 text-gray-800 rounded-bl-none"
+                  }`}>
+                    <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                  </div>
+                  {msg.sender === "me" && (
+                    <p className={`text-xs text-gray-500 mb-2 mx-1`}>
+                      {formatTime(msg.timestamp)}
+                    </p>
+                  )}
                 </div>
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                <p>ยังไม่มีข้อความ เริ่มส่งข้อความกันเถอะ</p>
               </div>
-            ))}
+            )}
             <div ref={chatEndRef} />
           </div>
         )}
@@ -317,8 +440,9 @@ function ChatWindow({ isOpen, onClose }: ChatWindowProps) {
               onKeyDown={handleKeyPress}
             />
             <button 
-              className="p-2 bg-primary-blue-500 text-white rounded-xl hover:bg-primary-blue-400 transition-colors"
+              className="p-2 bg-primary-blue-500 text-white rounded-xl hover:bg-primary-blue-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={sendMessage}
+              disabled={!newMessage.trim() || !selectedChat}
             >
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
@@ -341,5 +465,4 @@ function ChatWindow({ isOpen, onClose }: ChatWindowProps) {
     </div>
   );
 }
-
-export default ChatWindow
+export default ChatWindow;

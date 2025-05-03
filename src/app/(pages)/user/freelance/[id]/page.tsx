@@ -7,6 +7,7 @@ import axios from 'axios';
 import Link from 'next/link';
 import Loading from '../../../../components/common/Loading';
 import HireButton from '../../../../components/buttons/HireButton';
+import SendMessageButton from '../../../../components/buttons/SendMessageButton';
 import { usePusher } from '../../../../../providers/PusherProvider';
 
 export default function FreelancerProfilePage() {
@@ -135,14 +136,25 @@ export default function FreelancerProfilePage() {
           กลับไปหน้าค้นหาฟรีแลนซ์
         </Link>
         
-        {/* เพิ่มปุ่ม HireButton ถ้าผู้ใช้ไม่ใช่ student และเป็นเจ้าของโปรเจกต์ */}
-        {session?.user?.role !== 'student' && session?.user?.id !== freelancerId && (
-          <HireButton 
-            freelancerId={freelancerId} 
-            freelancerName={freelancer.name} 
-            freelancerSkills={freelancer.skills || []} 
-          />
-        )}
+        {/* เพิ่มปุ่ม HireButton และ SendMessageButton ตามสิทธิ์ */}
+        <div className="flex gap-2">
+            {/* ถ้าเป็นผู้ใช้ที่ล็อกอินแล้วและไม่ใช่ตัวเอง ให้แสดงปุ่ม SendMessageButton */}
+            {session?.user?.id && session?.user?.id !== freelancerId && (
+              <SendMessageButton 
+                recipientId={freelancerId} 
+                recipientName={freelancer.name} 
+              />
+            )}
+            
+            {/* ถ้าผู้ใช้ไม่ใช่ student และไม่ใช่ตัวเอง ให้แสดงปุ่ม HireButton */}
+            {session?.user?.role !== 'student' && session?.user?.id !== freelancerId && (
+              <HireButton 
+                freelancerId={freelancerId} 
+                freelancerName={freelancer.name} 
+                freelancerSkills={freelancer.skills || []} 
+              />
+            )}
+        </div>
       </div>
 
       {/* ข้อมูลฟรีแลนซ์ */}
