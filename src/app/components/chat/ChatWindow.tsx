@@ -7,6 +7,7 @@ import axios from "axios";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
 import Loading from "../common/Loading";
+import { usePusher } from "../../../providers/PusherProvider";
 
 interface ChatMessage {
   id: string;
@@ -51,6 +52,13 @@ function ChatWindow({
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatWindowRef = useRef<HTMLDivElement>(null);
   
+  // เพิ่ม: ใช้ Pusher hooks สำหรับการแชทแบบเรียลไทม์
+  const { 
+    subscribeToChatMessages, 
+    subscribeToChatListUpdates,
+    subscribeToMessageReadUpdates
+  } = usePusher();
+  
   // โหลดรายการแชททั้งหมดเมื่อเปิดหน้าต่าง
   useEffect(() => {
     if (isOpen && status === 'authenticated') {
@@ -62,6 +70,76 @@ function ChatWindow({
       }
     }
   }, [isOpen, status, initialView, recipientId, recipientName]);
+
+  // เพิ่ม: รับข้อความแชทใหม่แบบเรียลไทม์
+  useEffect(() => {
+    if (!session?.user?.id || !isOpen) return;
+    
+    const userId = session.user.id;
+    
+    // ฟังก์ชันสำหรับรับข้อความใหม่
+    const handleNewMessage = (data: any) => {
+      console.log('📨 New message received:', data);
+      
+      if (data.message) {
+        // ตรวจสอบว่าเป็นแชทกับผู้ส่งที่กำลังแสดงอยู่หรือไม่
+        if (view === 'chat' && selectedChat?.userId === data.senderId) {
+          // เพิ่มข้อความใหม่เข้าไปในรายการ
+          setMessages(prevMessages => [
+            ...prevMessages,
+            {
+              id: data.message.id,
+              content: data.message.content,
+              sender: 'other',
+              timestamp: data.message.timestamp,
+              isRead: false
+            }
+          ]);
+          
+          // ทำเครื่องหมายว่าอ่านแล้วในทันที เพราะผู้ใช้กำลังดูแชทนี้อยู่
+          markAsRead(data.senderId);
+        } else {
+          // ถ้าไม่ได้อยู่ในแชทกับผู้ส่ง ให้อัปเดตรายการแชทเมื่อมีการเปลี่ยนแปลง
+          fetchChatList();
+        }
+      }
+    };
+    
+    // ฟังก์ชันสำหรับรับการอัปเดตรายการแชท
+    const handleChatListUpdate = (data: any) => {
+      console.log('📋 Chat list updated:', data);
+      fetchChatList();
+    };
+    
+    // ฟังก์ชันสำหรับรับการอัปเดตสถานะการอ่านข้อความ
+    const handleMessageRead = (data: any) => {
+      console.log('✓ Messages marked as read by:', data.by);
+      
+      // อัปเดตสถานะการอ่านข้อความที่แสดงอยู่
+      if (view === 'chat' && selectedChat?.userId === data.by) {
+        setMessages(prevMessages => 
+          prevMessages.map(msg => 
+            msg.sender === 'me' ? { ...msg, isRead: true } : msg
+          )
+        );
+      }
+    };
+    
+    // ลงทะเบียนรับข้อความใหม่
+    const unsubscribeChatMessages = subscribeToChatMessages(userId, handleNewMessage);
+    
+    // ลงทะเบียนรับการอัปเดตรายการแชท
+    const unsubscribeChatList = subscribeToChatListUpdates(userId, handleChatListUpdate);
+    
+    // ลงทะเบียนรับการอัปเดตสถานะการอ่านข้อความ
+    const unsubscribeMessageRead = subscribeToMessageReadUpdates(userId, handleMessageRead);
+    
+    return () => {
+      unsubscribeChatMessages();
+      unsubscribeChatList();
+      unsubscribeMessageRead();
+    };
+  }, [session?.user?.id, isOpen, view, selectedChat, subscribeToChatMessages, subscribeToChatListUpdates, subscribeToMessageReadUpdates]);
 
   // ดึงรายการแชททั้งหมด
   const fetchChatList = async () => {
@@ -229,6 +307,15 @@ function ChatWindow({
     setView("inbox");
     setSelectedChat(null);
     fetchChatList(); // รีเฟรชรายการแชท
+  };
+
+  // ทำเครื่องหมายว่าอ่านข้อความแล้ว
+  const markAsRead = async (senderId: string) => {
+    try {
+      await axios.patch('/api/messages', { senderId });
+    } catch (err) {
+      console.error('Error marking messages as read:', err);
+    }
   };
 
   // ฟอร์แมตวันที่เวลาให้อ่านง่าย
@@ -411,9 +498,17 @@ function ChatWindow({
                     <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                   </div>
                   {msg.sender === "me" && (
-                    <p className={`text-xs text-gray-500 mb-2 mx-1`}>
-                      {formatTime(msg.timestamp)}
-                    </p>
+                    <div className="flex flex-col items-end mb-2 mx-1">
+                      <p className="text-xs text-gray-500">
+                        {formatTime(msg.timestamp)}
+                      </p>
+                      {/* สถานะการอ่าน */}
+                      {msg.isRead ? (
+                        <p className="text-xs text-primary-blue-500">อ่านแล้ว</p>
+                      ) : (
+                        <p className="text-xs text-gray-400">ส่งแล้ว</p>
+                      )}
+                    </div>
                   )}
                 </div>
               ))

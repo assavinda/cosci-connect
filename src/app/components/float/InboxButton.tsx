@@ -3,12 +3,16 @@ import React, { useEffect, useState } from "react";
 import ChatWindow from "../chat/ChatWindow";
 import axios from 'axios';
 import { useSession } from "next-auth/react";
+import { usePusher } from "../../../providers/PusherProvider";
 
 function InboxButton() {
   const { data: session, status } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  
+  // ใช้ Pusher hook
+  const { subscribeToChatListUpdates } = usePusher();
 
   // เช็คจำนวนข้อความที่ยังไม่ได้อ่านเมื่อล็อกอินแล้ว
   useEffect(() => {
@@ -31,6 +35,28 @@ function InboxButton() {
       return () => clearInterval(interval);
     }
   }, [status, isOpen]);
+  
+  // เพิ่ม: รับการอัปเดตข้อความใหม่แบบเรียลไทม์
+  useEffect(() => {
+    if (status !== 'authenticated' || !session?.user?.id) return;
+    
+    // ฟังก์ชันสำหรับรับการอัปเดตรายการแชท
+    const handleChatListUpdate = (data: any) => {
+      console.log('📋 Chat list updated (InboxButton):', data);
+      
+      // อัปเดตจำนวนข้อความที่ยังไม่ได้อ่าน
+      if (!isOpen) { // อัปเดตเฉพาะเมื่อไม่ได้เปิดหน้าต่างแชท
+        fetchUnreadCount();
+      }
+    };
+    
+    // ลงทะเบียนรับการอัปเดตรายการแชท
+    const unsubscribe = subscribeToChatListUpdates(session.user.id, handleChatListUpdate);
+    
+    return () => {
+      unsubscribe();
+    };
+  }, [status, session?.user?.id, isOpen, subscribeToChatListUpdates]);
 
   // ดึงจำนวนข้อความที่ยังไม่ได้อ่าน
   const fetchUnreadCount = async () => {
@@ -119,9 +145,9 @@ function InboxButton() {
             />
           </svg>
           
-          {/* แสดงจำนวนข้อความที่ยังไม่ได้อ่าน */}
+          {/* แสดงจำนวนข้อความที่ยังไม่ได้อ่าน (แบบเรียลไทม์) */}
           {unreadCount > 0 && (
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center animate-pulse">
               <span className="text-white text-xs font-bold">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>

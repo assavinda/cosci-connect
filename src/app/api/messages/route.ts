@@ -5,6 +5,7 @@ import connectToDatabase from '@/libs/mongodb';
 import Message from '@/models/Message';
 import User from '@/models/User';
 import mongoose from 'mongoose';
+import { triggerChatMessage, triggerMessageRead } from '@/libs/pusher';
 
 // GET - ดึงรายการแชทของผู้ใช้
 export async function GET(req: NextRequest) {
@@ -50,10 +51,19 @@ export async function GET(req: NextRequest) {
       .exec();
       
       // ทำเครื่องหมายว่าอ่านแล้วสำหรับข้อความที่ยังไม่ได้อ่าน
-      await Message.updateMany(
-        { senderId: otherUserId, receiverId: user._id, isRead: false },
-        { isRead: true }
+      const unreadMessages = messages.filter(
+        msg => msg.senderId.toString() === otherUserId && !msg.isRead
       );
+      
+      if (unreadMessages.length > 0) {
+        await Message.updateMany(
+          { senderId: otherUserId, receiverId: user._id, isRead: false },
+          { isRead: true }
+        );
+        
+        // แจ้งผู้ส่งว่าข้อความถูกอ่านแล้วผ่าน Pusher
+        await triggerMessageRead(otherUserId, user._id.toString());
+      }
       
       // ค้นหาข้อมูลผู้ใช้อีกฝ่าย
       const otherUser = await User.findById(otherUserId).select('name profileImageUrl').lean();
@@ -224,6 +234,26 @@ export async function POST(req: NextRequest) {
     // บันทึกข้อความลงฐานข้อมูล
     await message.save();
     
+    // เตรียมข้อมูลสำหรับ Pusher
+    const messagePayload = {
+      id: message._id.toString(),
+      content: message.content,
+      sender: {
+        id: user._id.toString(),
+        name: user.name,
+        profileImageUrl: user.profileImageUrl
+      },
+      timestamp: message.createdAt,
+      isRead: message.isRead
+    };
+    
+    // ส่งข้อความผ่าน Pusher ไปยังผู้รับ
+    await triggerChatMessage(
+      user._id.toString(),
+      data.receiverId,
+      messagePayload
+    );
+    
     return NextResponse.json({
       success: true,
       message: {
@@ -274,14 +304,21 @@ export async function PATCH(req: NextRequest) {
     
     // ทำเครื่องหมายว่าอ่านแล้วสำหรับข้อความจากผู้ส่งที่ระบุ
     if (data.senderId && mongoose.Types.ObjectId.isValid(data.senderId)) {
-      await Message.updateMany(
+      // อัปเดตข้อความในฐานข้อมูล
+      const result = await Message.updateMany(
         { senderId: data.senderId, receiverId: user._id, isRead: false },
         { isRead: true }
       );
       
+      // แจ้งผู้ส่งว่าข้อความถูกอ่านแล้วผ่าน Pusher
+      if (result.modifiedCount > 0) {
+        await triggerMessageRead(data.senderId, user._id.toString());
+      }
+      
       return NextResponse.json({
         success: true,
-        message: 'ทำเครื่องหมายว่าอ่านข้อความแล้ว'
+        message: 'ทำเครื่องหมายว่าอ่านข้อความแล้ว',
+        count: result.modifiedCount
       });
     }
     
@@ -306,6 +343,9 @@ export async function PATCH(req: NextRequest) {
       
       message.isRead = true;
       await message.save();
+      
+      // แจ้งผู้ส่งว่าข้อความถูกอ่านแล้วผ่าน Pusher
+      await triggerMessageRead(message.senderId.toString(), user._id.toString());
       
       return NextResponse.json({
         success: true,

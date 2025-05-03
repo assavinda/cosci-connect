@@ -15,9 +15,13 @@ type PusherContextType = {
   subscribeToUserEvents: (userId: string, eventCallback: (data: any) => void) => () => void;
   subscribeToProjectList: (eventCallback: (data: any) => void) => () => void;
   subscribeToFreelancerList: (eventCallback: (data: any) => void) => () => void;
-  
-  // Modified function for user notifications
   subscribeToUserNotifications: (userId: string, eventCallback: (data: any) => void) => () => void;
+  // เพิ่มฟังก์ชันใหม่สำหรับการรับข้อความแชท
+  subscribeToChatMessages: (userId: string, eventCallback: (data: any) => void) => () => void;
+  // เพิ่มฟังก์ชันใหม่สำหรับการรับการอัปเดตรายการแชท
+  subscribeToChatListUpdates: (userId: string, eventCallback: (data: any) => void) => () => void;
+  // เพิ่มฟังก์ชันใหม่สำหรับการรับการอัปเดตสถานะการอ่านข้อความ
+  subscribeToMessageReadUpdates: (userId: string, eventCallback: (data: any) => void) => () => void;
 };
 
 const PusherContext = createContext<PusherContextType>({
@@ -30,6 +34,9 @@ const PusherContext = createContext<PusherContextType>({
   subscribeToProjectList: () => () => {},
   subscribeToFreelancerList: () => () => {},
   subscribeToUserNotifications: () => () => {},
+  subscribeToChatMessages: () => () => {},
+  subscribeToChatListUpdates: () => () => {},
+  subscribeToMessageReadUpdates: () => () => {},
 });
 
 export const usePusher = () => useContext(PusherContext);
@@ -42,6 +49,8 @@ export default function PusherProvider({ children }: { children: React.ReactNode
   
   // Add a ref to track notification subscriptions - prevent duplicate toasts
   const notificationSubscriptionsRef = useRef<Record<string, boolean>>({});
+  // เพิ่ม ref สำหรับเก็บสถานะการลงทะเบียนแชท
+  const chatSubscriptionsRef = useRef<Record<string, boolean>>({});
 
   useEffect(() => {
     if (
@@ -81,6 +90,7 @@ export default function PusherProvider({ children }: { children: React.ReactNode
       hasInitializedRef.current = false;
       // Also clear notification subscriptions on unmount
       notificationSubscriptionsRef.current = {};
+      chatSubscriptionsRef.current = {};
     };
   }, []);
 
@@ -239,6 +249,67 @@ export default function PusherProvider({ children }: { children: React.ReactNode
     };
   };
 
+  // เพิ่มฟังก์ชันใหม่: รับข้อความแชทแบบเรียลไทม์
+  const subscribeToChatMessages = (userId: string, eventCallback: (data: any) => void) => {
+    if (!pusherClient) return () => {};
+
+    const channelId = `chat-${userId}`;
+    const channel = pusherClient.subscribe(channelId);
+
+    // ตรวจสอบว่าเคยลงทะเบียนกับ channel นี้แล้วหรือไม่
+    if (chatSubscriptionsRef.current[channelId]) {
+      channel.bind('new-message', eventCallback);
+      return () => {
+        channel.unbind('new-message', eventCallback);
+      };
+    }
+
+    // ถ้ายังไม่เคยลงทะเบียน ให้บันทึกว่าได้ลงทะเบียนแล้ว
+    chatSubscriptionsRef.current[channelId] = true;
+
+    // รับข้อความใหม่
+    channel.bind('new-message', (data: any) => {
+      // เรียก callback
+      eventCallback(data);
+    });
+
+    return () => {
+      channel.unbind('new-message', eventCallback);
+      delete chatSubscriptionsRef.current[channelId];
+      pusherClient.unsubscribe(channelId);
+    };
+  };
+
+  // เพิ่มฟังก์ชันใหม่: รับการอัปเดตรายการแชท
+  const subscribeToChatListUpdates = (userId: string, eventCallback: (data: any) => void) => {
+    if (!pusherClient) return () => {};
+
+    const channelId = `user-${userId}`;
+    const channel = pusherClient.subscribe(channelId);
+
+    // รับการอัปเดตรายการแชท
+    channel.bind('chat-list-updated', eventCallback);
+
+    return () => {
+      channel.unbind('chat-list-updated', eventCallback);
+    };
+  };
+
+  // เพิ่มฟังก์ชันใหม่: รับการอัปเดตสถานะการอ่านข้อความ
+  const subscribeToMessageReadUpdates = (userId: string, eventCallback: (data: any) => void) => {
+    if (!pusherClient) return () => {};
+
+    const channelId = `chat-${userId}`;
+    const channel = pusherClient.subscribe(channelId);
+
+    // รับการอัปเดตสถานะการอ่านข้อความ
+    channel.bind('messages-read', eventCallback);
+
+    return () => {
+      channel.unbind('messages-read', eventCallback);
+    };
+  };
+
   // Subscribe to user-specific events (auto on login)
   useEffect(() => {
     if (!pusherClient || !isConnected || !session?.user?.id) return;
@@ -263,6 +334,11 @@ export default function PusherProvider({ children }: { children: React.ReactNode
     const handleProjectInvitation = (data: any) => {
       console.log('📢 Received project invitation:', data);
     };
+
+    // ฟังก์ชันรับการอัปเดตรายการแชท
+    const handleChatListUpdates = (data: any) => {
+      console.log('📝 Chat list updated:', data);
+    };
     
     // ลงทะเบียนรับการแจ้งเตือนส่วนตัว
     const userChannel = pusherClient.subscribe(`user-${userId}`);
@@ -279,12 +355,16 @@ export default function PusherProvider({ children }: { children: React.ReactNode
       userChannel.bind('project-request', handleProjectRequest);
     }
     
+    // ฟังการอัปเดตรายการแชท
+    userChannel.bind('chat-list-updated', handleChatListUpdates);
+    
     // ช่องทางรับการแจ้งเตือนทั่วไป ไม่จำเป็นต้องลงทะเบียนที่นี่เพื่อหลีกเลี่ยงการซ้ำซ้อน
     // เนื่องจากจะมีการเรียกใช้ subscribeToUserNotifications ในส่วนอื่นๆ ของแอปอยู่แล้ว
 
     return () => {
       // ยกเลิกการฟังทั้งหมด
       userChannel.unbind('project-status-changed', handleProjectStatusChange);
+      userChannel.unbind('chat-list-updated', handleChatListUpdates);
       
       if (isFreelancer) {
         userChannel.unbind('project-invitation', handleProjectInvitation);
@@ -308,6 +388,9 @@ export default function PusherProvider({ children }: { children: React.ReactNode
         subscribeToProjectList,
         subscribeToFreelancerList,
         subscribeToUserNotifications,
+        subscribeToChatMessages,
+        subscribeToChatListUpdates,
+        subscribeToMessageReadUpdates,
       }}
     >
       {children}

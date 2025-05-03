@@ -64,7 +64,6 @@ export async function triggerStatusChange(projectId: string, newStatus: string, 
   }
 }
 
-// ฟังก์ชันส่งการอัปเดตข้อมูลฟรีแลนซ์
 export async function triggerFreelancerUpdate(freelancerId: string, freelancerData: any) {
   try {
     await pusherServer.trigger('freelancer-updates', `freelancer-${freelancerId}-updated`, {
@@ -79,7 +78,6 @@ export async function triggerFreelancerUpdate(freelancerId: string, freelancerDa
   }
 }
 
-// ฟังก์ชันส่งการอัปเดตรายการโปรเจกต์ทั้งหมด
 export async function triggerProjectListUpdate() {
   try {
     await pusherServer.trigger('project-updates', 'project-list-updated', {
@@ -93,7 +91,6 @@ export async function triggerProjectListUpdate() {
   }
 }
 
-// ฟังก์ชันส่งการอัปเดตรายการฟรีแลนซ์ทั้งหมด
 export async function triggerFreelancerListUpdate() {
   try {
     await pusherServer.trigger('freelancer-updates', 'freelancer-list-updated', {
@@ -136,6 +133,49 @@ export async function triggerSystemNotification(message: string, link?: string) 
     return true;
   } catch (error) {
     console.error('Pusher system notification error:', error);
+    return false;
+  }
+}
+
+// เพิ่มฟังก์ชันใหม่: ส่งข้อความแชทแบบเรียลไทม์
+export async function triggerChatMessage(senderId: string, receiverId: string, message: any) {
+  try {
+    // ส่งข้อความไปยังผู้รับ
+    await pusherServer.trigger(`chat-${receiverId}`, 'new-message', {
+      message,
+      senderId,
+      timestamp: new Date().toISOString()
+    });
+    
+    // อัปเดตรายการแชทของผู้รับ
+    await pusherServer.trigger(`user-${receiverId}`, 'chat-list-updated', {
+      sender: {
+        id: senderId,
+        ...message.sender
+      },
+      lastMessage: message.content,
+      timestamp: new Date().toISOString()
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Pusher chat message error:', error);
+    return false;
+  }
+}
+
+// เพิ่มฟังก์ชันใหม่: อัปเดตสถานะการอ่านข้อความ
+export async function triggerMessageRead(senderId: string, receiverId: string) {
+  try {
+    // แจ้งผู้ส่งว่าข้อความถูกอ่านแล้ว
+    await pusherServer.trigger(`chat-${senderId}`, 'messages-read', {
+      by: receiverId,
+      timestamp: new Date().toISOString()
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Pusher message read error:', error);
     return false;
   }
 }
