@@ -1,5 +1,5 @@
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ProjectManageButtons from "../buttons/ProjectManageButtons";
 
 interface Project {
@@ -13,6 +13,9 @@ interface Project {
   assignedFreelancerName?: string;
   requestToFreelancer?: string;
   freelancersRequested: string[];
+  // เพิ่มฟิลด์ใหม่สำหรับแสดงผลแยกการ์ด
+  requestingFreelancerId?: string;
+  requestingFreelancerName?: string;
 }
 
 interface ProjectManageCardProps {
@@ -42,10 +45,39 @@ function ProjectManageCard({
 }: ProjectManageCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [newProgress, setNewProgress] = useState(progress);
+  const [sliderValue, setSliderValue] = useState(progress); // สำหรับ slider
+  const [hoverValue, setHoverValue] = useState(null); // สำหรับแสดงตัวเลขเมื่อชี้
+  
+  // ปรับค่า newProgress เมื่อค่า progress จาก props เปลี่ยน
+  useEffect(() => {
+    setNewProgress(progress);
+    setSliderValue(progress);
+  }, [progress]);
+  
+  // Function to determine progress color
+  const getProgressColor = (value) => {
+    if (value < 30) return 'bg-red-400';
+    if (value < 70) return 'bg-yellow-400';
+    return 'bg-green-400';
+  };
+  
+  const handleSliderChange = (e) => {
+    const value = parseInt(e.target.value, 10);
+    setSliderValue(value);
+    setNewProgress(value);
+  };
   
   const handleProgressUpdate = () => {
     onUpdateProgress(id, newProgress);
     setIsEditing(false);
+  };
+  
+  // ปุ่มปรับแบบ quick presets
+  const presetValues = [0, 25, 50, 75, 100];
+  
+  const handlePresetClick = (value) => {
+    setSliderValue(value);
+    setNewProgress(value);
   };
 
   // Function to determine if progress editing is allowed
@@ -74,67 +106,117 @@ function ProjectManageCard({
            status}
         </span>
       </div>
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2 mb-2">
         <p className="text-sm text-gray-400">{isFreelancer ? 'โดย' : 'ผู้รับผิดชอบ'}</p>
         <Link href={profileLink}>
-            <p className="text-sm text-gray-600 mb-2 truncate hover:underline hover:text-primary-blue-400">{owner}</p>
+            <p className="text-sm text-primary-blue-500 truncate hover:underline hover:text-primary-blue-400 font-medium">{owner}</p>
         </Link>
       </div>
       
       {/* Progress bar - show for all in_progress, revision and awaiting projects */}
       {(status === 'in_progress' || status === 'revision' || status === 'awaiting') && (
         <>
-          <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
-            <div 
-              className="bg-primary-blue-400 h-2 rounded-full" 
-              style={{ width: `${progress}%` }}
-            ></div>
-          </div>
-          
-          <div className="flex justify-between w-full text-xs text-gray-500">
-            <div>
-              {canEditProgress() && isEditing ? (
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="number" 
-                    min="0" 
+          {canEditProgress() && isEditing ? (
+            <div className="bg-gray-50 rounded-lg p-3 mt-3 border border-gray-200">
+              {/* Progress slider */}
+              <div className="flex items-center mb-3">
+                <div className="relative w-full">
+                  <input
+                    type="range"
+                    min="0"
                     max="100"
-                    value={newProgress}
-                    onChange={(e) => setNewProgress(Number(e.target.value))}
-                    className="w-16 p-1 bg-gray-100 rounded text-xs"
-                  />
-                  <button 
-                    onClick={handleProgressUpdate}
-                    className="text-primary-blue-400 px-2 py-1 rounded text-xs"
-                  >
-                    บันทึก
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setIsEditing(false);
-                      setNewProgress(progress);
+                    step="1"
+                    value={sliderValue}
+                    onChange={handleSliderChange}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-blue-500"
+                    style={{
+                      background: `linear-gradient(to right, ${getProgressColor(sliderValue)} 0%, ${getProgressColor(sliderValue)} ${sliderValue}%, #e5e7eb ${sliderValue}%, #e5e7eb 100%)`
                     }}
-                    className="text-gray-500 px-2 py-1 rounded text-xs"
-                  >
-                    ยกเลิก
-                  </button>
-                </div>
-              ) : (
-                <button 
-                  onClick={() => canEditProgress() && setIsEditing(true)}
-                  className={`flex py-1 items-center gap-1 ${canEditProgress() ? 'hover:text-primary-blue-500 cursor-pointer' : 'cursor-default'}`}
-                >
-                  {progress}%
-                  {canEditProgress() && (
-                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
-                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                    </svg>
+                    onMouseMove={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const x = e.clientX - rect.left;
+                      const percent = Math.min(Math.max(x / rect.width, 0), 1) * 100;
+                      setHoverValue(Math.round(percent));
+                    }}
+                    onMouseLeave={() => setHoverValue(null)}
+                  />
+                  {hoverValue !== null && (
+                    <div 
+                      className="absolute -top-8 px-2 py-1 bg-gray-800 text-white text-xs rounded pointer-events-none"
+                      style={{ left: `calc(${hoverValue}% - 12px)` }}
+                    >
+                      {hoverValue}%
+                    </div>
                   )}
+                </div>
+                <span className="ml-3 text-lg font-semibold text-primary-blue-500 min-w-16 text-center">
+                  {sliderValue}%
+                </span>
+              </div>
+              
+              {/* Quick presets */}
+              <div className="flex justify-between mb-3">
+                {presetValues.map(value => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => handlePresetClick(value)}
+                    className={`px-2 py-1 text-xs rounded-full transition-colors ${
+                      sliderValue === value 
+                        ? 'bg-primary-blue-500 text-white' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {value}%
+                  </button>
+                ))}
+              </div>
+              
+              {/* Action buttons */}
+              <div className="flex justify-end mt-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setSliderValue(progress);
+                    setNewProgress(progress);
+                  }}
+                  className="px-3 py-1.5 text-sm rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                >
+                  ยกเลิก
                 </button>
-              )}
+                <button
+                  type="button"
+                  onClick={handleProgressUpdate}
+                  className="px-3 py-1.5 text-sm rounded-lg bg-primary-blue-500 text-white hover:bg-primary-blue-400 transition-colors"
+                >
+                  บันทึก
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="mt-3">
+              <div className="flex justify-between w-full text-xs text-gray-500 mb-1">
+                {canEditProgress() ? (
+                  <button 
+                    onClick={() => setIsEditing(true)}
+                    className="text-primary-blue-500 hover:text-primary-blue-400 underline"
+                  >
+                    อัพเดต
+                  </button>
+                ) : (
+                  <span>ความคืบหน้า</span>
+                )}
+                <span className="font-medium">{progress}%</span>
+              </div>
+              <div className="relative w-full bg-gray-200 rounded-full h-3">
+                <div 
+                  className={`${getProgressColor(progress)} h-3 rounded-full transition-all duration-500 ease-in-out`} 
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+            </div>
+          )}
         </>
       )}
       

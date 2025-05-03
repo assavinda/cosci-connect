@@ -84,25 +84,51 @@ export async function GET(req: NextRequest) {
       .lean()
       .exec();
     
-    // Map projects to a clean format
-    const mappedProjects = projects.map(project => ({
-      id: project._id.toString(),
-      title: project.title,
-      description: project.description,
-      budget: project.budget,
-      deadline: project.deadline,
-      requiredSkills: project.requiredSkills,
-      ownerName: project.ownerName,
-      owner: project.owner.toString(),
-      status: project.status,
-      progress: project.progress || 0,
-      createdAt: project.createdAt,
-      assignedTo: project.assignedTo ? project.assignedTo.toString() : null,
-      // ต้องแน่ใจว่าส่ง requestToFreelancer กลับไปด้วยเพื่อตรวจสอบที่ frontend
-      requestToFreelancer: project.requestToFreelancer ? project.requestToFreelancer.toString() : null,
-      // เพิ่ม freelancersRequested เพื่อตรวจสอบว่าใครส่งคำขอร่วมงานบ้าง
-      freelancersRequested: project.freelancersRequested ? project.freelancersRequested.map(id => id.toString()) : []
-    }));
+    // ดึงข้อมูลผู้ใช้ที่เกี่ยวข้องกับโปรเจกต์ (ไม่จำเป็นต้องทำการ populate เพราะเราเรียกใช้ lean())
+    const userIds = new Set();
+    
+    // รวบรวม ID ผู้ใช้ทั้งหมดที่เกี่ยวข้อง
+    projects.forEach(project => {
+      if (project.assignedTo) userIds.add(project.assignedTo.toString());
+      if (project.requestToFreelancer) userIds.add(project.requestToFreelancer.toString());
+      project.freelancersRequested.forEach(id => userIds.add(id.toString()));
+    });
+    
+    // ดึงข้อมูลผู้ใช้ทั้งหมดในคำขอเดียว
+    const users = await User.find({
+      _id: { $in: Array.from(userIds).map((id: string) => new mongoose.Types.ObjectId(id)) }
+    }).select('_id name').lean();
+    
+    // สร้าง Map ของ userId => userName
+    const userMap = new Map();
+    users.forEach(user => {
+      userMap.set(user._id.toString(), user.name);
+    });
+    
+    // Map projects to a clean format with user names
+    const mappedProjects = projects.map(project => {
+      const assignedToId = project.assignedTo ? project.assignedTo.toString() : null;
+      const requestToFreelancerId = project.requestToFreelancer ? project.requestToFreelancer.toString() : null;
+      
+      return {
+        id: project._id.toString(),
+        title: project.title,
+        description: project.description,
+        budget: project.budget,
+        deadline: project.deadline,
+        requiredSkills: project.requiredSkills,
+        ownerName: project.ownerName,
+        owner: project.owner.toString(),
+        status: project.status,
+        progress: project.progress || 0,
+        createdAt: project.createdAt,
+        assignedTo: assignedToId,
+        assignedFreelancerName: assignedToId ? userMap.get(assignedToId) || "ฟรีแลนซ์" : null,
+        requestToFreelancer: requestToFreelancerId,
+        requestToFreelancerName: requestToFreelancerId ? userMap.get(requestToFreelancerId) || "ฟรีแลนซ์" : null,
+        freelancersRequested: project.freelancersRequested.map(id => id.toString())
+      };
+    });
     
     // Return response with pagination info
     return NextResponse.json({

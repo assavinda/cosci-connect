@@ -46,12 +46,14 @@ function ProjectManageList({
     
     // สำหรับคำขอฟรีแลนซ์ ใช้ชื่อฟรีแลนซ์ที่ส่งคำขอมา
     if (status === "requests" && project.requestingFreelancerId) {
-      return project.requestingFreelancerName || "ฟรีแลนซ์";
+      return project.requestingFreelancerName || "ฟรีแลนซ์ไม่ระบุชื่อ";
     }
     
     // For project owners with assigned freelancer
-    if (project.assignedTo) {
-      return project.assignedFreelancerName || "ฟรีแลนซ์";
+    if (project.assignedTo && project.assignedFreelancerName) {
+      return project.assignedFreelancerName;
+    } else if (project.assignedTo) {
+      return "ฟรีแลนซ์ที่รับงาน";
     }
     
     // For project owners waiting for freelancer response

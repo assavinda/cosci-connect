@@ -100,88 +100,118 @@ export default function ManageProjectsPage() {
     }
   }, [status, session?.user?.id, subscribeToUserEvents, subscribeToProjectList]);
 
-  // Function to fetch projects from API
-  const fetchProjects = async () => {
-    setLoading(true);
-    setError("");
+  // ฟังก์ชันสำหรับดึงข้อมูลโปรเจกต์และสร้างการ์ดแยกสำหรับฟรีแลนซ์แต่ละคนที่ส่งคำขอ
+const fetchProjects = async () => {
+  setLoading(true);
+  setError("");
 
-    try {
-      const isFreelancer = session?.user?.role === 'student';
-      const userId = session?.user?.id;
+  try {
+    const isFreelancer = session?.user?.role === 'student';
+    const userId = session?.user?.id;
 
-      // Fetch all projects related to the user
-      let response;
+    // Fetch all projects related to the user
+    let response;
+    
+    if (isFreelancer) {
+      // For freelancers, get projects where:
+      // 1. They are assigned to the project
+      // 2. They have been requested by project owners
+      // 3. They have requested to join
+      response = await axios.get('/api/projects', {
+        params: {
+          limit: 100, // Get more projects at once
+          status: 'all', // ดึงทุกสถานะ
+          assignedTo: userId, // Projects assigned to this freelancer
+          requestToFreelancer: userId, // Projects that requested this freelancer
+          freelancerRequested: userId // Projects where freelancer requested to join
+        }
+      });
+    } else {
+      // For teachers/alumni, get projects they own
+      response = await axios.get('/api/projects', {
+        params: {
+          limit: 100,
+          status: 'all', // ดึงทุกสถานะ
+          owner: userId
+        }
+      });
+    }
+
+    // ดึงข้อมูลฟรีแลนซ์เพิ่มเติมสำหรับโปรเจกต์ที่มีคำขอจากฟรีแลนซ์
+    if (!isFreelancer) {
+      // ดึงรายชื่อฟรีแลนซ์ที่เกี่ยวข้องกับโปรเจกต์
+      const userIds = new Set();
       
-      if (isFreelancer) {
-        // For freelancers, get projects where:
-        // 1. They are assigned to the project
-        // 2. They have been requested by project owners
-        // 3. They have requested to join
-        response = await axios.get('/api/projects', {
-          params: {
-            limit: 100, // Get more projects at once
-            status: 'all', // ดึงทุกสถานะ
-            assignedTo: userId, // Projects assigned to this freelancer
-            requestToFreelancer: userId, // Projects that requested this freelancer
-            freelancerRequested: userId // Projects where freelancer requested to join
-          }
-        });
-      } else {
-        // For teachers/alumni, get projects they own
-        response = await axios.get('/api/projects', {
-          params: {
-            limit: 100,
-            status: 'all', // ดึงทุกสถานะ
-            owner: userId
-          }
-        });
-      }
-
-      // ถ้าจำเป็นต้องดึงข้อมูลฟรีแลนซ์เพิ่มเติมสำหรับโปรเจกต์ที่มีคำขอ
-      if (!isFreelancer) {
-        // ดึงข้อมูลเพิ่มเติมของฟรีแลนซ์แต่ละคน
-        const projectsWithFreelancerRequests = response.data.projects.filter(
-          project => project.freelancersRequested && project.freelancersRequested.length > 0
-        );
-        
-        // ถ้ามีโปรเจกต์ที่มีฟรีแลนซ์ส่งคำขอ
-        if (projectsWithFreelancerRequests.length > 0) {
-          // ดึงข้อมูลรายชื่อฟรีแลนซ์ในอีกรีเควส (ในระบบจริงอาจจะต้องทำ API ใหม่)
-          try {
-            // ในตัวอย่างนี้เราสมมติว่ามี API สำหรับดึงข้อมูลฟรีแลนซ์หลายคนพร้อมกัน
-            // ตัดข้อมูลส่วนนี้ออกในกรณีที่ยังไม่มี API รองรับ
-            /*
-            const allFreelancerIds = [...new Set(projectsWithFreelancerRequests.flatMap(
-              project => project.freelancersRequested
-            ))];
-            
-            const freelancerResponse = await axios.get('/api/users/batch', {
-              params: { ids: allFreelancerIds.join(',') }
-            });
-            
-            const freelancersMap = {};
-            freelancerResponse.data.users.forEach(user => {
-              freelancersMap[user.id] = {
-                name: user.name,
-                profileImageUrl: user.profileImageUrl
+      response.data.projects.forEach(project => {
+        if (project.freelancersRequested) {
+          project.freelancersRequested.forEach(id => userIds.add(id));
+        }
+      });
+      
+      // ถ้ามีฟรีแลนซ์ที่ส่งคำขอ ให้ดึงข้อมูลเพิ่มเติม
+      if (userIds.size > 0) {
+        try {
+          const userList = Array.from(userIds);
+          console.log('จำนวนฟรีแลนซ์ที่ต้องดึงข้อมูล:', userList.length);
+          
+          // ในสภาพแวดล้อมจริงควรมี API ที่สามารถดึงข้อมูลผู้ใช้หลายคนในคราวเดียว
+          // แต่สำหรับตัวอย่างนี้เราจะใช้ข้อมูลที่มีอยู่แล้วใน response
+          
+          // สร้าง Map ของ ID และชื่อฟรีแลนซ์
+          const freelancerMap = {};
+          
+          // หาข้อมูลฟรีแลนซ์จากโปรเจกต์ที่มีอยู่แล้ว
+          response.data.projects.forEach(project => {
+            if (project.assignedFreelancerName && project.assignedTo) {
+              freelancerMap[project.assignedTo] = {
+                name: project.assignedFreelancerName,
+                profileImageUrl: null // ในกรณีที่ไม่มีข้อมูลรูปโปรไฟล์
               };
-            });
-            */
-          } catch (error) {
-            console.error("Error fetching freelancer details:", error);
-          }
+            }
+          });
+          
+          // แก้ไขโปรเจกต์ที่มีฟรีแลนซ์ส่งคำขอมา
+          const projectsWithFreelancers = [];
+          
+          response.data.projects.forEach(project => {
+            if (project.status === 'open' && project.freelancersRequested && project.freelancersRequested.length > 0) {
+              // สร้างการ์ดแยกสำหรับฟรีแลนซ์แต่ละคน
+              project.freelancersRequested.forEach(freelancerId => {
+                const freelancerInfo = freelancerMap[freelancerId] || { 
+                  name: `ฟรีแลนซ์ ID: ${freelancerId.substring(0, 5)}...` 
+                };
+                
+                // สร้างออบเจกต์โปรเจกต์ใหม่สำหรับแสดงการ์ดเฉพาะฟรีแลนซ์คนนี้
+                const projectCopy = { ...project };
+                projectCopy.requestingFreelancerId = freelancerId;
+                projectCopy.requestingFreelancerName = freelancerInfo.name;
+                
+                projectsWithFreelancers.push(projectCopy);
+              });
+            } else {
+              // ถ้าไม่มีฟรีแลนซ์ส่งคำขอ หรือไม่ใช่โปรเจกต์เปิด ให้เพิ่มเข้าไปเลย
+              projectsWithFreelancers.push(project);
+            }
+          });
+          
+          // แทนที่ projects ด้วยข้อมูลใหม่ที่มีการแยกการ์ดสำหรับแต่ละฟรีแลนซ์
+          response.data.projects = projectsWithFreelancers;
+        } catch (error) {
+          console.error("ไม่สามารถดึงข้อมูลฟรีแลนซ์ได้:", error);
+          // ถึงแม้จะเกิดข้อผิดพลาด เรายังคงใช้ข้อมูลโปรเจกต์ที่มีอยู่ต่อไปได้
         }
       }
-
-      // Group projects based on their status and role
-      groupProjects(response.data.projects, isFreelancer);
-    } catch (err) {
-      console.error("Error fetching projects:", err);
-      setError("เกิดข้อผิดพลาดในการโหลดข้อมูลโปรเจกต์");
-    } finally {
-      setLoading(false);
     }
-  };
+
+    // Group projects based on their status and role
+    groupProjects(response.data.projects, isFreelancer);
+  } catch (err) {
+    console.error("Error fetching projects:", err);
+    setError("เกิดข้อผิดพลาดในการโหลดข้อมูลโปรเจกต์");
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Function to group projects by status and role
   const groupProjects = (projectList: Project[], isFreelancer: boolean) => {
