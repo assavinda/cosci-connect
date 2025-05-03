@@ -21,11 +21,11 @@ interface ChatContact {
   userId: string;
   name: string;
   profileImageUrl: string | null;
+  role?: string; // เพิ่มฟิลด์ role
   lastMessage: string;
   timestamp: string; 
   unreadCount: number;
 }
-
 interface ChatWindowProps {
   isOpen: boolean;
   onClose: () => void;
@@ -184,11 +184,13 @@ function ChatWindow({
       
       setMessages(response.data.messages || []);
       
+      // ในส่วนของฟังก์ชัน fetchMessages
       if (response.data.otherUser) {
         setSelectedChat({
           userId: response.data.otherUser.id,
           name: response.data.otherUser.name,
           profileImageUrl: response.data.otherUser.profileImageUrl,
+          role: response.data.otherUser.role || 'unknown',  // กำหนดค่าเริ่มต้น
           lastMessage: response.data.messages.length > 0 ? 
             response.data.messages[response.data.messages.length - 1].content : '',
           timestamp: response.data.messages.length > 0 ? 
@@ -196,11 +198,12 @@ function ChatWindow({
           unreadCount: 0
         });
       } else if (userId && userName) {
-        // ใช้ข้อมูลที่ส่งมาจาก props ในกรณีที่ไม่มีข้อมูลจาก API
+        // กรณีไม่มีข้อมูลจาก API
         setSelectedChat({
           userId: userId,
           name: userName,
           profileImageUrl: null,
+          role: 'unknown',  // กำหนดค่าเริ่มต้น
           lastMessage: '',
           timestamp: new Date().toISOString(),
           unreadCount: 0
@@ -414,7 +417,11 @@ function ChatWindow({
               ข้อความ
             </h3>
           ) : (
-            <Link href={`/user/${selectedChat?.userId ? (selectedChat.userId) : ''}`}>
+            <Link href={`/user/${
+              selectedChat?.role === 'student' 
+                ? `freelance/${selectedChat?.userId || ''}` 
+                : `customer/${selectedChat?.userId || ''}`
+            }`}>
               <h3 className="font-medium text-s ml-1 cursor-pointer">
                 {selectedChat?.name || recipientName || "ข้อความ"}
               </h3>
@@ -482,7 +489,7 @@ function ChatWindow({
                       <p className="font-medium truncate">{chat.name}</p>
                       <span className="text-xs text-gray-500">{formatTime(chat.timestamp)}</span>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex justify-between place-items-center mt-1">
                       <p className="text-sm text-gray-600 truncate">{chat.lastMessage}</p>
                       {chat.unreadCount > 0 && (
                         <div className="size-fit px-2 bg-red-500 rounded-full">
@@ -510,30 +517,28 @@ function ChatWindow({
                   key={msg.id} 
                   className={`flex place-items-end ${msg.sender === "me" ? "justify-end" : "justify-start"}`}
                 >
-                  {msg.sender === "other" && (
-                    <p className={`text-xs text-gray-500 mb-2 mx-1`}>
-                      {formatTime(msg.timestamp)}
-                    </p>
+                  {msg.sender === "me" && (
+                    <div className="flex flex-col items-end mb-2 mx-1">
+                      {/* สถานะการอ่าน */}
+                      {msg.isRead && (
+                        <p className="text-xs text-primary-blue-400">อ่านแล้ว</p>
+                      )}
+                      <p className="text-xs text-gray-400">
+                        {formatTime(msg.timestamp)}
+                      </p>
+                    </div>
                   )}
-                  <div className={`max-w-[75%] p-2 rounded-2xl mb-2 ${ 
+                  <div className={`max-w-[75%] p-2 rounded-xl mb-2 ${ 
                     msg.sender === "me" 
                       ? "bg-primary-blue-400 text-white rounded-br-none" 
                       : "bg-gray-200 text-gray-800 rounded-bl-none"
                   }`}>
                     <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                   </div>
-                  {msg.sender === "me" && (
-                    <div className="flex flex-col items-end mb-2 mx-1">
-                      <p className="text-xs text-gray-500">
-                        {formatTime(msg.timestamp)}
-                      </p>
-                      {/* สถานะการอ่าน */}
-                      {msg.isRead ? (
-                        <p className="text-xs text-primary-blue-500">อ่านแล้ว</p>
-                      ) : (
-                        <p className="text-xs text-gray-400">ส่งแล้ว</p>
-                      )}
-                    </div>
+                  {msg.sender === "other" && (
+                    <p className={`text-xs text-gray-400 mb-2 mx-1`}>
+                      {formatTime(msg.timestamp)}
+                    </p>
                   )}
                 </div>
               ))

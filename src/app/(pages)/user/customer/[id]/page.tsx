@@ -20,7 +20,7 @@ export default function CustomerProfilePage() {
     const fetchCustomerData = async () => {
       setLoading(true);
       try {
-        const response = await axios.get(`/api/users/${customerId}`);
+        const response = await axios.get(`/api/customers/${customerId}`);
         setCustomer(response.data);
         setError('');
       } catch (err) {

@@ -40,8 +40,8 @@ function ProjectBoardCard({
   };
   
   // แสดงทักษะที่ต้องการไม่เกิน 2 ทักษะ
-  const displaySkills = requiredSkills.slice(0, 2);
-  const hasMoreSkills = requiredSkills.length > 2;
+  const displaySkills = requiredSkills.slice(0, 3);
+  const hasMoreSkills = requiredSkills.length > 3;
   
   return (
     <div className="bg-white shadow-md rounded-xl w-full p-3 flex flex-col border-[0.1px] border-gray-300 gap-3 hover:bg-gray-50">
@@ -74,7 +74,7 @@ function ProjectBoardCard({
               ))}
               {hasMoreSkills && (
                 <span className="text-white bg-primary-blue-400 border border-primary-blue-400 text-xs px-1 py-0.5 rounded-lg">
-                  +{requiredSkills.length - 2}
+                  +{requiredSkills.length - 3}
                 </span>
               )}
             </>

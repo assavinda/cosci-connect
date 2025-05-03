@@ -95,6 +95,7 @@ function InboxButton() {
   // ปิดหน้าต่างแชท
   const handleCloseChat = () => {
     setIsOpen(false);
+    fetchUnreadCount();
   };
 
   // หากยังไม่ได้ล็อกอินหรือกำลังโหลด ไม่ต้องแสดงปุ่ม

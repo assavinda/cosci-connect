@@ -65,23 +65,26 @@ export async function GET(req: NextRequest) {
         await triggerMessageRead(otherUserId, user._id.toString());
       }
       
-      // ค้นหาข้อมูลผู้ใช้อีกฝ่าย
-      const otherUser = await User.findById(otherUserId).select('name profileImageUrl').lean();
-      
-      return NextResponse.json({
+      const otherUser = await User.findById(otherUserId)
+        .select('name profileImageUrl role')  // เพิ่ม role เข้าไปในการ select
+        .lean();
+
+        // ในส่วนที่ส่งข้อมูลกลับ
+        return NextResponse.json({
         messages: messages.map(msg => ({
-          id: msg._id.toString(),
-          content: msg.content,
-          sender: msg.senderId.toString() === user._id.toString() ? 'me' : 'other',
-          timestamp: msg.createdAt,
-          isRead: msg.isRead
+            id: msg._id.toString(),
+            content: msg.content,
+            sender: msg.senderId.toString() === user._id.toString() ? 'me' : 'other',
+            timestamp: msg.createdAt,
+            isRead: msg.isRead
         })),
         otherUser: otherUser ? {
-          id: otherUser._id.toString(),
-          name: otherUser.name,
-          profileImageUrl: otherUser.profileImageUrl
+            id: otherUser._id.toString(),
+            name: otherUser.name,
+            profileImageUrl: otherUser.profileImageUrl,
+            role: otherUser.role || 'unknown'  // กำหนดค่าเริ่มต้นถ้าไม่มี role
         } : null
-      });
+        });
     } else {
       // ดึงรายการแชททั้งหมดของผู้ใช้ (แสดงเฉพาะล่าสุดจากแต่ละคู่สนทนา)
       // สร้าง pipeline สำหรับ MongoDB Aggregation
@@ -133,26 +136,27 @@ export async function GET(req: NextRequest) {
       const userIds = chatList.map(chat => chat._id);
       
       // ดึงข้อมูลผู้ใช้
-      const chatUsers = await User.find(
-        { _id: { $in: userIds } },
-        { _id: 1, name: 1, profileImageUrl: 1 }
-      ).lean();
+    const chatUsers = await User.find(
+            { _id: { $in: userIds } },
+            { _id: 1, name: 1, profileImageUrl: 1, role: 1 }  // เพิ่ม role
+    ).lean();
       
       // จับคู่ข้อมูลผู้ใช้กับข้อความ
-      const formattedChatList = chatList.map(chat => {
+    const formattedChatList = chatList.map(chat => {
         const chatUser = chatUsers.find(u => u._id.toString() === chat._id.toString());
         
         if (!chatUser) return null;
         
         return {
-          userId: chatUser._id.toString(),
-          name: chatUser.name,
-          profileImageUrl: chatUser.profileImageUrl || null,
-          lastMessage: chat.lastMessage.content,
-          timestamp: chat.lastMessage.createdAt,
-          unreadCount: chat.unreadCount
+        userId: chatUser._id.toString(),
+        name: chatUser.name,
+        profileImageUrl: chatUser.profileImageUrl || null,
+        role: chatUser.role || 'unknown',  // เพิ่มการเก็บค่า role
+        lastMessage: chat.lastMessage.content,
+        timestamp: chat.lastMessage.createdAt,
+        unreadCount: chat.unreadCount
         };
-      }).filter(Boolean);
+    }).filter(Boolean);
       
       return NextResponse.json({
         chatList: formattedChatList
