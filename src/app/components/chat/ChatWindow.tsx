@@ -71,6 +71,23 @@ function ChatWindow({
     }
   }, [isOpen, status, initialView, recipientId, recipientName]);
 
+  // เลื่อนไปยังข้อความล่าสุดเมื่อมีข้อความใหม่หรือเปิดแชท
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "auto" });
+    }
+  }, [messages]);
+  
+  // เลื่อนลงเมื่อโหลดข้อความเสร็จหรือเปลี่ยนแชท
+  useEffect(() => {
+    if (!loading && messages.length > 0 && view === "chat" && chatEndRef.current) {
+      // ใช้ setTimeout เพื่อให้แน่ใจว่า DOM ได้อัปเดตเรียบร้อยแล้ว
+      setTimeout(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: "auto" });
+      }, 100);
+    }
+  }, [loading, selectedChat, view]);
+
   // เพิ่ม: รับข้อความแชทใหม่แบบเรียลไทม์
   useEffect(() => {
     if (!session?.user?.id || !isOpen) return;
@@ -191,6 +208,19 @@ function ChatWindow({
       }
       
       setView('chat');
+      
+      // อัปเดตรายการแชท - เมื่อเข้าดูแชทแล้ว ลบการแจ้งเตือนสำหรับแชทนี้
+      setChatList(prevList => {
+        return prevList.map(chat => {
+          if (chat.userId === userId) {
+            return {
+              ...chat,
+              unreadCount: 0
+            };
+          }
+          return chat;
+        });
+      });
     } catch (err) {
       console.error('Error fetching messages:', err);
       setError('ไม่สามารถโหลดข้อความแชทได้');
@@ -414,12 +444,7 @@ function ChatWindow({
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center h-full">
-            <Loading size="medium" color="primary" />
-            <p className="mt-2 text-gray-500 text-sm">กำลังโหลดข้อความ...</p>
-          </div>
-        ) : error ? (
+        {error ? (
           <div className="flex flex-col items-center justify-center h-full p-4">
             <p className="text-red-500 text-center">{error}</p>
             <button 
