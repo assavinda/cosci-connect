@@ -722,10 +722,10 @@ export async function DELETE(
       );
     }
     
-    // Check if the project can be deleted
-    if (['in_progress', 'revision', 'awaiting'].includes(project.status)) {
+    // Check if the project can be deleted - must have 'open' status
+    if (project.status !== 'open') {
       return NextResponse.json(
-        { error: 'Cannot delete a project that is currently in progress or assigned' },
+        { error: 'Cannot delete a project that is not open - only projects with open status can be deleted' },
         { status: 400 }
       );
     }
@@ -897,3 +897,4 @@ export async function PUT(
     );
   }
 }
+

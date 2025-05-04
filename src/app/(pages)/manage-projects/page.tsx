@@ -7,7 +7,7 @@ import axios from "axios";
 import Loading from "../../components/common/Loading";
 import { Toaster } from 'react-hot-toast';
 import { usePusher } from "../../../providers/PusherProvider";
-import { toast } from "react-hot-toast";
+import Link from "next/link"; // เพิ่ม import Link
 
 // Define project interface
 interface Project {
@@ -73,12 +73,6 @@ export default function ManageProjectsPage() {
       // ลงทะเบียนรับการแจ้งเตือนเมื่อมีการอัปเดตโปรเจกต์ที่เกี่ยวข้องกับผู้ใช้
       const unsubscribeUserEvents = subscribeToUserEvents(session.user.id, (data) => {
         console.log('ได้รับการแจ้งเตือนสถานะโปรเจกต์:', data);
-        
-        // แจ้งเตือนและรีโหลดข้อมูล
-        toast.success(`มีการอัปเดตสถานะโปรเจกต์เป็น "${data.newStatus}"`, {
-          duration: 5000,
-          position: 'top-right',
-        });
         
         // รีโหลดข้อมูลโปรเจกต์
         fetchProjects();
@@ -311,7 +305,6 @@ const fetchProjects = async () => {
 
     } catch (error) {
       console.error("Error updating progress:", error);
-      toast.error('เกิดข้อผิดพลาดในการอัปเดตความคืบหน้า');
     }
   };
 
@@ -361,12 +354,26 @@ const fetchProjects = async () => {
       
       {/* Header */}
       <section className="mt-6 p-6 flex flex-col gap-2 bg-primary-blue-500 rounded-xl">
-        <h1 className="font-medium text-xl text-white">
-          จัดการโปรเจกต์
-        </h1>
-        <p className="text-white">
-          จัดการทุกขั้นตอนในทุกโปรเจกต์ของคุณตั้งแต่รับงานจนถึงเสร็จงาน
-        </p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="font-medium text-xl text-white">
+              จัดการโปรเจกต์
+            </h1>
+            <p className="text-white">
+              จัดการทุกขั้นตอนในทุกโปรเจกต์ของคุณตั้งแต่รับงานจนถึงเสร็จงาน
+            </p>
+          </div>
+          
+          {/* เพิ่มปุ่มดูโปรเจกต์ทั้งหมด */}
+          <Link href="/manage-projects/all-projects" className="btn-secondary flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="3" y1="9" x2="21" y2="9"></line>
+              <line x1="9" y1="21" x2="9" y2="9"></line>
+            </svg>
+            ดูโปรเจกต์ทั้งหมด
+          </Link>
+        </div>
         <div className="flex justify-between items-center mt-2">
           <div className="flex flex-wrap gap-3">
             <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-lg">
