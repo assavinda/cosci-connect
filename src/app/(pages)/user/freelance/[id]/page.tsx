@@ -138,8 +138,8 @@ export default function FreelancerProfilePage() {
         
         {/* เพิ่มปุ่ม HireButton และ SendMessageButton ตามสิทธิ์ */}
         <div className="flex gap-2">
-            {/* ถ้าเป็นผู้ใช้ที่ล็อกอินแล้วและไม่ใช่ตัวเอง ให้แสดงปุ่ม SendMessageButton */}
-            {session?.user?.id && session?.user?.id !== freelancerId && (
+            {/* ถ้าเป็นผู้ใช้ที่ล็อกอินแล้ว ไม่ใช่ตัวเอง และไม่ใช่ฟรีแลนซ์ ให้แสดงปุ่ม SendMessageButton */}
+            {session?.user?.id && session?.user?.id !== freelancerId && session?.user?.role !== 'student' && (
               <SendMessageButton 
                 recipientId={freelancerId} 
                 recipientName={freelancer.name} 

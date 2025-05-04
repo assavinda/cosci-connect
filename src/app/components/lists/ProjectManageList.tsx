@@ -101,7 +101,7 @@ function ProjectManageList({
       </div>
       
       {projects.length > 0 ? (
-        <div className="space-y-3">
+        <div className={`${status === "completed" ? "grid grid-cols-1 sm:grid-cols-2 gap-4" : "space-y-4"}`}>
           {projects.map((project) => (
             <ProjectManageCard 
               key={`${project.id}${project.requestingFreelancerId || ''}`} // ใช้ key ที่ไม่ซ้ำกัน

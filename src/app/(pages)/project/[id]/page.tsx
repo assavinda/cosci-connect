@@ -9,6 +9,7 @@ import Loading from '../../../components/common/Loading';
 import ApplyButton from '../../../components/buttons/ApplyButton';
 import { Toaster } from 'react-hot-toast';
 import { usePusher } from '../../../../providers/PusherProvider';
+import ProjectManageButtons from '@/app/components/buttons/ProjectManageButtons';
 
 export default function ProjectPage() {
   const { id } = useParams();
@@ -173,22 +174,52 @@ export default function ProjectPage() {
           กลับไปหน้าโปรเจกต์บอร์ด
         </Link>
         
-        {/* ปุ่มสมัครสำหรับฟรีแลนซ์ */}
-        {session?.user?.role === 'student' && project?.status === 'open' && (
-          hasApplied ? (
-            <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg flex items-center gap-2">
+        {/* ปุ่มสำหรับฟรีแลนซ์ */}
+        {session?.user?.role === 'student' && (
+          // ถ้าฟรีแลนซ์ได้รับมอบหมายให้ทำโปรเจกต์นี้แล้ว
+          project.assignedTo === session?.user?.id ? (
+            // แสดงปุ่ม "ไปหน้าจัดการโปรเจกต์"
+            <Link 
+              href="/manage-projects" 
+              className="btn-primary flex items-center gap-2"
+            >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
               </svg>
-              คุณได้ส่งคำขอร่วมงานแล้ว
-            </div>
+              ไปหน้าจัดการโปรเจกต์
+            </Link>
           ) : (
-            <ApplyButton 
-              projectId={project.id} 
-              projectTitle={project.title}
-              alreadyApplied={hasApplied}
-            />
+            // ถ้าฟรีแลนซ์ได้รับคำขอจากเจ้าของโปรเจกต์
+            project.requestToFreelancer === session?.user?.id ? (
+              // แสดง ProjectManageButtons
+              <ProjectManageButtons 
+                project={project}
+                isFreelancer={true}
+                userId={session?.user?.id}
+              />
+            ) : (
+              // ถ้าโปรเจกต์ยังเปิดรับสมัคร
+              project?.status === 'open' && (
+                // ถ้าฟรีแลนซ์ได้ส่งคำขอร่วมงานแล้ว
+                hasApplied ? (
+                  <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    คุณได้ส่งคำขอร่วมงานแล้ว
+                  </div>
+                ) : (
+                  // ถ้าฟรีแลนซ์ยังไม่ได้ส่งคำขอร่วมงาน
+                  <ApplyButton 
+                    projectId={project.id} 
+                    projectTitle={project.title}
+                    alreadyApplied={hasApplied}
+                  />
+                )
+              )
+            )
           )
         )}
       </div>
