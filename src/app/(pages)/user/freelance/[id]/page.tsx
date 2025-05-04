@@ -9,6 +9,9 @@ import Loading from '../../../../components/common/Loading';
 import HireButton from '../../../../components/buttons/HireButton';
 import SendMessageButton from '../../../../components/buttons/SendMessageButton';
 import { usePusher } from '../../../../../providers/PusherProvider';
+import PDFViewer from '../../../../components/common/PDFViewer';
+// ด้านบนของไฟล์ที่จะใช้งาน
+import { addPDFTransformation } from '@/utils/fileHelpers';
 
 export default function FreelancerProfilePage() {
   const { id } = useParams();
@@ -224,10 +227,11 @@ export default function FreelancerProfilePage() {
                       <line x1="9" y1="15" x2="15" y2="15"></line>
                     </svg>
                     <a 
-                      href={freelancer.portfolioUrl} 
+                      href={addPDFTransformation(freelancer.portfolioUrl)}
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="text-primary-blue-500 hover:underline"
+                      download="portfolio.pdf"
                     >
                       ดูพอร์ตโฟลิโอ (PDF)
                     </a>

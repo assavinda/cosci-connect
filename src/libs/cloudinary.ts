@@ -21,30 +21,42 @@ cloudinary.config({
  * @param publicId Optional public ID to use (for gallery images)
  * @returns URL of the uploaded file
  */
+// src/libs/cloudinary.ts
 export async function uploadToCloudinary(
   file: string, 
   userId: string, 
   type: 'profileImage' | 'portfolio' | 'gallery',
   publicId?: string
 ): Promise<string> {
-  // Create the folder path based on file type
+  // สร้าง folder path ตามประเภทไฟล์
   const folderPath = type === 'gallery' 
     ? `users/${userId}/gallery` 
     : `users/${userId}/${type}`;
   
   try {
-    // Set the public_id based on the type or provided publicId
-    const customPublicId = publicId || (type === 'portfolio' ? 'portfolio' : 'profile');
+    // ตรวจสอบประเภทไฟล์
+    const isPDF = file.includes('application/pdf');
     
-    // Upload the file to Cloudinary
+    // สำหรับไฟล์ PDF (portfolio)
+    if (type === 'portfolio' && isPDF) {
+      const result = await cloudinary.uploader.upload(file, {
+        folder: folderPath,
+        resource_type: 'raw',  // แก้ไขจาก 'image' เป็น 'raw' สำหรับ PDF
+        public_id: 'portfolio',
+        overwrite: true,
+        type: 'upload'
+      });
+
+      // เพิ่ม fl_attachment เพื่อบังคับให้ดาวน์โหลด
+      return result.secure_url;
+    }
+    
+    // สำหรับรูปภาพและไฟล์อื่นๆ
     const result = await cloudinary.uploader.upload(file, {
       folder: folderPath,
-      resource_type: type === 'portfolio' ? 'raw' : 'image',
-      // Set the public_id to ensure proper naming/overwriting
-      public_id: type === 'gallery' ? publicId : customPublicId,
-      overwrite: type !== 'gallery', // Only overwrite for non-gallery images
-      // For PDF files, specify the format
-      format: type === 'portfolio' ? 'pdf' : undefined,
+      resource_type: type === 'portfolio' ? 'auto' : 'image',
+      public_id: publicId || (type === 'portfolio' ? 'portfolio' : (type === 'profileImage' ? 'profile' : undefined)),
+      overwrite: type !== 'gallery',
     });
 
     return result.secure_url;
