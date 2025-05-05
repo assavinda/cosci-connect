@@ -206,8 +206,8 @@ function Navbar() {
         id="main-navbar"
         className={`w-screen h-fit backdrop-blur-md shadow py-4 px-4 md:px-4 lg:px-4 xl:px-12 fixed top-0 flex justify-between z-50 ${
           isScrolled
-            ? 'bg-white/90 shadow-md shadow-gray-400/25 rounded-b-xl'
-            : 'bg-white/80'
+            ? 'bg-white/75 shadow-md shadow-gray-400/25 rounded-b-xl'
+            : 'bg-white/75'
         }`}
       >
         <div className="flex place-items-center gap-8">
@@ -219,7 +219,7 @@ function Navbar() {
             <BurgerIcon isMenuOpen={isMenuOpen}/>
           </button>
           <Link href={'/'} className="transform transition-transform hover:scale-105">
-            <h1 className="text-2xl font-medium">connect</h1>
+            <img src="/logo/cosci-connect-logo.png" alt="cosci:connect" className="h-[40px]"/>
           </Link>
           <div className="hidden gap-8 sm:flex">
             {navItems.map((item) => (
