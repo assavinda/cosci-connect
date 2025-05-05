@@ -75,7 +75,7 @@ export default function AllProjectsPage() {
     };
   }, [status, subscribeToProjectList]);
 
-  // ฟังก์ชันสำหรับดึงข้อมูลโปรเจกต์ทั้งหมดที่เกี่ยวข้องกับผู้ใช้
+  // ฟังก์ชันสำหรับดึงข้อมูลโปรเจกต์ที่เกี่ยวข้องกับผู้ใช้ปัจจุบันเท่านั้น
   const fetchProjects = async () => {
     setLoading(true);
     setError("");
@@ -84,33 +84,35 @@ export default function AllProjectsPage() {
       const isFreelancer = session?.user?.role === 'student';
       const userId = session?.user?.id;
 
-      // Fetch all projects related to the user
-      let response;
+      // กำหนด parameters สำหรับการค้นหาโปรเจกต์
+      let params: Record<string, any> = {
+        limit: 100, // ดึงโปรเจกต์จำนวนมากเพื่อให้ได้ทั้งหมด
+        status: 'all' // ดึงทุกสถานะ
+      };
       
+      // สำหรับฟรีแลนซ์ ดึงเฉพาะโปรเจกต์ที่เกี่ยวข้องกับตัวเอง
       if (isFreelancer) {
-        // For freelancers, get projects where:
-        // 1. They are assigned to the project
-        // 2. They have been requested by project owners
-        // 3. They have requested to join
-        response = await axios.get('/api/projects', {
-          params: {
-            limit: 100, // ดึงโปรเจกต์จำนวนมากเพื่อให้ได้ทั้งหมด
-            status: 'all', // ดึงทุกสถานะ
-            assignedTo: userId, // โปรเจกต์ที่ได้รับมอบหมายให้ฟรีแลนซ์คนนี้
-            requestToFreelancer: userId, // โปรเจกต์ที่ขอให้ฟรีแลนซ์คนนี้
-            freelancerRequested: userId // โปรเจกต์ที่ฟรีแลนซ์คนนี้ส่งคำขอ
-          }
-        });
+        // ดึงข้อมูลโดยระบุเงื่อนไขเป็น union ของ 3 กรณี:
+        // 1. โปรเจกต์ที่ได้รับมอบหมายให้ทำ (assignedTo)
+        // 2. โปรเจกต์ที่เจ้าของส่งคำขอมาให้ (requestToFreelancer)
+        // 3. โปรเจกต์ที่ฟรีแลนซ์ส่งคำขอเข้าร่วม (freelancerRequested)
+        params = {
+          ...params,
+          assignedTo: userId,                 // โปรเจกต์ที่ได้รับมอบหมาย 
+          requestToFreelancer: userId,        // โปรเจกต์ที่ขอให้ทำ
+          freelancerRequested: userId,        // โปรเจกต์ที่ส่งคำขอเข้าร่วม
+          userRelatedOnly: 'true'             // เพิ่มพารามิเตอร์พิเศษเพื่อให้ API ทราบว่าต้องการเฉพาะโปรเจกต์ที่เกี่ยวข้อง
+        };
       } else {
-        // For teachers/alumni, get projects they own
-        response = await axios.get('/api/projects', {
-          params: {
-            limit: 100, // ดึงโปรเจกต์จำนวนมากเพื่อให้ได้ทั้งหมด
-            status: 'all', // ดึงทุกสถานะ
-            owner: userId // โปรเจกต์ที่ผู้ใช้เป็นเจ้าของ
-          }
-        });
+        // สำหรับเจ้าของโปรเจกต์ (อาจารย์/ศิษย์เก่า) ดึงเฉพาะโปรเจกต์ที่เป็นเจ้าของ
+        params = {
+          ...params,
+          owner: userId // โปรเจกต์ที่ผู้ใช้เป็นเจ้าของ
+        };
       }
+
+      // ส่งคำขอไปยัง API
+      const response = await axios.get('/api/projects', { params });
 
       // Set projects data
       setProjects(response.data.projects || []);
@@ -272,10 +274,12 @@ export default function AllProjectsPage() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="font-medium text-xl text-white">
-              โปรเจกต์ทั้งหมด
+              {isFreelancer ? 'โปรเจกต์ของฉัน' : 'โปรเจกต์ทั้งหมด'}
             </h1>
             <p className="text-white/80">
-              ดูรายการโปรเจกต์ทั้งหมดที่เกี่ยวข้องกับคุณ
+              {isFreelancer 
+                ? 'ดูรายการโปรเจกต์ทั้งหมดที่คุณเกี่ยวข้อง'
+                : 'ดูรายการโปรเจกต์ทั้งหมดที่คุณเป็นเจ้าของ'}
             </p>
           </div>
           

@@ -7,7 +7,7 @@ import axios from "axios";
 import Loading from "../../components/common/Loading";
 import { Toaster } from 'react-hot-toast';
 import { usePusher } from "../../../providers/PusherProvider";
-import Link from "next/link"; // เพิ่ม import Link
+import Link from "next/link";
 
 // Define project interface
 interface Project {
@@ -25,8 +25,9 @@ interface Project {
   assignedTo?: string;
   assignedFreelancerName?: string;
   requestToFreelancer?: string;
+  requestToFreelancerName?: string;
   freelancersRequested: string[];
-  // เพิ่มฟิลด์สำหรับแสดงข้อมูลฟรีแลนซ์ที่ส่งคำขอเฉพาะรายการ
+  // เพิ่มฟิลด์ใหม่สำหรับแสดงผลแยกการ์ด
   requestingFreelancerId?: string;
   requestingFreelancerName?: string;
 }
@@ -117,7 +118,8 @@ export default function ManageProjectsPage() {
             status: 'all', // ดึงทุกสถานะ
             assignedTo: userId, // Projects assigned to this freelancer
             requestToFreelancer: userId, // Projects that requested this freelancer
-            freelancerRequested: userId // Projects where freelancer requested to join
+            freelancerRequested: userId, // Projects where freelancer requested to join
+            userRelatedOnly: 'true' // เพิ่มพารามิเตอร์พิเศษเพื่อใช้การค้นหาแบบ OR
           }
         });
       } else {

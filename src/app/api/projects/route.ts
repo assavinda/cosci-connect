@@ -19,6 +19,10 @@ export async function GET(req: NextRequest) {
     const minPrice = parseInt(url.searchParams.get('minPrice') || '0', 10);
     const maxPrice = parseInt(url.searchParams.get('maxPrice') || '10000', 10);
     const owner = url.searchParams.get('owner'); // Optional owner filter
+    const assignedTo = url.searchParams.get('assignedTo'); // Optional assignedTo filter
+    const requestToFreelancer = url.searchParams.get('requestToFreelancer'); // Optional requestToFreelancer filter
+    const freelancerRequested = url.searchParams.get('freelancerRequested'); // Optional freelancerRequested filter
+    const userRelatedOnly = url.searchParams.get('userRelatedOnly') === 'true'; // New parameter
     
     // พารามิเตอร์ใหม่: noRequest - สำหรับกรองโปรเจกต์ที่ไม่มี requestToFreelancer
     const noRequest = url.searchParams.get('noRequest') === 'true';
@@ -68,6 +72,50 @@ export async function GET(req: NextRequest) {
         $gte: minPrice,
         $lte: maxPrice
       };
+    }
+    
+    // ส่วนใหม่: สำหรับฟรีแลนซ์ที่ต้องการเห็นเฉพาะโปรเจกต์ที่เกี่ยวข้องกับตัวเอง
+    if (userRelatedOnly && (assignedTo || requestToFreelancer || freelancerRequested)) {
+      // สร้างเงื่อนไข OR เพื่อรวมทุกกรณีที่ฟรีแลนซ์เกี่ยวข้อง
+      const orConditions = [];
+      
+      if (assignedTo) {
+        orConditions.push({ assignedTo: new mongoose.Types.ObjectId(assignedTo) });
+      }
+      
+      if (requestToFreelancer) {
+        orConditions.push({ requestToFreelancer: new mongoose.Types.ObjectId(requestToFreelancer) });
+      }
+      
+      if (freelancerRequested) {
+        orConditions.push({ freelancersRequested: new mongoose.Types.ObjectId(freelancerRequested) });
+      }
+      
+      // รวมเงื่อนไข OR เข้ากับ query หลัก
+      if (query.$or) {
+        // ถ้ามี $or อยู่แล้ว ให้สร้าง $and เพื่อรวมเงื่อนไขทั้งหมด
+        query.$and = [
+          { $or: query.$or },
+          { $or: orConditions }
+        ];
+        delete query.$or; // ลบ $or เดิมออก
+      } else {
+        // ถ้ายังไม่มี $or ให้ใช้ได้เลย
+        query.$or = orConditions;
+      }
+    } else {
+      // ถ้าไม่ได้ใช้ userRelatedOnly แต่มีพารามิเตอร์เกี่ยวกับฟรีแลนซ์
+      if (assignedTo) {
+        query.assignedTo = new mongoose.Types.ObjectId(assignedTo);
+      }
+      
+      if (requestToFreelancer) {
+        query.requestToFreelancer = new mongoose.Types.ObjectId(requestToFreelancer);
+      }
+      
+      if (freelancerRequested) {
+        query.freelancersRequested = new mongoose.Types.ObjectId(freelancerRequested);
+      }
     }
     
     // Calculate skip for pagination
