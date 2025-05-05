@@ -115,7 +115,7 @@ function ProjectManageCard({
         </span>
       </div>
       <div className="flex items-center gap-2 mb-2">
-        <p className="text-sm text-gray-400">{isFreelancer ? 'โดย' : 'ผู้รับผิดชอบ'}</p>
+        <p className="text-sm text-gray-400">{isFreelancer ? 'เจ้าของ' : 'ฟรีแลนซ์'}</p>
         <Link href={profileLink}>
             <p className="text-sm text-primary-blue-500 truncate hover:underline hover:text-primary-blue-400 font-medium">{owner}</p>
         </Link>
@@ -205,7 +205,7 @@ function ProjectManageCard({
           ) : (
             <div className="mt-3">
               <div className="flex justify-between w-full text-xs text-gray-500 mb-1">
-                {canEditProgress ? (
+                {canEditProgress() ? (
                   <button 
                     onClick={() => setIsEditing(true)}
                     className="text-primary-blue-500 hover:text-primary-blue-400 underline"
