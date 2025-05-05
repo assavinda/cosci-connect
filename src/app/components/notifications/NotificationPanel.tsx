@@ -81,10 +81,9 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, onClose }
         return (
           <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-500">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="16" y1="2" x2="16" y2="6"></line>
-              <line x1="8" y1="2" x2="8" y2="6"></line>
-              <line x1="3" y1="10" x2="21" y2="10"></line>
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <path d="M12 8v8"></path>
+              <path d="M8 12h8"></path>
             </svg>
           </div>
         );
@@ -109,7 +108,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, onClose }
         );
       case 'project_status_change':
         return (
-          <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-500">
+          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-500">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="23 4 23 10 17 10"></polyline>
               <polyline points="1 20 1 14 7 14"></polyline>
@@ -119,7 +118,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, onClose }
         );
       case 'project_progress_update':
         return (
-          <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-500">
+          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-500">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 20V10"></path>
               <path d="M12 20V4"></path>
@@ -131,8 +130,9 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, onClose }
         return (
           <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-500">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <path d="M9 15l3 3 5-5"></path>
             </svg>
           </div>
         );
