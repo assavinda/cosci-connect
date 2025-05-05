@@ -375,3 +375,57 @@ export async function markAllNotificationsAsRead(userId: string) {
     return { success: false, error: 'Failed to mark all notifications as read' };
   }
 }
+
+/**
+ * ส่งการแจ้งเตือนถึงฟรีแลนซ์ทุกคนที่ไม่ได้รับเลือก เมื่อเจ้าของโปรเจกต์เลือกฟรีแลนซ์แล้ว
+ */
+export async function notifyRejectedFreelancers(
+    projectId: string,
+    selectedFreelancerId: string,
+    otherFreelancerIds: string[]
+  ) {
+    try {
+      // ดึงข้อมูลโปรเจกต์
+      const project = await Project.findById(projectId).lean();
+      
+      if (!project) {
+        return { success: false, error: 'ไม่พบข้อมูลโปรเจกต์' };
+      }
+      
+      // กรองให้เหลือเฉพาะฟรีแลนซ์ที่ไม่ใช่คนที่ถูกเลือก
+      const rejectedFreelancerIds = otherFreelancerIds.filter(id => id !== selectedFreelancerId);
+      
+      // ถ้าไม่มีฟรีแลนซ์ที่ถูกปฏิเสธ ไม่ต้องทำอะไร
+      if (rejectedFreelancerIds.length === 0) {
+        return { success: true, message: 'ไม่มีฟรีแลนซ์ที่ต้องแจ้งเตือน' };
+      }
+      
+      // ดึงข้อมูลฟรีแลนซ์ที่ได้รับเลือก
+      const selectedFreelancer = await User.findById(selectedFreelancerId).select('name').lean();
+      const freelancerName = selectedFreelancer ? selectedFreelancer.name : 'ฟรีแลนซ์';
+      
+      // สร้างการแจ้งเตือนสำหรับทุกฟรีแลนซ์ที่ถูกปฏิเสธ
+      const promises = rejectedFreelancerIds.map(freelancerId => 
+        createNotification({
+          recipientId: freelancerId,
+          senderId: project.owner.toString(),
+          type: 'project_rejected',
+          title: 'คำขอร่วมงานถูกปฏิเสธ',
+          message: `คำขอร่วมงานของคุณในโปรเจกต์ "${project.title}" ถูกปฏิเสธเนื่องจากเจ้าของโปรเจกต์ได้เลือกฟรีแลนซ์คนอื่นแล้ว`,
+          projectId: projectId,
+          link: '/project-board' // ลิงก์ไปที่หน้าโปรเจกต์บอร์ดแทนที่จะเป็นหน้าโปรเจกต์นั้นๆ
+        })
+      );
+      
+      // รอให้ทุกการแจ้งเตือนถูกสร้างเสร็จสิ้น
+      await Promise.all(promises);
+      
+      return { 
+        success: true, 
+        message: `ส่งการแจ้งเตือนไปยังฟรีแลนซ์ที่ถูกปฏิเสธจำนวน ${rejectedFreelancerIds.length} คน`
+      };
+    } catch (error) {
+      console.error('เกิดข้อผิดพลาดในการส่งการแจ้งเตือนถึงฟรีแลนซ์ที่ถูกปฏิเสธ:', error);
+      return { success: false, error: 'ไม่สามารถส่งการแจ้งเตือนได้' };
+    }
+  }

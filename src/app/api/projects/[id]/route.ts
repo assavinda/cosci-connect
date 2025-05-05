@@ -16,7 +16,8 @@ import {
   createProjectResponseNotification,
   createProjectStatusChangeNotification,
   createProjectProgressUpdateNotification,
-  createFreelancerResponseNotification
+  createFreelancerResponseNotification,
+  notifyRejectedFreelancers
 } from '@/utils/notificationUtils';
 // GET - Retrieve a specific project by ID
 export async function GET(
@@ -242,6 +243,9 @@ export async function PATCH(
             { status: 400 }
           );
         }
+
+        // เก็บรายชื่อฟรีแลนซ์ทั้งหมดที่เคยส่งคำขอไว้ก่อนที่จะล้างคำขอทั้งหมด
+        const allFreelancerRequests = [...project.freelancersRequested.map(id => id.toString())];
         
         // อัปเดตโปรเจกต์
         updateData.assignedTo = new mongoose.Types.ObjectId(data.assignedTo);
@@ -255,6 +259,7 @@ export async function PATCH(
         // สร้างการแจ้งเตือนเมื่อยอมรับฟรีแลนซ์เข้าทำงาน
         try {
           await createProjectResponseNotification(id, data.assignedTo, true);
+          await notifyRejectedFreelancers(id, data.assignedTo, allFreelancerRequests);
         } catch (notificationError) {
           console.error('Error creating project accepted notification:', notificationError);
           // ไม่ต้องหยุดการทำงานหลักหากการสร้างการแจ้งเตือนล้มเหลว
