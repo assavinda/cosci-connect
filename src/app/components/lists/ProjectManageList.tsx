@@ -12,6 +12,7 @@ interface Project {
   assignedTo?: string;
   assignedFreelancerName?: string;
   requestToFreelancer?: string;
+  requestToFreelancerName?: string;
   freelancersRequested: string[];
   // เพิ่มฟิลด์ใหม่สำหรับแสดงผลแยกการ์ด
   requestingFreelancerId?: string;
@@ -37,7 +38,7 @@ function ProjectManageList({
   isFreelancer,
   userId
 }: ProjectManageListProps) {
-  // Function to get the appropriate name to display
+  // Function to determine the display name
   const getDisplayName = (project: Project) => {
     // For freelancers, show the project owner
     if (isFreelancer) {
@@ -58,7 +59,8 @@ function ProjectManageList({
     
     // For project owners waiting for freelancer response
     if (status === "waitingResponse" && project.requestToFreelancer) {
-      return "รอการตอบรับจากฟรีแลนซ์";
+      // ใช้ชื่อจริงของฟรีแลนซ์ที่เจ้าของโปรเจกต์ส่งคำขอไป
+      return project.requestToFreelancerName || "รอการตอบรับจากฟรีแลนซ์";
     }
     
     // Default
