@@ -243,15 +243,15 @@ export async function createProjectStatusChangeNotification(
     
     // ถ้าสถานะเป็น 'revision' (เจ้าของโปรเจกต์ต้องการให้แก้ไข)
     if (status === 'revision') {
-      return await createNotification({
+        return await createNotification({
         recipientId: recipientId,
         senderId: senderId,
         type: 'project_revision',
         title: 'โปรเจกต์ต้องการการแก้ไข',
-        message: `${senderName} ได้ตรวจสอบและพบว่าโปรเจกต์ "${project.title}" ยังมีส่วนที่ต้องแก้ไข กรุณาปรับปรุงและส่งงานอีกครั้ง`,
+        message: `${senderName} ได้ตรวจสอบและพบว่าโปรเจกต์ "${project.title}" ยังมีส่วนที่ต้องแก้ไข กรุณาปรับปรุงและส่งงานอีกครั้ง (ความคืบหน้าการแก้ไขได้รีเซ็ตเป็น 0% แล้ว)`,
         projectId: projectId,
         link: `/project/${projectId}`
-      });
+        });
     }
     
     // ถ้าสถานะเป็น 'completed' (งานเสร็จสมบูรณ์แล้ว)
@@ -293,73 +293,59 @@ export async function createProjectStatusChangeNotification(
   }
 }
 
-/**
- * Creates notification for project progress update
- */
+// แก้ไขไฟล์ src/utils/notificationUtils.ts
+// ปรับฟังก์ชัน createProjectProgressUpdateNotification
+
 export async function createProjectProgressUpdateNotification(
-  projectId: string, 
-  progress: number, 
-  ownerId: string,
-  freelancerId: string
-) {
-  try {
-    // Get project details
-    const project = await Project.findById(projectId).lean();
-
-    if (!project) {
-      return { success: false, error: 'Project not found' };
+    projectId: string, 
+    progress: number, 
+    ownerId: string,
+    freelancerId: string
+  ) {
+    try {
+      // Get project details
+      const project = await Project.findById(projectId).lean();
+  
+      if (!project) {
+        return { success: false, error: 'Project not found' };
+      }
+  
+      // Get freelancer details
+      const freelancer = await User.findById(freelancerId).select('name').lean();
+      const freelancerName = freelancer ? freelancer.name : 'ฟรีแลนซ์';
+  
+      // ตรวจสอบสถานะโปรเจกต์เพื่อปรับข้อความแจ้งเตือน
+      const isRevision = project.status === 'revision';
+      const statusPrefix = isRevision ? 'การแก้ไข' : '';
+      
+      // กรณีความคืบหน้า 100%
+      if (progress === 100) {
+        return await createNotification({
+          recipientId: ownerId,
+          senderId: freelancerId,
+          type: 'project_progress_update',
+          title: `${statusPrefix}โปรเจกต์ดำเนินการครบ 100%`,
+          message: `${statusPrefix}โปรเจกต์ "${project.title}" เสร็จสมบูรณ์แล้ว ${freelancerName} กำลังตรวจสอบเพื่อยืนยันและส่งงาน`,
+          projectId: projectId,
+          link: `/project/${projectId}`
+        });
+      }
+      else if (progress > 0 && progress < 100) {
+        return await createNotification({
+          recipientId: ownerId,
+          senderId: freelancerId,
+          type: 'project_progress_update',
+          title: `${statusPrefix}โปรเจกต์มีการอัปเดตความคืบหน้า`,
+          message: `${statusPrefix}โปรเจกต์ "${project.title}" มีความคืบหน้า ${progress}% โดย ${freelancerName}`,
+          projectId: projectId,
+          link: `/project/${projectId}`
+        });
+      }
+    } catch (error) {
+      console.error('Error creating project progress update notification:', error);
+      return { success: false, error: 'Failed to create notification' };
     }
-
-    // Get freelancer details
-    const freelancer = await User.findById(freelancerId).select('name').lean();
-    const freelancerName = freelancer ? freelancer.name : 'ฟรีแลนซ์';
-
-    // กรณีความคืบหน้า 100%
-    if (progress === 100) {
-      return await createNotification({
-        recipientId: ownerId,
-        senderId: freelancerId,
-        type: 'project_progress_update',
-        title: 'โปรเจกต์ดำเนินการครบ 100%',
-        message: `โปรเจกต์ "${project.title}" เสร็จสมบูรณ์แล้ว ${freelancerName} กำลังตรวจสอบเพื่อยืนยันและส่งงาน`,
-        projectId: projectId,
-        link: `/project/${projectId}`
-      });
-    }
-    
-    // กรณีความคืบหน้าเป็นจุดสำคัญ (10%, 25%, 50%, 75%)
-    if (progress === 10 || progress === 25 || progress === 50 || progress === 75) {
-      return await createNotification({
-        recipientId: ownerId,
-        senderId: freelancerId,
-        type: 'project_progress_update',
-        title: `โปรเจกต์มีความคืบหน้า ${progress}%`,
-        message: `${freelancerName} ได้อัปเดตความคืบหน้าของโปรเจกต์ "${project.title}" เป็น ${progress}% แล้ว`,
-        projectId: projectId,
-        link: `/project/${projectId}`
-      });
-    }
-    
-    // Only notify owner when progress changes significantly (every 10%)
-    if (progress % 10 !== 0) {
-      return { success: false, message: 'Progress update not significant enough for notification' };
-    }
-
-    // ข้อความทั่วไปสำหรับความคืบหน้าอื่นๆ ที่หารด้วย 10 ลงตัว
-    return await createNotification({
-      recipientId: ownerId,
-      senderId: freelancerId,
-      type: 'project_progress_update',
-      title: 'มีการอัปเดตความคืบหน้าโปรเจกต์',
-      message: `โปรเจกต์ "${project.title}" มีความคืบหน้า ${progress}%`,
-      projectId: projectId,
-      link: `/project/${projectId}`
-    });
-  } catch (error) {
-    console.error('Error creating project progress update notification:', error);
-    return { success: false, error: 'Failed to create notification' };
   }
-}
 
 /**
  * Mark a notification as read

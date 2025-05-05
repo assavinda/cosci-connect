@@ -55,10 +55,18 @@ function ProjectManageCard({
   }, [progress]);
   
   // Function to determine progress color
-  const getProgressColor = (value) => {
-    if (value < 30) return 'bg-red-400';
-    if (value < 70) return 'bg-yellow-400';
-    return 'bg-green-400';
+  const getProgressColor = (value, isRevision) => {
+    // ใช้ชุดสีที่แตกต่างกันสำหรับสถานะการแก้ไข
+    if (isRevision) {
+      if (value < 30) return 'bg-orange-400';
+      if (value < 70) return 'bg-yellow-400';
+      return 'bg-green-400';
+    } else {
+      // สีปกติสำหรับสถานะ in_progress
+      if (value < 30) return 'bg-red-400';
+      if (value < 70) return 'bg-yellow-400';
+      return 'bg-green-400';
+    }
   };
   
   const handleSliderChange = (e) => {
@@ -130,7 +138,7 @@ function ProjectManageCard({
                     onChange={handleSliderChange}
                     className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-blue-500"
                     style={{
-                      background: `linear-gradient(to right, ${getProgressColor(sliderValue)} 0%, ${getProgressColor(sliderValue)} ${sliderValue}%, #e5e7eb ${sliderValue}%, #e5e7eb 100%)`
+                      background: `linear-gradient(to right, ${getProgressColor(sliderValue, project.status === 'revision')} 0%, ${getProgressColor(sliderValue, project.status === 'revision')} ${sliderValue}%, #e5e7eb ${sliderValue}%, #e5e7eb 100%)`
                     }}
                     onMouseMove={(e) => {
                       const rect = e.currentTarget.getBoundingClientRect();
@@ -197,21 +205,23 @@ function ProjectManageCard({
           ) : (
             <div className="mt-3">
               <div className="flex justify-between w-full text-xs text-gray-500 mb-1">
-                {canEditProgress() ? (
+                {canEditProgress ? (
                   <button 
                     onClick={() => setIsEditing(true)}
                     className="text-primary-blue-500 hover:text-primary-blue-400 underline"
                   >
-                    อัพเดต
+                    อัปเดต
                   </button>
                 ) : (
-                  <span>ความคืบหน้า</span>
+                  <span>
+                    {project.status === 'revision' ? 'ความคืบหน้าการแก้ไข' : 'ความคืบหน้า'}
+                  </span>
                 )}
                 <span className="font-medium">{progress}%</span>
               </div>
               <div className="relative w-full bg-gray-200 rounded-full h-3">
                 <div 
-                  className={`${getProgressColor(progress)} h-3 rounded-full transition-all duration-500 ease-in-out`} 
+                  className={`${getProgressColor(progress, project.status === 'revision')} h-3 rounded-full transition-all duration-500 ease-in-out`} 
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>

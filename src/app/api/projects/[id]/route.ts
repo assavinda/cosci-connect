@@ -166,48 +166,56 @@ export async function PATCH(
       if (data.requiredSkills !== undefined) updateData.requiredSkills = data.requiredSkills;
       
       // Project flow control by owner
-      if (data.status !== undefined) {
-        // Owner can change status with some restrictions
-        const currentStatus = project.status;
-        const newStatus = data.status;
-        
-        const validTransitions: Record<string, string[]> = {
-          'open': ['in_progress', 'completed'],
-          'in_progress': ['revision', 'awaiting', 'completed'],
-          'revision': ['in_progress', 'awaiting', 'completed'],
-          'awaiting': ['completed', 'revision']
-        };
-        
-        if (!validTransitions[currentStatus]?.includes(newStatus)) {
-          return NextResponse.json(
-            { error: `Cannot change status from ${currentStatus} to ${newStatus}` },
-            { status: 400 }
+      // แก้ไขไฟล์ src/app/api/projects/[id]/route.ts
+// ในส่วนที่เจ้าของโปรเจกต์เปลี่ยนสถานะเป็น 'revision'
+
+    // ในส่วนที่ดูแลการเปลี่ยนสถานะโปรเจกต์โดยเจ้าของโปรเจกต์
+    if (data.status !== undefined) {
+      // Owner can change status with some restrictions
+      const currentStatus = project.status;
+      const newStatus = data.status;
+      
+      const validTransitions: Record<string, string[]> = {
+        'open': ['in_progress', 'completed'],
+        'in_progress': ['revision', 'awaiting', 'completed'],
+        'revision': ['in_progress', 'awaiting', 'completed'],
+        'awaiting': ['completed', 'revision']
+      };
+      
+      if (!validTransitions[currentStatus]?.includes(newStatus)) {
+        return NextResponse.json(
+          { error: `Cannot change status from ${currentStatus} to ${newStatus}` },
+          { status: 400 }
+        );
+      }
+      
+      updateData.status = newStatus;
+      statusChanged = true;
+      
+      // เพิ่มโค้ดตรงนี้: รีเซ็ตค่า progress เป็น 0 เมื่อเปลี่ยนสถานะเป็น 'revision'
+      if (newStatus === 'revision') {
+        updateData.progress = 0;
+      }
+      
+      // If project is completed, set completedAt
+      if (newStatus === 'completed' && !project.completedAt) {
+        updateData.completedAt = new Date();
+      }
+      
+      // สร้างการแจ้งเตือนเมื่อมีการเปลี่ยนสถานะโปรเจกต์
+      try {
+        if (project.assignedTo) {
+          await createProjectStatusChangeNotification(
+            id, 
+            newStatus, 
+            project.assignedTo.toString(),
+            user._id.toString()
           );
         }
-        
-        updateData.status = newStatus;
-        statusChanged = true;
-        
-        // If project is completed, set completedAt
-        if (newStatus === 'completed' && !project.completedAt) {
-          updateData.completedAt = new Date();
-        }
-        
-        // สร้างการแจ้งเตือนเมื่อมีการเปลี่ยนสถานะโปรเจกต์
-        try {
-          if (project.assignedTo) {
-            await createProjectStatusChangeNotification(
-              id, 
-              newStatus, 
-              project.assignedTo.toString(),
-              user._id.toString()
-            );
-          }
-        } catch (notificationError) {
-          console.error('Error creating status change notification:', notificationError);
-          // ไม่ต้องหยุดการทำงานหลักหากการสร้างการแจ้งเตือนล้มเหลว
-        }
+      } catch (notificationError) {
+        console.error('Error creating status change notification:', notificationError);
       }
+    }
       
       // เจ้าของโปรเจกต์กำหนดฟรีแลนซ์โดยตรง (เช่น การยอมรับคำขอจากฟรีแลนซ์)
       if (data.assignedTo && mongoose.Types.ObjectId.isValid(data.assignedTo)) {
@@ -380,7 +388,7 @@ export async function PATCH(
         // สร้างการแจ้งเตือนเมื่อมีการอัปเดตความคืบหน้าที่สำคัญ
         try {
           // ส่งการแจ้งเตือนเฉพาะเมื่อความคืบหน้าเป็นเลขหลักสิบหรือ 100%
-          if (progress % 10 === 0 || progress === 100) {
+          if (progress) {
             await createProjectProgressUpdateNotification(
               id,
               progress,

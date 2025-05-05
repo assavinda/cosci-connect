@@ -258,6 +258,7 @@ export default function ProjectPage() {
                     <p className="text-gray-500 text-sm">วันที่สร้าง</p>
                     <p className="font-medium">{formatDate(project.createdAt)}</p>
                   </div>
+
                   {project.status === 'in_progress' && (
                     <div>
                       <p className="text-gray-500 text-sm">ความคืบหน้า</p>
@@ -265,6 +266,21 @@ export default function ProjectPage() {
                         <div className="w-full bg-gray-200 rounded-full h-2.5">
                           <div 
                             className="bg-primary-blue-500 h-2.5 rounded-full" 
+                            style={{ width: `${project.progress || 0}%` }}
+                          ></div>
+                        </div>
+                        <p className="text-right text-sm mt-1">{project.progress || 0}%</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {project.status === 'revision' && (
+                    <div>
+                      <p className="text-gray-500 text-sm">ความคืบหน้าการแก้ไข</p>
+                      <div className="mt-1">
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div 
+                            className="bg-orange-500 h-2.5 rounded-full" 
                             style={{ width: `${project.progress || 0}%` }}
                           ></div>
                         </div>
