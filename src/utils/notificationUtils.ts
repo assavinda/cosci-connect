@@ -170,84 +170,100 @@ export async function createProjectResponseNotification(
   }
 }
 
-/**
- * Creates notification when a freelancer accepts/rejects an invitation
- */
-export async function createFreelancerResponseNotification(
-  projectId: string, 
-  freelancerId: string, 
-  isAccepted: boolean
-) {
-  try {
-    // Get project and freelancer details
-    const [project, freelancer] = await Promise.all([
-      Project.findById(projectId).lean(),
-      User.findById(freelancerId).select('name').lean()
-    ]);
-
-    if (!project || !freelancer) {
-      return { success: false, error: 'Project or freelancer not found' };
+// สำหรับเมื่อฟรีแลนซ์ตอบรับโปรเจกต์
+  export async function createFreelancerResponseNotification(
+    projectId: string, 
+    freelancerId: string, 
+    isAccepted: boolean
+  ) {
+    try {
+      // Get project and freelancer details
+      const [project, freelancer] = await Promise.all([
+        Project.findById(projectId).lean(),
+        User.findById(freelancerId).select('name').lean()
+      ]);
+  
+      if (!project || !freelancer) {
+        return { success: false, error: 'Project or freelancer not found' };
+      }
+  
+      // Notification to project owner
+      return await createNotification({
+        recipientId: project.owner.toString(),
+        senderId: freelancerId,
+        type: isAccepted ? 'project_accepted' : 'project_rejected',
+        title: isAccepted ? 'คำขอร่วมงานได้รับการตอบรับ' : 'คำขอร่วมงานถูกปฏิเสธ',
+        message: isAccepted 
+          // ข้อความใหม่สำหรับการตอบรับโปรเจกต์
+          ? `${freelancer.name} ได้ตอบรับโปรเจกต์ "${project.title}" ของคุณ`
+          : `${freelancer.name} ได้ปฏิเสธคำขอร่วมงาน "${project.title}" ของคุณ`,
+        projectId: projectId,
+        link: `/project/${projectId}`
+      });
+    } catch (error) {
+      console.error('Error creating freelancer response notification:', error);
+      return { success: false, error: 'Failed to create notification' };
     }
-
-    // Notification to project owner
-    return await createNotification({
-      recipientId: project.owner.toString(),
-      senderId: freelancerId,
-      type: isAccepted ? 'project_accepted' : 'project_rejected',
-      title: isAccepted ? 'คำขอร่วมงานได้รับการตอบรับ' : 'คำขอร่วมงานถูกปฏิเสธ',
-      message: isAccepted 
-        ? `${freelancer.name} ได้ตอบรับคำขอร่วมงาน "${project.title}" ของคุณแล้ว`
-        : `${freelancer.name} ได้ปฏิเสธคำขอร่วมงาน "${project.title}" ของคุณ`,
-      projectId: projectId,
-      link: `/project/${projectId}`
-    });
-  } catch (error) {
-    console.error('Error creating freelancer response notification:', error);
-    return { success: false, error: 'Failed to create notification' };
   }
-}
-
-/**
- * Creates notification for project status change
- */
-export async function createProjectStatusChangeNotification(
-  projectId: string, 
-  status: string, 
-  recipientId: string,
-  senderId: string
-) {
-  try {
-    // Get project details
-    const project = await Project.findById(projectId).lean();
-
-    if (!project) {
-      return { success: false, error: 'Project not found' };
+  
+  // สำหรับการเปลี่ยนสถานะโปรเจกต์ - ต้องแก้ไขเพื่อให้มีเงื่อนไขพิเศษสำหรับสถานะเสร็จสิ้น
+  export async function createProjectStatusChangeNotification(
+    projectId: string, 
+    status: string, 
+    recipientId: string,
+    senderId: string
+  ) {
+    try {
+      // Get project details and sender details (ซึ่งในกรณีนี้คือฟรีแลนซ์)
+      const [project, sender] = await Promise.all([
+        Project.findById(projectId).lean(),
+        User.findById(senderId).select('name').lean()
+      ]);
+  
+      if (!project) {
+        return { success: false, error: 'Project not found' };
+      }
+      
+      // ถ้าสถานะเป็น 'awaiting' (ฟรีแลนซ์กดส่งงานเพื่อรอการตรวจสอบ)
+      if (status === 'awaiting') {
+        const freelancerName = sender ? sender.name : 'ฟรีแลนซ์';
+        
+        return await createNotification({
+          recipientId: recipientId,
+          senderId: senderId,
+          type: 'project_status_change',
+          title: 'โปรเจกต์เสร็จสิ้นรอการตรวจสอบ',
+          message: `${freelancerName} ได้ยืนยันว่าโปรเจกต์ "${project.title}" เสร็จสิ้น กรุณาตรวจสอบ`,
+          projectId: projectId,
+          link: `/project/${projectId}`
+        });
+      }
+      
+      // กรณีอื่นๆ ใช้ข้อความปกติ
+      // Map status to human-readable text
+      const statusMap = {
+        'in_progress': 'กำลังดำเนินการ',
+        'revision': 'ต้องการการแก้ไข',
+        'awaiting': 'รอการตรวจสอบ',
+        'completed': 'เสร็จสิ้น'
+      };
+  
+      const statusText = statusMap[status] || status;
+  
+      return await createNotification({
+        recipientId: recipientId,
+        senderId: senderId,
+        type: 'project_status_change',
+        title: 'มีการเปลี่ยนสถานะโปรเจกต์',
+        message: `โปรเจกต์ "${project.title}" มีการเปลี่ยนสถานะเป็น "${statusText}"`,
+        projectId: projectId,
+        link: `/project/${projectId}`
+      });
+    } catch (error) {
+      console.error('Error creating project status change notification:', error);
+      return { success: false, error: 'Failed to create notification' };
     }
-
-    // Map status to human-readable text
-    const statusMap = {
-      'in_progress': 'กำลังดำเนินการ',
-      'revision': 'ต้องการการแก้ไข',
-      'awaiting': 'รอการตรวจสอบ',
-      'completed': 'เสร็จสิ้น'
-    };
-
-    const statusText = statusMap[status] || status;
-
-    return await createNotification({
-      recipientId: recipientId,
-      senderId: senderId,
-      type: 'project_status_change',
-      title: 'มีการเปลี่ยนสถานะโปรเจกต์',
-      message: `โปรเจกต์ "${project.title}" มีการเปลี่ยนสถานะเป็น "${statusText}"`,
-      projectId: projectId,
-      link: `/project/${projectId}`
-    });
-  } catch (error) {
-    console.error('Error creating project status change notification:', error);
-    return { success: false, error: 'Failed to create notification' };
   }
-}
 
 /**
  * Creates notification for project progress update

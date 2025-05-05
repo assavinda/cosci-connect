@@ -448,7 +448,6 @@ export async function PATCH(
         updateData.requestToFreelancer = null;
         updateData.freelancersRequested = [];
         
-        // สร้างการแจ้งเตือนเมื่อฟรีแลนซ์ยอมรับคำขอ
         try {
           // แจ้งเตือนเจ้าของโปรเจกต์ว่าฟรีแลนซ์ยอมรับคำขอแล้ว
           await createFreelancerResponseNotification(
@@ -457,13 +456,8 @@ export async function PATCH(
             true // ตอบรับคำขอ
           );
           
-          // แจ้งเตือนเมื่อสถานะโปรเจกต์เปลี่ยน
-          await createProjectStatusChangeNotification(
-            id, 
-            'in_progress', 
-            project.owner.toString(),
-            user._id.toString()
-          );
+          // ลบการเรียกใช้ createProjectStatusChangeNotification ตรงนี้
+          // ไม่ต้องแจ้งเตือนเมื่อสถานะโปรเจกต์เปลี่ยน
         } catch (notificationError) {
           console.error('Error creating freelancer response notification:', notificationError);
           // ไม่ต้องหยุดการทำงานหลักหากการสร้างการแจ้งเตือนล้มเหลว

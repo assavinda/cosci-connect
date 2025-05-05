@@ -110,7 +110,7 @@ function ProjectManageButtons({ project, isFreelancer, userId }: ProjectManageBu
     }
   };
   
-  // Freelancer marks project as complete (submit for review)
+  // Freelancer submits a completed project
   const handleSubmitProject = async () => {
     if (!userId) return;
     
@@ -139,7 +139,7 @@ function ProjectManageButtons({ project, isFreelancer, userId }: ProjectManageBu
       setIsLoading(false);
     }
   };
-  
+
   // Freelancer submits a revision
   const handleSubmitRevision = async () => {
     if (!userId) return;
