@@ -11,6 +11,7 @@ interface Project {
   budget: number;
   requiredSkills: string[];
   requestToFreelancer?: string | null;
+  freelancersRequested: string[]; // เพิ่มฟิลด์นี้เพื่อเช็คว่าฟรีแลนซ์ส่งคำขอมาแล้วหรือไม่
 }
 
 interface HireButtonProps {
@@ -155,6 +156,11 @@ const HireButton: React.FC<HireButtonProps> = ({
     return null;
   }
 
+  // ตรวจสอบว่าฟรีแลนซ์ได้ส่งคำขอมาแล้วหรือไม่
+  const checkIfFreelancerRequested = (project: Project): boolean => {
+    return project.freelancersRequested.includes(freelancerId);
+  };
+
   return (
     <>
       <button
@@ -234,8 +240,21 @@ const HireButton: React.FC<HireButtonProps> = ({
                           selectedProjectId === project.id 
                             ? 'border-primary-blue-500 bg-primary-blue-50' 
                             : 'border-gray-200 hover:border-gray-300'
+                        } ${
+                          checkIfFreelancerRequested(project) 
+                            ? 'opacity-60 hover:border-gray-200' 
+                            : ''
                         }`}
-                        onClick={() => setSelectedProjectId(project.id)}
+                        onClick={() => {
+                          if (!checkIfFreelancerRequested(project)) {
+                            // ถ้ากดที่โปรเจกต์เดิมที่กำลังเลือกอยู่ ให้ยกเลิกการเลือก
+                            if (selectedProjectId === project.id) {
+                              setSelectedProjectId(null);
+                            } else {
+                              setSelectedProjectId(project.id);
+                            }
+                          }
+                        }}
                       >
                         <div className="flex justify-between items-start">
                           <div>
@@ -257,19 +276,28 @@ const HireButton: React.FC<HireButtonProps> = ({
                                 </span>
                               ))}
                             </div>
+                            
+                            {/* แสดงข้อความเมื่อฟรีแลนซ์ส่งคำขอมาแล้ว */}
+                            {checkIfFreelancerRequested(project) && (
+                              <p className="mt-2 text-sm text-orange-500 font-medium">
+                                ฟรีแลนซ์ได้ส่งคำขอร่วมงานในโปรเจกต์นี้แล้ว
+                              </p>
+                            )}
                           </div>
                           <div className="ml-2">
-                            <div 
-                              className={`w-5 h-5 rounded-full border ${
-                                selectedProjectId === project.id
-                                  ? 'border-primary-blue-500 bg-primary-blue-500'
-                                  : 'border-gray-300'
-                              } flex items-center justify-center`}
-                            >
-                              {selectedProjectId === project.id && (
-                                <div className="w-2 h-2 rounded-full bg-white"></div>
-                              )}
-                            </div>
+                            {!checkIfFreelancerRequested(project) && (
+                              <div 
+                                className={`w-5 h-5 rounded-full border ${
+                                  selectedProjectId === project.id
+                                    ? 'border-primary-blue-500 bg-primary-blue-500'
+                                    : 'border-gray-300'
+                                } flex items-center justify-center`}
+                              >
+                                {selectedProjectId === project.id && (
+                                  <div className="w-2 h-2 rounded-full bg-white"></div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -291,7 +319,9 @@ const HireButton: React.FC<HireButtonProps> = ({
               {availableProjects.length > 0 && !successMessage && (
                 <button
                   onClick={sendHireRequest}
-                  className="btn-primary flex items-center justify-center min-w-24"
+                  className={`btn-primary flex items-center justify-center min-w-24 ${
+                    !selectedProjectId ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                   disabled={!selectedProjectId || isSubmitting}
                 >
                   {isSubmitting ? (
