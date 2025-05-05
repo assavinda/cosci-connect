@@ -13,11 +13,22 @@ import PDFViewer from '../../../../components/common/PDFViewer';
 // ด้านบนของไฟล์ที่จะใช้งาน
 import { addPDFTransformation } from '@/utils/fileHelpers';
 
+interface CompletedProject {
+  id: string;
+  title: string;
+  description: string;
+  budget: number;
+  ownerName: string;
+  completedAt: string;
+  owner: string;
+}
+
 export default function FreelancerProfilePage() {
   const { id } = useParams();
   const freelancerId = Array.isArray(id) ? id[0] : id; // แปลงจาก ParamValue เป็น string
   const { data: session } = useSession();
   const [freelancer, setFreelancer] = useState(null);
+  const [completedProjects, setCompletedProjects] = useState<CompletedProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -26,22 +37,36 @@ export default function FreelancerProfilePage() {
   const { subscribeToFreelancer } = usePusher();
 
   useEffect(() => {
-    const fetchFreelancerData = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await axios.get(`/api/freelancers/${freelancerId}`);
-        setFreelancer(response.data);
+        // ดึงข้อมูลฟรีแลนซ์
+        const freelancerResponse = await axios.get(`/api/freelancers/${freelancerId}`);
+        setFreelancer(freelancerResponse.data);
+        
+        // ดึงข้อมูลโปรเจกต์ที่ทำเสร็จแล้ว
+        const projectsResponse = await axios.get('/api/projects', {
+          params: {
+            status: 'completed',
+            assignedTo: freelancerId,
+            limit: 100
+          }
+        });
+        
+        // ตั้งค่าโปรเจกต์ที่ทำเสร็จแล้ว
+        setCompletedProjects(projectsResponse.data.projects || []);
+        
         setError('');
       } catch (err) {
-        console.error('Error fetching freelancer data:', err);
-        setError('ไม่สามารถโหลดข้อมูลฟรีแลนซ์ได้ กรุณาลองใหม่อีกครั้ง');
+        console.error('Error fetching data:', err);
+        setError('ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง');
       } finally {
         setLoading(false);
       }
     };
 
     if (freelancerId) {
-      fetchFreelancerData();
+      fetchData();
     }
   }, [freelancerId]);
   
@@ -93,6 +118,16 @@ export default function FreelancerProfilePage() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(price);
+  };
+  
+  // ฟังก์ชันฟอร์แมตวันที่
+  const formatDate = (dateString) => {
+    const options = { 
+      year: 'numeric' as const, 
+      month: 'long' as const, 
+      day: 'numeric' as const 
+    };
+    return new Date(dateString).toLocaleDateString('th-TH', options);
   };
 
   if (loading) {
@@ -327,6 +362,39 @@ export default function FreelancerProfilePage() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+      
+      {/* เพิ่มส่วนแสดงโปรเจกต์ที่ทำเสร็จแล้ว */}
+      <div className="mt-8 bg-white shadow-md rounded-xl overflow-hidden">
+        <div className="bg-primary-blue-500 p-4 text-white">
+          <h2 className="text-xl font-medium">โปรเจกต์ที่ทำเสร็จแล้ว</h2>
+        </div>
+        
+        <div className="p-6">
+          {completedProjects.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {completedProjects.map((project) => (
+                <div key={project.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200 hover:border-primary-blue-300 transition-colors">
+                  <Link href={`/project/${project.id}`} className="block">
+                    <h3 className="font-medium text-primary-blue-500 hover:text-primary-blue-600">{project.title}</h3>
+                    <p className="text-gray-500 text-sm mt-1">เจ้าของโปรเจกต์: {project.ownerName}</p>
+                    <p className="text-gray-500 text-sm">งบประมาณ: {formatPrice(project.budget)}</p>
+                    <p className="text-gray-500 text-sm">เสร็จสิ้นเมื่อ: {formatDate(project.completedAt)}</p>
+                    <p className="text-gray-600 mt-2 line-clamp-2">{project.description}</p>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 bg-gray-50 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto text-gray-400 mb-4">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+              </svg>
+              <p className="text-gray-500">ฟรีแลนซ์คนนี้ยังไม่มีโปรเจกต์ที่ทำเสร็จ</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
