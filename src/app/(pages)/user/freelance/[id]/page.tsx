@@ -164,44 +164,25 @@ export default function FreelancerProfilePage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="w-full mx-auto pt-6">
       {/* หัวข้อและปุ่มย้อนกลับ */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center">
         <Link href="/find-freelance" className="text-primary-blue-500 hover:text-primary-blue-600 flex items-center gap-1">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M15 18l-6-6 6-6"/>
           </svg>
           กลับไปหน้าค้นหาฟรีแลนซ์
         </Link>
-        
-        {/* เพิ่มปุ่ม HireButton และ SendMessageButton ตามสิทธิ์ */}
-        <div className="flex gap-2">
-            {/* ถ้าเป็นผู้ใช้ที่ล็อกอินแล้ว ไม่ใช่ตัวเอง และไม่ใช่ฟรีแลนซ์ ให้แสดงปุ่ม SendMessageButton */}
-            {session?.user?.id && session?.user?.id !== freelancerId && session?.user?.role !== 'student' && (
-              <SendMessageButton 
-                recipientId={freelancerId} 
-                recipientName={freelancer.name} 
-              />
-            )}
-            
-            {/* ถ้าผู้ใช้ไม่ใช่ student และไม่ใช่ตัวเอง ให้แสดงปุ่ม HireButton */}
-            {session?.user?.role !== 'student' && session?.user?.id !== freelancerId && (
-              <HireButton 
-                freelancerId={freelancerId} 
-                freelancerName={freelancer.name} 
-                freelancerSkills={freelancer.skills || []} 
-              />
-            )}
-        </div>
       </div>
 
       {/* ข้อมูลฟรีแลนซ์ */}
-      <div className="bg-white shadow-md rounded-xl overflow-hidden">
+      <div className="bg-white rounded-xl overflow-hidden">
         {/* ส่วนหัว - ข้อมูลพื้นฐาน */}
-        <div className="bg-primary-blue-500 p-6 text-white">
+
+        <div className="p-6">
           <div className="flex flex-col md:flex-row gap-4 items-center md:items-start">
             {/* รูปโปรไฟล์ */}
-            <div className="w-24 h-24 rounded-full overflow-hidden bg-white/30 flex items-center justify-center">
+            <div className="w-20 h-20 rounded-full overflow-hidden bg-white/30 flex items-center justify-center outline-double outline-4 outline-primary-blue-500">
               {freelancer.profileImageUrl ? (
                 <img
                   src={freelancer.profileImageUrl}
@@ -216,15 +197,34 @@ export default function FreelancerProfilePage() {
             </div>
             
             {/* ข้อมูลส่วนตัว */}
-            <div className="flex-1 text-center md:text-left">
-              <h1 className="text-2xl font-medium">{freelancer.name}</h1>
-              <p className="text-white/80">{freelancer.major}</p>
-              <p className="text-xl font-medium mt-2">
-                ราคาเริ่มต้น: {formatPrice(freelancer.basePrice || 500)}
-              </p>
+            <div className="flex-1 self-center text-center md:text-left">
+              <h1 className="text-xl font-medium">{freelancer.name}</h1>
+              <p className="text-s text-gray-400">{freelancer.major}</p>
+            </div>
+
+            {/* เพิ่มปุ่ม HireButton และ SendMessageButton ตามสิทธิ์ */}
+            <div className="flex gap-2 self-center">
+              {/* ถ้าเป็นผู้ใช้ที่ล็อกอินแล้ว ไม่ใช่ตัวเอง และไม่ใช่ฟรีแลนซ์ ให้แสดงปุ่ม SendMessageButton */}
+              {session?.user?.id && session?.user?.id !== freelancerId && session?.user?.role !== 'student' && (
+                <SendMessageButton 
+                  recipientId={freelancerId} 
+                  recipientName={freelancer.name} 
+                />
+              )}
+              
+              {/* ถ้าผู้ใช้ไม่ใช่ student และไม่ใช่ตัวเอง ให้แสดงปุ่ม HireButton */}
+              {session?.user?.role !== 'student' && session?.user?.id !== freelancerId && (
+                <HireButton 
+                  freelancerId={freelancerId} 
+                  freelancerName={freelancer.name} 
+                  freelancerSkills={freelancer.skills || []} 
+                />
+              )}
             </div>
           </div>
         </div>
+
+        <hr className="text-gray-300 mx-6"/>
 
         {/* ข้อมูลทักษะและรายละเอียด */}
         <div className="p-6">
@@ -232,14 +232,18 @@ export default function FreelancerProfilePage() {
             {/* คอลัมน์ซ้าย - ทักษะและรายละเอียด */}
             <div className="lg:col-span-1 space-y-6">
               {/* ทักษะ */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h2 className="text-lg font-medium mb-3 text-gray-800">ทักษะ</h2>
-                <div className="flex flex-wrap gap-2">
+              <div className="rounded-lg">
+                <div className="flex items-center mb-3 gap-2">
+                  <h2 className="text-lg font-medium">ทักษะ</h2>
+                  <p className="text-xs bg-primary-blue-400 rounded-lg px-1.5 py-0.5 text-white">{freelancer.skills.length}</p>
+                </div>
+                
+                <div className="flex flex-wrap gap-2 border border-gray-200 bg-gray-50 p-4 rounded-lg">
                   {freelancer.skills && freelancer.skills.length > 0 ? (
                     freelancer.skills.map((skill, index) => (
                       <span 
                         key={index} 
-                        className="bg-primary-blue-100 text-primary-blue-600 text-sm px-3 py-1 rounded-lg"
+                        className="bg-primary-blue-100 text-primary-blue-600 text-sm px-3 py-1 rounded-lg border border-primary-blue-200"
                       >
                         {skill}
                       </span>
@@ -252,23 +256,26 @@ export default function FreelancerProfilePage() {
               
               {/* ข้อมูลการติดต่อ และลิงก์ */}
               <div className="bg-gray-50 p-4 rounded-lg">
-                <h2 className="text-lg font-medium mb-3 text-gray-800">เอกสาร</h2>
+                <h2 className="text-lg font-medium mb-3 text-gray-800">พอร์ตโฟลิโอ</h2>
                 {freelancer.portfolioUrl ? (
-                  <div className="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                      <polyline points="14 2 14 8 20 8"></polyline>
-                      <line x1="12" y1="18" x2="12" y2="12"></line>
-                      <line x1="9" y1="15" x2="15" y2="15"></line>
-                    </svg>
+                  <div className="flex items-center justify-center gap-2">
                     <a 
                       href={addPDFTransformation(freelancer.portfolioUrl)}
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-primary-blue-500 hover:underline"
+                      className="btn-primary flex justify-center items-center text-center gap-2 w-full"
                       download="portfolio.pdf"
                     >
-                      ดูพอร์ตโฟลิโอ (PDF)
+                       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="12" y1="18" x2="12" y2="12"></line>
+                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                      </svg>
+                      <p>
+                        ดูพอร์ตโฟลิโอ (PDF)
+                      </p>
+                      
                     </a>
                   </div>
                 ) : (
@@ -281,9 +288,9 @@ export default function FreelancerProfilePage() {
             <div className="lg:col-span-2 space-y-6">
               {/* ประวัติและคำอธิบาย */}
               <div className="bg-gray-50 p-4 rounded-lg">
-                <h2 className="text-lg font-medium mb-3 text-gray-800">เกี่ยวกับฟรีแลนซ์</h2>
-                <p className="text-gray-700">
-                  {freelancer.bio || 'ฟรีแลนซ์ไม่ได้เพิ่มข้อมูลเกี่ยวกับตนเอง'}
+                <h2 className="text-lg font-medium mb-3 text-gray-800">เกี่ยวกับ</h2>
+                <p className={`${freelancer.bio ? 'text-gray-700' : 'text-gray-300'}`}>
+                  {freelancer.bio || 'ไม่มีข้อมูล'}
                 </p>
               </div>
               
