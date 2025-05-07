@@ -21,11 +21,12 @@ interface ChatContact {
   userId: string;
   name: string;
   profileImageUrl: string | null;
-  role?: string; // เพิ่มฟิลด์ role
+  role?: string;
   lastMessage: string;
   timestamp: string; 
   unreadCount: number;
 }
+
 interface ChatWindowProps {
   isOpen: boolean;
   onClose: () => void;
@@ -52,7 +53,7 @@ function ChatWindow({
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatWindowRef = useRef<HTMLDivElement>(null);
   
-  // เพิ่ม: ใช้ Pusher hooks สำหรับการแชทแบบเรียลไทม์
+  // ใช้ Pusher hooks สำหรับการแชทแบบเรียลไทม์
   const { 
     subscribeToChatMessages, 
     subscribeToChatListUpdates,
@@ -88,7 +89,7 @@ function ChatWindow({
     }
   }, [loading, selectedChat, view]);
 
-  // เพิ่ม: รับข้อความแชทใหม่แบบเรียลไทม์
+  // รับข้อความแชทใหม่แบบเรียลไทม์
   useEffect(() => {
     if (!session?.user?.id || !isOpen) return;
     
@@ -184,13 +185,12 @@ function ChatWindow({
       
       setMessages(response.data.messages || []);
       
-      // ในส่วนของฟังก์ชัน fetchMessages
       if (response.data.otherUser) {
         setSelectedChat({
           userId: response.data.otherUser.id,
           name: response.data.otherUser.name,
           profileImageUrl: response.data.otherUser.profileImageUrl,
-          role: response.data.otherUser.role || 'unknown',  // กำหนดค่าเริ่มต้น
+          role: response.data.otherUser.role || 'unknown',
           lastMessage: response.data.messages.length > 0 ? 
             response.data.messages[response.data.messages.length - 1].content : '',
           timestamp: response.data.messages.length > 0 ? 
@@ -203,7 +203,7 @@ function ChatWindow({
           userId: userId,
           name: userName,
           profileImageUrl: null,
-          role: 'unknown',  // กำหนดค่าเริ่มต้น
+          role: 'unknown',
           lastMessage: '',
           timestamp: new Date().toISOString(),
           unreadCount: 0
@@ -502,6 +502,10 @@ function ChatWindow({
                   </div>
                 </div>
               ))
+            ) : loading ? (
+              <div className="flex justify-center items-center h-full">
+                <Loading size="medium" color="primary" />
+              </div>
             ) : (
               <div className="p-6 text-center text-gray-500">
                 ไม่มีข้อความใหม่
@@ -511,7 +515,11 @@ function ChatWindow({
         ) : (
           // Chat View
           <div className="p-3 flex flex-col gap-1 h-full">
-            {messages.length > 0 ? (
+            {loading ? (
+              <div className="flex justify-center items-center h-full">
+                <Loading size="medium" color="primary" />
+              </div>
+            ) : messages.length > 0 ? (
               messages.map((msg) => (
                 <div 
                   key={msg.id} 
@@ -590,4 +598,5 @@ function ChatWindow({
     </div>
   );
 }
+
 export default ChatWindow;

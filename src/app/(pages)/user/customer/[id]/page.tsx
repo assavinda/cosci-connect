@@ -26,6 +26,7 @@ export default function CustomerProfilePage() {
   const [customerProjects, setCustomerProjects] = useState<CustomerProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState('ongoing'); // 'ongoing' | 'completed'
 
   useEffect(() => {
     const fetchData = async () => {
@@ -73,15 +74,15 @@ export default function CustomerProfilePage() {
   
   // ฟังก์ชันฟอร์แมตวันที่
   const formatDate = (dateString) => {
-    const options = { 
-      year: 'numeric' as const, 
-      month: 'long' as const, 
-      day: 'numeric' as const 
+    const options: Intl.DateTimeFormatOptions = { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
     };
     return new Date(dateString).toLocaleDateString('th-TH', options);
   };
   
-  // ฟังก์ชันแปลงสถานะโปรเจกต์เป็นภาษาไทย
+  // แปลงสถานะเป็นภาษาไทย
   const getStatusText = (status) => {
     const statusMap = {
       'open': 'เปิดรับสมัคร',
@@ -93,7 +94,7 @@ export default function CustomerProfilePage() {
     return statusMap[status] || status;
   };
   
-  // ฟังก์ชันแปลงสถานะโปรเจกต์เป็นสี
+  // รับสีสำหรับสถานะ
   const getStatusColor = (status) => {
     const colorMap = {
       'open': 'bg-green-100 text-green-800',
@@ -104,6 +105,17 @@ export default function CustomerProfilePage() {
     };
     return colorMap[status] || 'bg-gray-100 text-gray-800';
   };
+
+  // กรองโปรเจกต์ตาม active tab
+  const filteredProjects = customerProjects.filter(project => {
+    if (activeTab === 'ongoing') {
+      // แสดง open, in_progress, revision, awaiting
+      return ['open', 'in_progress', 'revision', 'awaiting'].includes(project.status);
+    } else {
+      // แสดง completed
+      return project.status === 'completed';
+    }
+  });
 
   if (loading) {
     return (
@@ -139,120 +151,227 @@ export default function CustomerProfilePage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="mx-auto pt-6">
       {/* หัวข้อและปุ่มย้อนกลับ */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center">
         <Link href="/" className="text-primary-blue-500 hover:text-primary-blue-600 flex items-center gap-1">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M15 18l-6-6 6-6"/>
           </svg>
           กลับไปยังหน้าแรก
         </Link>
-        
-        {/* แสดงปุ่ม SendMessageButton ถ้าล็อกอินและไม่ใช่โปรไฟล์ของตัวเอง */}
-        {session?.user?.id && session.user.id !== customerId && (
-          <SendMessageButton 
-            recipientId={customerId} 
-            recipientName={customer.name} 
-          />
-        )}
       </div>
 
-      {/* ข้อมูลลูกค้า */}
-      <div className="bg-white shadow-md rounded-xl overflow-hidden">
-        {/* ส่วนหัว - ข้อมูลพื้นฐาน */}
-        <div className="bg-primary-blue-500 p-6 text-white">
-          <div className="flex flex-col md:flex-row gap-4 items-center md:items-start">
-            {/* รูปโปรไฟล์ */}
-            <div className="w-24 h-24 rounded-full overflow-hidden bg-white/30 flex items-center justify-center">
-              {customer.profileImageUrl ? (
-                <img
-                  src={customer.profileImageUrl}
-                  alt={customer.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-3xl font-medium">
-                  {customer.name?.charAt(0) || '?'}
+      {/* Hero section - แสดงข้อมูลสำคัญ */}
+      <div className="relative p-8 overflow-hidden border-b border-gray-200 mb-6 place-items-center">
+        <div className="flex flex-col md:flex-row gap-6 items-center md:items-start relative z-10">
+          {/* รูปโปรไฟล์ */}
+          <div className="w-24 h-24 lg:w-32 lg:h-32 rounded-full overflow-hidden bg-white flex items-center justify-center outline-8 outline-double outline-primary-blue-500 shadow-lg">
+            {customer.profileImageUrl ? (
+              <img
+                src={customer.profileImageUrl}
+                alt={customer.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-primary-blue-300 flex items-center justify-center">
+                <span className="text-4xl font-bold text-white">
+                  {customer.name?.charAt(0).toUpperCase() || '?'}
                 </span>
+              </div>
+            )}
+          </div>
+          
+          {/* ข้อมูลพื้นฐาน */}
+          <div className="flex-1 text-center md:text-left flex flex-col items-center md:items-start">
+            <h1 className="text-l md:text-xl font-bold">{customer.name}</h1>
+            <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+              <span className="py-1 rounded-full text-sm text-gray-500">
+                {customer.role === 'teacher' ? 'อาจารย์' : 'ศิษย์เก่า'}
+              </span>
+            </div>
+            <span className="py-1 rounded-full text-sm text-gray-500">
+              {customer.major}
+            </span>
+          </div>
+          
+          {/* ปุ่มส่งข้อความ */}
+          <div className="flex place-items-end gap-2 self-center md:self-start">
+            {session?.user?.id && session.user.id !== customerId && (
+              <div className="flex gap-2">
+                <SendMessageButton 
+                  recipientId={customerId} 
+                  recipientName={customer.name} 
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main content - แสดงข้อมูลและโปรเจกต์ */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* คอลัมน์ซ้าย - ข้อมูลส่วนตัว */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* ข้อมูลพื้นฐาน */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="flex items-center mb-4 gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary-blue-500">
+                <circle cx="12" cy="8" r="5"></circle>
+                <path d="M20 21a8 8 0 1 0-16 0"></path>
+              </svg>
+              <h2 className="text-lg font-bold">ข้อมูลติดต่อ</h2>
+            </div>
+            
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+              <p className="text-gray-700">{customer.email}</p>
+            </div>
+          </div>
+          
+          {/* สถิติโปรเจกต์ */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="flex items-center mb-4 gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary-blue-500">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+              </svg>
+              <h2 className="text-lg font-bold">สถิติโปรเจกต์</h2>
+            </div>
+            
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">โปรเจกต์ทั้งหมด</span>
+                  <span className="font-medium">{customerProjects.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">กำลังดำเนินการ</span>
+                  <span className="font-medium">
+                    {customerProjects.filter(p => ['open', 'in_progress', 'revision', 'awaiting'].includes(p.status)).length}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">เสร็จสิ้น</span>
+                  <span className="font-medium">{customerProjects.filter(p => p.status === 'completed').length}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* คอลัมน์ขวา - ประวัติและรายละเอียด */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* ประวัติและคำอธิบาย */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="flex items-center mb-4 gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary-blue-500">
+                <circle cx="12" cy="8" r="5"></circle>
+                <path d="M20 21a8 8 0 1 0-16 0"></path>
+              </svg>
+              <h2 className="text-lg font-bold">เกี่ยวกับ</h2>
+            </div>
+            
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+              <p className={`${customer.bio ? 'text-gray-700' : 'text-gray-400 italic'}`}>
+                {customer.bio || 'ไม่มีข้อมูลเพิ่มเติม'}
+              </p>
+            </div>
+          </div>
+          
+          {/* แท็บโปรเจกต์ */}
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            {/* Tab navigation */}
+            <div className="flex border-b border-gray-200">
+              <button
+                className={`flex-1 py-3 px-4 font-medium text-center transition-colors ${
+                  activeTab === 'ongoing'
+                    ? 'border-b-2 border-primary-blue-500 text-primary-blue-500'
+                    : 'text-gray-500 hover:bg-gray-50'
+                }`}
+                onClick={() => setActiveTab('ongoing')}
+              >
+                โปรเจกต์ที่กำลังดำเนินการ 
+                {customerProjects.filter(p => ['open', 'in_progress', 'revision', 'awaiting'].includes(p.status)).length > 0 && (
+                  <span className="ml-1 bg-primary-blue-100 text-primary-blue-600 text-xs px-1.5 py-0.5 rounded-full">
+                    {customerProjects.filter(p => ['open', 'in_progress', 'revision', 'awaiting'].includes(p.status)).length}
+                  </span>
+                )}
+              </button>
+              <button
+                className={`flex-1 py-3 px-4 font-medium text-center transition-colors ${
+                  activeTab === 'completed'
+                    ? 'border-b-2 border-primary-blue-500 text-primary-blue-500'
+                    : 'text-gray-500 hover:bg-gray-50'
+                }`}
+                onClick={() => setActiveTab('completed')}
+              >
+                โปรเจกต์ที่เสร็จสิ้น 
+                {customerProjects.filter(p => p.status === 'completed').length > 0 && (
+                  <span className="ml-1 bg-primary-blue-100 text-primary-blue-600 text-xs px-1.5 py-0.5 rounded-full">
+                    {customerProjects.filter(p => p.status === 'completed').length}
+                  </span>
+                )}
+              </button>
+            </div>
+            
+            {/* Tab content */}
+            <div className="p-6">
+              {filteredProjects.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filteredProjects.map((project) => (
+                    <Link 
+                      key={project.id} 
+                      href={`/project/${project.id}`}
+                      className="block bg-gray-50 rounded-lg p-4 border border-gray-100 hover:border-primary-blue-300 hover:shadow-md transition-all"
+                    >
+                      <div className="flex justify-between items-start">
+                        <h3 className="font-bold text-primary-blue-500">{project.title}</h3>
+                        <span className={`px-2 py-0.5 rounded-full text-xs ${getStatusColor(project.status)}`}>
+                          {getStatusText(project.status)}
+                        </span>
+                      </div>
+                      
+                      <div className="mt-3 space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">งบประมาณ</span>
+                          <span className="font-medium text-green-600">{formatPrice(project.budget)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">วันที่สร้าง</span>
+                          <span className="font-medium">{formatDate(project.createdAt)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">กำหนดส่งงาน</span>
+                          <span className="font-medium">{formatDate(project.deadline)}</span>
+                        </div>
+                      </div>
+                      
+                      <p className="mt-3 text-gray-600 line-clamp-2 text-sm">{project.description}</p>
+                      <div className="mt-2 text-primary-blue-500 text-right text-sm font-medium">
+                        ดูรายละเอียด →
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-100">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto text-gray-400 mb-4">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                  </svg>
+                  <p className="text-gray-500 mb-2">
+                    {activeTab === 'ongoing' 
+                      ? 'ไม่พบโปรเจกต์ที่กำลังดำเนินการ' 
+                      : 'ไม่พบโปรเจกต์ที่เสร็จสิ้น'}
+                  </p>
+                  <p className="text-gray-400 text-sm">
+                    {activeTab === 'ongoing'
+                      ? 'คุณสามารถดูโปรเจกต์ที่เสร็จสิ้นในแท็บ "โปรเจกต์ที่เสร็จสิ้น"'
+                      : 'คุณสามารถดูโปรเจกต์ที่กำลังดำเนินการในแท็บ "โปรเจกต์ที่กำลังดำเนินการ"'}
+                  </p>
+                </div>
               )}
             </div>
-            
-            {/* ข้อมูลส่วนตัว */}
-            <div className="flex-1 text-center md:text-left">
-              <h1 className="text-2xl font-medium">{customer.name}</h1>
-              <p className="text-white/80">{customer.role === 'teacher' ? 'อาจารย์' : 'ศิษย์เก่า'}</p>
-            </div>
           </div>
-        </div>
-
-        {/* ข้อมูลรายละเอียด */}
-        <div className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* คอลัมน์ซ้าย - ข้อมูลการติดต่อ */}
-            <div className="lg:col-span-1 space-y-6">
-              {/* ข้อมูลพื้นฐาน */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h2 className="text-lg font-medium mb-3 text-gray-800">ข้อมูลติดต่อ</h2>
-                <p className="text-gray-600">{customer.email}</p>
-              </div>
-              
-              {/* ข้อมูลวิชาเอก */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h2 className="text-lg font-medium mb-3 text-gray-800">วิชาเอก</h2>
-                <p className="text-gray-600">{customer.major || 'ไม่ระบุ'}</p>
-              </div>
-            </div>
-            
-            {/* คอลัมน์ขวา - ประวัติและรายละเอียด */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* ประวัติและคำอธิบาย */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h2 className="text-lg font-medium mb-3 text-gray-800">เกี่ยวกับ</h2>
-                <p className="text-gray-700">
-                  {customer.bio || 'ไม่มีข้อมูลเพิ่มเติม'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* เพิ่มส่วนแสดงโปรเจกต์ทั้งหมดของลูกค้า - รูปแบบเดียวกับ Freelancer */}
-      <div className="mt-8 bg-white shadow-md rounded-xl overflow-hidden">
-        <div className="bg-primary-blue-500 p-4 text-white">
-          <h2 className="text-xl font-medium">โปรเจกต์ทั้งหมด</h2>
-        </div>
-        
-        <div className="p-6">
-          {customerProjects.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {customerProjects.map((project) => (
-                <div key={project.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200 hover:border-primary-blue-300 transition-colors">
-                  <Link href={`/project/${project.id}`} className="block">
-                    <h3 className="font-medium text-primary-blue-500 hover:text-primary-blue-600">{project.title}</h3>
-                    <div className="flex justify-between items-center mt-1">
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
-                        {getStatusText(project.status)}
-                      </span>
-                      <p className="text-gray-500 text-sm">สร้างเมื่อ: {formatDate(project.createdAt)}</p>
-                    </div>
-                    <p className="text-gray-500 text-sm mt-2">งบประมาณ: {formatPrice(project.budget)}</p>
-                    <p className="text-gray-500 text-sm">กำหนดส่งงาน: {formatDate(project.deadline)}</p>
-                    <p className="text-gray-600 mt-2 line-clamp-2">{project.description}</p>
-                  </Link>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 bg-gray-50 rounded-lg">
-              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto text-gray-400 mb-4">
-                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-              </svg>
-              <p className="text-gray-500">ไม่พบโปรเจกต์ของลูกค้าคนนี้</p>
-            </div>
-          )}
         </div>
       </div>
     </div>

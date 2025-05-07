@@ -6,6 +6,7 @@ import Message from '@/models/Message';
 import User from '@/models/User';
 import mongoose from 'mongoose';
 import { triggerChatMessage, triggerMessageRead } from '@/libs/pusher';
+import { decrypt, isEncrypted } from '@/utils/encryptionUtils';
 
 // GET - ดึงรายการแชทของผู้ใช้
 export async function GET(req: NextRequest) {
@@ -66,25 +67,33 @@ export async function GET(req: NextRequest) {
       }
       
       const otherUser = await User.findById(otherUserId)
-        .select('name profileImageUrl role')  // เพิ่ม role เข้าไปในการ select
+        .select('name profileImageUrl role')
         .lean();
 
-        // ในส่วนที่ส่งข้อมูลกลับ
-        return NextResponse.json({
-        messages: messages.map(msg => ({
-            id: msg._id.toString(),
-            content: msg.content,
-            sender: msg.senderId.toString() === user._id.toString() ? 'me' : 'other',
-            timestamp: msg.createdAt,
-            isRead: msg.isRead
-        })),
+      // ถอดรหัสข้อความทั้งหมดก่อนส่งกลับไปยังไคลเอ็นต์
+      const decryptedMessages = messages.map(msg => {
+        // ตรวจสอบว่าข้อความเข้ารหัสหรือไม่ก่อนถอดรหัส
+        const content = isEncrypted(msg.content) ? decrypt(msg.content) : msg.content;
+        
+        return {
+          id: msg._id.toString(),
+          content: content,
+          sender: msg.senderId.toString() === user._id.toString() ? 'me' : 'other',
+          timestamp: msg.createdAt,
+          isRead: msg.isRead
+        };
+      });
+
+      // ส่งข้อมูลกลับ
+      return NextResponse.json({
+        messages: decryptedMessages,
         otherUser: otherUser ? {
-            id: otherUser._id.toString(),
-            name: otherUser.name,
-            profileImageUrl: otherUser.profileImageUrl,
-            role: otherUser.role || 'unknown'  // กำหนดค่าเริ่มต้นถ้าไม่มี role
+          id: otherUser._id.toString(),
+          name: otherUser.name,
+          profileImageUrl: otherUser.profileImageUrl,
+          role: otherUser.role || 'unknown'
         } : null
-        });
+      });
     } else {
       // ดึงรายการแชททั้งหมดของผู้ใช้ (แสดงเฉพาะล่าสุดจากแต่ละคู่สนทนา)
       // สร้าง pipeline สำหรับ MongoDB Aggregation
@@ -136,27 +145,33 @@ export async function GET(req: NextRequest) {
       const userIds = chatList.map(chat => chat._id);
       
       // ดึงข้อมูลผู้ใช้
-    const chatUsers = await User.find(
-            { _id: { $in: userIds } },
-            { _id: 1, name: 1, profileImageUrl: 1, role: 1 }  // เพิ่ม role
-    ).lean();
+      const chatUsers = await User.find(
+        { _id: { $in: userIds } },
+        { _id: 1, name: 1, profileImageUrl: 1, role: 1 }
+      ).lean();
       
-      // จับคู่ข้อมูลผู้ใช้กับข้อความ
-    const formattedChatList = chatList.map(chat => {
+      // จับคู่ข้อมูลผู้ใช้กับข้อความและถอดรหัสข้อความล่าสุด
+      const formattedChatList = chatList.map(chat => {
         const chatUser = chatUsers.find(u => u._id.toString() === chat._id.toString());
         
         if (!chatUser) return null;
         
+        // ถอดรหัสข้อความล่าสุดก่อนส่งไปยังไคลเอ็นต์
+        let lastMessageContent = chat.lastMessage.content;
+        if (isEncrypted(lastMessageContent)) {
+          lastMessageContent = decrypt(lastMessageContent);
+        }
+        
         return {
-        userId: chatUser._id.toString(),
-        name: chatUser.name,
-        profileImageUrl: chatUser.profileImageUrl || null,
-        role: chatUser.role || 'unknown',  // เพิ่มการเก็บค่า role
-        lastMessage: chat.lastMessage.content,
-        timestamp: chat.lastMessage.createdAt,
-        unreadCount: chat.unreadCount
+          userId: chatUser._id.toString(),
+          name: chatUser.name,
+          profileImageUrl: chatUser.profileImageUrl || null,
+          role: chatUser.role || 'unknown',
+          lastMessage: lastMessageContent,
+          timestamp: chat.lastMessage.createdAt,
+          unreadCount: chat.unreadCount
         };
-    }).filter(Boolean);
+      }).filter(Boolean);
       
       return NextResponse.json({
         chatList: formattedChatList
@@ -226,7 +241,7 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // สร้างข้อความใหม่
+    // สร้างข้อความใหม่ (การเข้ารหัสจะทำโดยอัตโนมัติในประเภท pre save hook)
     const message = new Message({
       senderId: user._id,
       receiverId: data.receiverId,
@@ -238,10 +253,10 @@ export async function POST(req: NextRequest) {
     // บันทึกข้อความลงฐานข้อมูล
     await message.save();
     
-    // เตรียมข้อมูลสำหรับ Pusher
+    // เตรียมข้อมูลสำหรับ Pusher (ส่งข้อความที่ยังไม่ได้เข้ารหัสเพื่อให้ผู้รับเห็นเนื้อหาที่อ่านได้)
     const messagePayload = {
       id: message._id.toString(),
-      content: message.content,
+      content: data.content.trim(), // ส่งข้อความที่ยังไม่ได้เข้ารหัส
       sender: {
         id: user._id.toString(),
         name: user.name,
@@ -262,7 +277,7 @@ export async function POST(req: NextRequest) {
       success: true,
       message: {
         id: message._id.toString(),
-        content: message.content,
+        content: data.content.trim(), // ส่งข้อความที่ยังไม่ได้เข้ารหัสกลับไปยังผู้ส่ง
         sender: 'me',
         timestamp: message.createdAt,
         isRead: message.isRead
