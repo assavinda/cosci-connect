@@ -23,7 +23,7 @@ function SendMessageButton({ recipientId, recipientName }: SendMessageButtonProp
     <>
       <button 
         onClick={handleOpenChat}
-        className="btn-secondary flex items-center gap-2"
+        className="btn-secondary flex items-center gap-2 w-full justify-center"
         aria-label="ส่งข้อความ"
       >
         <svg 

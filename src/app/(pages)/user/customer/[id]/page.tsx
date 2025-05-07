@@ -128,7 +128,7 @@ export default function CustomerProfilePage() {
 
   if (error) {
     return (
-      <div className="max-w-5xl mx-auto p-6 bg-red-50 border border-red-200 rounded-xl my-6">
+      <div className="max-w-5xl mx-auto p-6 bg-red-50 border border-red-200 rounded-xl my-6 shadow-sm">
         <h2 className="text-red-600 text-lg font-medium mb-4">เกิดข้อผิดพลาด</h2>
         <p className="text-red-600 mb-4">{error}</p>
         <Link href="/" className="btn-secondary inline-block">
@@ -140,7 +140,7 @@ export default function CustomerProfilePage() {
 
   if (!customer) {
     return (
-      <div className="max-w-5xl mx-auto p-6 bg-gray-50 border border-gray-200 rounded-xl my-6">
+      <div className="max-w-5xl mx-auto p-6 bg-gray-50 border border-gray-200 rounded-xl my-6 shadow-sm">
         <h2 className="text-lg font-medium mb-4">ไม่พบข้อมูลลูกค้า</h2>
         <p className="text-gray-600 mb-4">ไม่พบข้อมูลลูกค้าที่คุณต้องการดู หรืออาจไม่มีอยู่ในระบบ</p>
         <Link href="/" className="btn-secondary inline-block">
@@ -162,8 +162,8 @@ export default function CustomerProfilePage() {
         </Link>
       </div>
 
-      {/* Hero section - แสดงข้อมูลสำคัญ */}
-      <div className="relative p-8 overflow-hidden border-b border-gray-200 mb-6 place-items-center">
+      {/* Hero section - แสดงข้อมูลสำคัญ (ปรับปรุงตามหน้า freelancer profile) */}
+      <div className="relative p-8 overflow-hidden border-b border-gray-200 mb-6 place-items-cente">
         <div className="flex flex-col md:flex-row gap-6 items-center md:items-start relative z-10">
           {/* รูปโปรไฟล์ */}
           <div className="w-24 h-24 lg:w-32 lg:h-32 rounded-full overflow-hidden bg-white flex items-center justify-center outline-8 outline-double outline-primary-blue-500 shadow-lg">
@@ -187,24 +187,42 @@ export default function CustomerProfilePage() {
             <h1 className="text-l md:text-xl font-bold">{customer.name}</h1>
             <div className="flex flex-wrap gap-4 justify-center md:justify-start">
               <span className="py-1 rounded-full text-sm text-gray-500">
-                {customer.role === 'teacher' ? 'อาจารย์' : 'ศิษย์เก่า'}
+                {customer.major}
               </span>
             </div>
-            <span className="py-1 rounded-full text-sm text-gray-500">
-              {customer.major}
+            <span className="bg-blue-500/20 px-3 py-1 rounded-full text-sm flex items-center gap-1 justify-center md:justify-start mx-auto md:mx-0 w-fit mt-2">
+              <span className="w-2 h-2 bg-blue-400 rounded-full inline-block"></span>
+              {customer.role === 'teacher' ? 'อาจารย์' : 'ศิษย์เก่า'}
             </span>
           </div>
           
           {/* ปุ่มส่งข้อความ */}
-          <div className="flex place-items-end gap-2 self-center md:self-start">
-            {session?.user?.id && session.user.id !== customerId && (
-              <div className="flex gap-2">
-                <SendMessageButton 
-                  recipientId={customerId} 
-                  recipientName={customer.name} 
-                />
+          <div className="flex place-items-center gap-2 self-center md:self-start">
+            <div className="flex flex-col gap-2 self-end">
+              <div className="w-[263.31px] h-full border border-gray-300 rounded-xl py-3 text-center flex items-center justify-center">
+                <p>
+                  ราคาโปรเจกต์เฉลี่ย
+                  {customerProjects.length > 0 ? (
+                    <span className="text-primary-blue-500 font-bold text-xl block">
+                      {formatPrice(customerProjects.reduce((sum, project) => sum + project.budget, 0) / customerProjects.length)}
+                    </span>
+                  ) : (
+                    <span className="text-gray-300 italic text-lg block p-2">
+                      ยังไม่มีโปรเจกต์
+                    </span>
+                  )}
+                </p>
               </div>
-            )}
+              
+              {session?.user?.id && session.user.id !== customerId && (
+                <div className="w-full">
+                  <SendMessageButton 
+                    recipientId={customerId} 
+                    recipientName={customer.name} 
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
