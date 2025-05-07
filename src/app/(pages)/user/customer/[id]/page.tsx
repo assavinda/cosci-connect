@@ -110,7 +110,7 @@ export default function CustomerProfilePage() {
   const filteredProjects = customerProjects.filter(project => {
     if (activeTab === 'ongoing') {
       // แสดง open, in_progress, revision, awaiting
-      return ['open', 'in_progress', 'revision', 'awaiting'].includes(project.status);
+      return ['in_progress', 'revision', 'awaiting'].includes(project.status);
     } else {
       // แสดง completed
       return project.status === 'completed';
@@ -264,7 +264,7 @@ export default function CustomerProfilePage() {
                 <div className="flex justify-between">
                   <span className="text-gray-600">กำลังดำเนินการ</span>
                   <span className="font-medium">
-                    {customerProjects.filter(p => ['open', 'in_progress', 'revision', 'awaiting'].includes(p.status)).length}
+                    {customerProjects.filter(p => ['in_progress', 'revision', 'awaiting'].includes(p.status)).length}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -308,9 +308,9 @@ export default function CustomerProfilePage() {
                 onClick={() => setActiveTab('ongoing')}
               >
                 โปรเจกต์ที่กำลังดำเนินการ 
-                {customerProjects.filter(p => ['open', 'in_progress', 'revision', 'awaiting'].includes(p.status)).length > 0 && (
+                {customerProjects.filter(p => ['in_progress', 'revision', 'awaiting'].includes(p.status)).length > 0 && (
                   <span className="ml-1 bg-primary-blue-100 text-primary-blue-600 text-xs px-1.5 py-0.5 rounded-full">
-                    {customerProjects.filter(p => ['open', 'in_progress', 'revision', 'awaiting'].includes(p.status)).length}
+                    {customerProjects.filter(p => ['in_progress', 'revision', 'awaiting'].includes(p.status)).length}
                   </span>
                 )}
               </button>

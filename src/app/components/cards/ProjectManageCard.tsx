@@ -46,7 +46,6 @@ function ProjectManageCard({
   const [isEditing, setIsEditing] = useState(false);
   const [newProgress, setNewProgress] = useState(progress);
   const [sliderValue, setSliderValue] = useState(progress); // สำหรับ slider
-  const [hoverValue, setHoverValue] = useState(null); // สำหรับแสดงตัวเลขเมื่อชี้
   
   // ปรับค่า newProgress เมื่อค่า progress จาก props เปลี่ยน
   useEffect(() => {
@@ -136,26 +135,11 @@ function ProjectManageCard({
                     step="1"
                     value={sliderValue}
                     onChange={handleSliderChange}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-blue-500"
+                    className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-blue-500"
                     style={{
                       background: `linear-gradient(to right, ${getProgressColor(sliderValue, project.status === 'revision')} 0%, ${getProgressColor(sliderValue, project.status === 'revision')} ${sliderValue}%, #e5e7eb ${sliderValue}%, #e5e7eb 100%)`
                     }}
-                    onMouseMove={(e) => {
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      const x = e.clientX - rect.left;
-                      const percent = Math.min(Math.max(x / rect.width, 0), 1) * 100;
-                      setHoverValue(Math.round(percent));
-                    }}
-                    onMouseLeave={() => setHoverValue(null)}
                   />
-                  {hoverValue !== null && (
-                    <div 
-                      className="absolute -top-8 px-2 py-1 bg-gray-800 text-white text-xs rounded pointer-events-none"
-                      style={{ left: `calc(${hoverValue}% - 12px)` }}
-                    >
-                      {hoverValue}%
-                    </div>
-                  )}
                 </div>
                 <span className="ml-3 text-lg font-semibold text-primary-blue-500 min-w-16 text-center">
                   {sliderValue}%
@@ -163,13 +147,13 @@ function ProjectManageCard({
               </div>
               
               {/* Quick presets */}
-              <div className="flex justify-between mb-3">
+              <div className="flex justify-between">
                 {presetValues.map(value => (
                   <button
                     key={value}
                     type="button"
                     onClick={() => handlePresetClick(value)}
-                    className={`px-2 py-1 text-xs rounded-full transition-colors ${
+                    className={`px-2 py-1 text-xs rounded-lg w-full mx-2 transition-colors ${
                       sliderValue === value 
                         ? 'bg-primary-blue-500 text-white' 
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -219,7 +203,7 @@ function ProjectManageCard({
                 )}
                 <span className="font-medium">{progress}%</span>
               </div>
-              <div className="relative w-full bg-gray-200 rounded-full h-3">
+              <div className="relative w-full bg-gray-200 rounded-full h-2">
                 <div 
                   className={`${getProgressColor(progress, project.status === 'revision')} h-3 rounded-full transition-all duration-500 ease-in-out`} 
                   style={{ width: `${progress}%` }}
