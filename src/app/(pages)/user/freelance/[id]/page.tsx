@@ -44,7 +44,7 @@ export default function FreelancerProfilePage() {
         const freelancerResponse = await axios.get(`/api/freelancers/${freelancerId}`);
         setFreelancer(freelancerResponse.data);
         
-        // ดึงข้อมูลโปรเจกต์ที่ทำเสร็จแล้ว
+        // ดึงข้อมูลโปรเจกต์ที่เคยทำ
         const projectsResponse = await axios.get('/api/projects', {
           params: {
             status: 'completed',
@@ -53,7 +53,7 @@ export default function FreelancerProfilePage() {
           }
         });
         
-        // ตั้งค่าโปรเจกต์ที่ทำเสร็จแล้ว
+        // ตั้งค่าโปรเจกต์ที่เคยทำ
         setCompletedProjects(projectsResponse.data.projects || []);
         
         setError('');
@@ -173,7 +173,7 @@ export default function FreelancerProfilePage() {
       </div>
 
       {/* Hero section - แสดงข้อมูลสำคัญ */}
-      <div className="relative p-8 overflow-hidden border-b border-gray-200 mb-6">
+      <div className="relative p-8 overflow-hidden border-b border-gray-200 mb-6 place-items-cente">
         
         <div className="flex flex-col md:flex-row gap-6 items-center md:items-start relative z-10">
           {/* รูปโปรไฟล์ */}
@@ -194,30 +194,39 @@ export default function FreelancerProfilePage() {
           </div>
           
           {/* ข้อมูลพื้นฐาน */}
-          <div className="flex-1 text-center md:text-left">
-            <h1 className="text-2xl md:text-3xl font-bold">{freelancer.name}</h1>
-            <div className="flex flex-wrap gap-2 mt-2 justify-center md:justify-start">
-              <span className="bg-white/20 backdrop-blur-sm py-1 rounded-full text-sm">
+            <div className="flex-1 text-center md:text-left flex flex-col items-center md:items-start">
+              <h1 className="text-l md:text-xl font-bold">{freelancer.name}</h1>
+              <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+              <span className="py-1 rounded-full text-sm text-gray-500">
                 {freelancer.major}
               </span>
-            </div>
-            {freelancer.isOpen ? (
-                <span className="bg-green-500/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm flex items-center gap-1 w-fit">
-                  <span className="w-2 h-2 bg-green-400 rounded-full inline-block"></span>
-                  พร้อมรับงาน
-                </span>
+              </div>
+              {freelancer.isOpen ? (
+              <span className="bg-green-500/20 px-3 py-1 rounded-full text-sm flex items-center gap-1 justify-center md:justify-start mx-auto md:mx-0 w-fit mt-2">
+                <span className="w-2 h-2 bg-green-400 rounded-full inline-block"></span>
+                พร้อมรับงาน
+              </span>
               ) : (
-                <span className="bg-red-500/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm flex items-center gap-1 w-fit">
-                  <span className="w-2 h-2 bg-red-400 rounded-full inline-block"></span>
-                  ไม่พร้อมรับงาน
-                </span>
-            )}
-          </div>
+              <span className="bg-red-500/20 px-3 py-1 rounded-full text-sm flex items-center gap-1 justify-center md:justify-start mx-auto md:mx-0 w-fit mt-2">
+                <span className="w-2 h-2 bg-red-400 rounded-full inline-block"></span>
+                ไม่พร้อมรับงาน
+              </span>
+              )}
+            </div>
           
           {/* ปุ่มจ้างและส่งข้อความ */}
           <div className="flex place-items-center gap-2 self-center md:self-start">
             {/* ถ้าเป็นผู้ใช้ที่ล็อกอินแล้ว ไม่ใช่ตัวเอง และไม่ใช่ฟรีแลนซ์ ให้แสดงปุ่ม */}
-            <div>
+            <div className="flex flex-col gap-2 self-end">
+                <div className="w-[263.31px] h-full border border-gray-300 rounded-xl py-3 text-center flex items-center justify-center">
+                  <p>
+                    ราคาเริ่มต้น
+                    <span className="text-primary-blue-500 font-bold text-xl block">
+                    {formatPrice(freelancer.basePrice)}
+                    </span>
+                  </p>
+                </div>
+              
               {session?.user?.id && session?.user?.id !== freelancerId && (
                 <div className="flex gap-2">
                   {session?.user?.role !== 'student' && (
@@ -228,10 +237,12 @@ export default function FreelancerProfilePage() {
                     />
                   )}
                   
-                  <SendMessageButton 
-                    recipientId={freelancerId} 
-                    recipientName={freelancer.name} 
-                  />
+                  {session?.user?.role !== 'student' && (
+                    <SendMessageButton 
+                      recipientId={freelancerId} 
+                      recipientName={freelancer.name} 
+                    />
+                  )}
                 </div>
               )}
             </div>
@@ -246,11 +257,8 @@ export default function FreelancerProfilePage() {
           {/* ทักษะ */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center mb-4 gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-blue-500">
-                <path d="M8.8 20v-4.1l1.9.2a2.3 2.3 0 0 0 2.164-2.1V8.3A5.37 5.37 0 0 0 2 8.25c0 2.8.656 3.15 1 4.9a5.71 5.71 0 0 1 .5 2.55V20"></path>
-                <path d="M2 12h20"></path>
-                <path d="M19 8.25s-.5-6.5-4-6.5-4.5 6.5-4.5 6.5"></path>
-                <path d="M19.9 16.75C19.4 16.37 18.7 16 18 16c-1.35 0-2 .62-2 1.5s.65 1.5 2 1.5c.7 0 1.4-.37 1.9-.75l1.1 1.5c-.85.62-1.9 1-3 1-2.35 0-4-1.37-4-3.25S15.65 14 18 14c1.1 0 2.15.38 3 1l-1.1 1.75z"></path>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" className="text-primary-blue-500">
+                <path d="M12 2C8.14 2 5 5.14 5 9C5 11.38 6.19 13.47 8 14.74V17C8 17.55 8.45 18 9 18H15C15.55 18 16 17.55 16 17V14.74C17.81 13.47 19 11.38 19 9C19 5.14 15.86 2 12 2M9 21V20H15V21C15 21.55 14.55 22 14 22H10C9.45 22 9 21.55 9 21Z" stroke="#1167AE" strokeWidth="1.5" fill="none"/>
               </svg>
               <h2 className="text-lg font-bold">ทักษะ</h2>
               <span className="bg-primary-blue-100 text-primary-blue-600 text-xs px-2 py-0.5 rounded-full">
@@ -278,9 +286,11 @@ export default function FreelancerProfilePage() {
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center mb-4 gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-blue-500">
-                <path d="M8 21h12a2 2 0 0 0 2-2v-2H10v2a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v3h4"></path>
-                <path d="M19 3h-8.5a3.5 3.5 0 0 0-3.5 3.5 3.5 3.5 0 0 0 3.5 3.5H16"></path>
-                <path d="M19 13h-7.5a3.5 3.5 0 0 0 0 7H12"></path>
+                <path d="M14 2H6C4.89 2 4 2.89 4 4V20C4 21.11 4.89 22 6 22H18C19.11 22 20 21.11 20 20V8L14 2Z" stroke="#1167AE" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M14 2V8H20" stroke="#1167AE" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M16 13H8" stroke="#1167AE" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M16 17H8" stroke="#1167AE" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M10 9H9H8" stroke="#1167AE" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
               <h2 className="text-lg font-bold">พอร์ตโฟลิโอ</h2>
             </div>
@@ -312,7 +322,7 @@ export default function FreelancerProfilePage() {
           {/* ประวัติและคำอธิบาย */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center mb-4 gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-blue-500">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary-blue-500">
                 <circle cx="12" cy="8" r="5"></circle>
                 <path d="M20 21a8 8 0 1 0-16 0"></path>
               </svg>
@@ -348,7 +358,7 @@ export default function FreelancerProfilePage() {
                 }`}
                 onClick={() => setActiveTab('projects')}
               >
-                โปรเจกต์ที่เสร็จแล้ว {completedProjects.length > 0 && <span className="ml-1 bg-primary-blue-100 text-primary-blue-600 text-xs px-1.5 py-0.5 rounded-full">{completedProjects.length}</span>}
+                โปรเจกต์ที่เคยทำ {completedProjects.length > 0 && <span className="ml-1 bg-primary-blue-100 text-primary-blue-600 text-xs px-1.5 py-0.5 rounded-full">{completedProjects.length}</span>}
               </button>
             </div>
             
@@ -428,13 +438,13 @@ export default function FreelancerProfilePage() {
                         <polyline points="21 15 16 10 5 21"></polyline>
                       </svg>
                       <p className="text-gray-500 mb-2">ฟรีแลนซ์ยังไม่ได้เพิ่มตัวอย่างผลงาน</p>
-                      <p className="text-gray-400 text-sm">คุณสามารถดูประวัติการทำงานได้ในแท็บ "โปรเจกต์ที่เสร็จแล้ว"</p>
+                      <p className="text-gray-400 text-sm">คุณสามารถดูประวัติการทำงานได้ในแท็บ "โปรเจกต์ที่เคยทำ"</p>
                     </div>
                   )}
                 </div>
               )}
               
-              {/* โปรเจกต์ที่ทำเสร็จแล้ว */}
+              {/* โปรเจกต์ที่เคยทำ */}
               {activeTab === 'projects' && (
                 <div>
                   {completedProjects.length > 0 ? (
@@ -483,65 +493,6 @@ export default function FreelancerProfilePage() {
           </div>
         </div>
       </div>
-      
-      {/* ส่วนเพิ่มเติม - คำรับรองและตราประทับ */}
-      {completedProjects.length > 0 && (
-        <div className="mt-6 bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center mb-4 gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-blue-500">
-              <path d="m7 11 2-2-2-2"></path>
-              <path d="M11 13h4"></path>
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-            </svg>
-            <h2 className="text-lg font-bold">ข้อมูลเพิ่มเติม</h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* โปรเจกต์ที่ทำเสร็จ */}
-            <div className="bg-gray-50 border border-gray-100 rounded-lg p-4 flex flex-col items-center">
-              <div className="rounded-full bg-primary-blue-100 w-12 h-12 flex items-center justify-center mb-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-blue-500">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-              </div>
-              <h3 className="font-bold text-xl text-primary-blue-500">{completedProjects.length}</h3>
-              <p className="text-gray-700">โปรเจกต์ที่ทำเสร็จแล้ว</p>
-            </div>
-            
-            {/* ระยะเวลาที่ใช้ */}
-            <div className="bg-gray-50 border border-gray-100 rounded-lg p-4 flex flex-col items-center">
-              <div className="rounded-full bg-primary-blue-100 w-12 h-12 flex items-center justify-center mb-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-blue-500">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-              </div>
-              <h3 className="font-bold text-xl text-primary-blue-500">
-                {/* คำนวณเฉลี่ยวัน */}
-                ~7 วัน
-              </h3>
-              <p className="text-gray-700">ระยะเวลาทำงานเฉลี่ย</p>
-            </div>
-            
-            {/* ความพึงพอใจ */}
-            <div className="bg-gray-50 border border-gray-100 rounded-lg p-4 flex flex-col items-center">
-              <div className="rounded-full bg-primary-blue-100 w-12 h-12 flex items-center justify-center mb-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-blue-500">
-                  <path d="M9 10h.01"></path>
-                  <path d="M15 10h.01"></path>
-                  <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20"></path>
-                  <path d="M9.5 15a3.5 3.5 0 0 0 5 0"></path>
-                </svg>
-              </div>
-              <h3 className="font-bold text-xl text-primary-blue-500">
-                100%
-              </h3>
-              <p className="text-gray-700">ความพึงพอใจของลูกค้า</p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
