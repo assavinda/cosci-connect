@@ -47,9 +47,6 @@ function ApplyButton({ projectId, projectTitle, alreadyApplied = false }: ApplyB
       const response = await axios.patch(`/api/projects/${projectId}`, {
         applyToProject: true
       });
-
-      // แสดงข้อความสำเร็จ
-      toast.success('ส่งคำขอร่วมงานเรียบร้อยแล้ว');
       
       // อัปเดตสถานะในหน้าปัจจุบัน (ไม่ต้อง refresh เพราะจะได้รับการอัปเดตผ่าน Pusher)
       setLocalApplied(true);
@@ -58,7 +55,6 @@ function ApplyButton({ projectId, projectTitle, alreadyApplied = false }: ApplyB
       setIsModalOpen(false);
     } catch (error: any) {
       console.error('Error applying to project:', error);
-      toast.error(error.response?.data?.error || 'เกิดข้อผิดพลาดในการส่งคำขอ');
     } finally {
       setIsSubmitting(false);
     }

@@ -330,7 +330,7 @@ export default function ManageProjectsPage() {
   // Show loading state
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-10">
+      <div className="flex flex-col items-center justify-center py-10 h-screen">
         <Loading size="large" color="primary" />
         <p className="mt-4 text-gray-500">กำลังโหลดข้อมูลโปรเจกต์...</p>
       </div>
@@ -369,7 +369,7 @@ export default function ManageProjectsPage() {
   return (
     <div className="flex flex-col gap-6">
       {/* Toaster component for showing notifications */}
-      <Toaster position="top-right" />
+      <Toaster position="bottom-left" />
       
       {/* Header */}
       <section className="mt-6 p-6 flex flex-col gap-2 bg-primary-blue-500 rounded-xl">
@@ -392,20 +392,6 @@ export default function ManageProjectsPage() {
             </svg>
             ดูโปรเจกต์ทั้งหมด
           </Link>
-        </div>
-        <div className="flex justify-between items-center mt-2">
-          <div className="flex flex-wrap gap-3">
-            <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-lg">
-              <p className="text-white text-sm">โปรเจกต์ทั้งหมด: <span className="font-medium">
-                {totalProjects}
-              </span></p>
-            </div>
-            <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-lg">
-              <p className="text-white text-sm">กำลังดำเนินการ: <span className="font-medium">
-                {projects.in_progress.length}
-              </span></p>
-            </div>
-          </div>
         </div>
       </section>
       

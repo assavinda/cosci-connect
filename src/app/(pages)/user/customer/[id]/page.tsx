@@ -26,7 +26,7 @@ export default function CustomerProfilePage() {
   const [customerProjects, setCustomerProjects] = useState<CustomerProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('ongoing'); // 'ongoing' | 'completed'
+  const [activeTab, setActiveTab] = useState('open'); // ปรับค่าเริ่มต้นเป็น 'open'
 
   useEffect(() => {
     const fetchData = async () => {
@@ -108,8 +108,11 @@ export default function CustomerProfilePage() {
 
   // กรองโปรเจกต์ตาม active tab
   const filteredProjects = customerProjects.filter(project => {
-    if (activeTab === 'ongoing') {
-      // แสดง open, in_progress, revision, awaiting
+    if (activeTab === 'open') {
+      // แสดงโปรเจกต์ที่มีสถานะ 'open'
+      return project.status === 'open';
+    } else if (activeTab === 'ongoing') {
+      // แสดง in_progress, revision, awaiting
       return ['in_progress', 'revision', 'awaiting'].includes(project.status);
     } else {
       // แสดง completed
@@ -262,6 +265,12 @@ export default function CustomerProfilePage() {
                   <span className="font-medium">{customerProjects.length}</span>
                 </div>
                 <div className="flex justify-between">
+                  <span className="text-gray-600">เปิดรับสมัคร</span>
+                  <span className="font-medium">
+                    {customerProjects.filter(p => p.status === 'open').length}
+                  </span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-gray-600">กำลังดำเนินการ</span>
                   <span className="font-medium">
                     {customerProjects.filter(p => ['in_progress', 'revision', 'awaiting'].includes(p.status)).length}
@@ -297,8 +306,23 @@ export default function CustomerProfilePage() {
           
           {/* แท็บโปรเจกต์ */}
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            {/* Tab navigation */}
+            {/* Tab navigation - เพิ่มแท็บ "เปิดรับสมัคร" */}
             <div className="flex border-b border-gray-200">
+              <button
+                className={`flex-1 py-3 px-4 font-medium text-center transition-colors ${
+                  activeTab === 'open'
+                    ? 'border-b-2 border-primary-blue-500 text-primary-blue-500'
+                    : 'text-gray-500 hover:bg-gray-50'
+                }`}
+                onClick={() => setActiveTab('open')}
+              >
+                โปรเจกต์ที่เปิดรับสมัคร 
+                {customerProjects.filter(p => p.status === 'open').length > 0 && (
+                  <span className="ml-1 bg-primary-blue-100 text-primary-blue-600 text-xs px-1.5 py-0.5 rounded-full">
+                    {customerProjects.filter(p => p.status === 'open').length}
+                  </span>
+                )}
+              </button>
               <button
                 className={`flex-1 py-3 px-4 font-medium text-center transition-colors ${
                   activeTab === 'ongoing'
@@ -307,7 +331,7 @@ export default function CustomerProfilePage() {
                 }`}
                 onClick={() => setActiveTab('ongoing')}
               >
-                โปรเจกต์ที่กำลังดำเนินการ 
+                กำลังดำเนินการ 
                 {customerProjects.filter(p => ['in_progress', 'revision', 'awaiting'].includes(p.status)).length > 0 && (
                   <span className="ml-1 bg-primary-blue-100 text-primary-blue-600 text-xs px-1.5 py-0.5 rounded-full">
                     {customerProjects.filter(p => ['in_progress', 'revision', 'awaiting'].includes(p.status)).length}
@@ -322,7 +346,7 @@ export default function CustomerProfilePage() {
                 }`}
                 onClick={() => setActiveTab('completed')}
               >
-                โปรเจกต์ที่เสร็จสิ้น 
+                เสร็จสิ้น 
                 {customerProjects.filter(p => p.status === 'completed').length > 0 && (
                   <span className="ml-1 bg-primary-blue-100 text-primary-blue-600 text-xs px-1.5 py-0.5 rounded-full">
                     {customerProjects.filter(p => p.status === 'completed').length}
@@ -377,14 +401,18 @@ export default function CustomerProfilePage() {
                     <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
                   </svg>
                   <p className="text-gray-500 mb-2">
-                    {activeTab === 'ongoing' 
-                      ? 'ไม่พบโปรเจกต์ที่กำลังดำเนินการ' 
+                    {activeTab === 'open' 
+                      ? 'ไม่พบโปรเจกต์ที่เปิดรับสมัคร' 
+                      : activeTab === 'ongoing'
+                      ? 'ไม่พบโปรเจกต์ที่กำลังดำเนินการ'
                       : 'ไม่พบโปรเจกต์ที่เสร็จสิ้น'}
                   </p>
                   <p className="text-gray-400 text-sm">
-                    {activeTab === 'ongoing'
-                      ? 'คุณสามารถดูโปรเจกต์ที่เสร็จสิ้นในแท็บ "โปรเจกต์ที่เสร็จสิ้น"'
-                      : 'คุณสามารถดูโปรเจกต์ที่กำลังดำเนินการในแท็บ "โปรเจกต์ที่กำลังดำเนินการ"'}
+                    {activeTab === 'open'
+                      ? 'คุณสามารถดูโปรเจกต์ที่กำลังดำเนินการในแท็บ "กำลังดำเนินการ"'
+                      : activeTab === 'ongoing'
+                      ? 'คุณสามารถดูโปรเจกต์ที่เสร็จสิ้นในแท็บ "เสร็จสิ้น"'
+                      : 'คุณสามารถดูโปรเจกต์ที่เปิดรับสมัครในแท็บ "เปิดรับสมัคร"'}
                   </p>
                 </div>
               )}

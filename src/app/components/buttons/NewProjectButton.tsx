@@ -428,7 +428,7 @@ function NewProjectButton() {
   
   const handleSubmitProject = (projectData, apiResponse) => {
     // แสดงข้อความแจ้งเตือนว่าโพสต์สำเร็จ
-    toast.success('โพสต์งานสำเร็จ!');
+    toast.success('โพสต์งานสำเร็จ');
     
     // Refresh the page to show the new project
     setTimeout(() => {

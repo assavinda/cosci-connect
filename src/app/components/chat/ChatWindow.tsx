@@ -463,7 +463,7 @@ function ChatWindow({
           </div>
         ) : view === "inbox" ? (
           // Inbox View
-          <div className="p-0">
+          <div className="p-0 h-full">
             {chatList.length > 0 ? (
               chatList.map((chat) => (
                 <div 
@@ -503,8 +503,8 @@ function ChatWindow({
                 </div>
               ))
             ) : loading ? (
-              <div className="flex justify-center items-center h-full">
-                <Loading size="medium" color="primary" />
+              <div className="flex justify-center place-items-center h-full">
+                <Loading size="medium" color="primary"/>
               </div>
             ) : (
               <div className="p-6 text-center text-gray-500">

@@ -45,7 +45,7 @@ function ProjectManageButtons({ project, isFreelancer, userId }: ProjectManageBu
       });
       
       if (response.data.success) {
-        toast.success('คุณได้รับโปรเจกต์นี้แล้ว');
+        toast.success('ยอมรับโปรเจกต์แล้ว');
         router.refresh();
       } else {
         toast.error('เกิดข้อผิดพลาด: ' + (response.data.error || 'กรุณาลองใหม่อีกครั้ง'));
@@ -71,7 +71,7 @@ function ProjectManageButtons({ project, isFreelancer, userId }: ProjectManageBu
       });
       
       if (response.data.success) {
-        toast.success('ปฏิเสธคำขอเรียบร้อยแล้ว');
+        toast.success('ปฏิเสธคำขอแล้ว');
         router.refresh();
       } else {
         toast.error('เกิดข้อผิดพลาด: ' + (response.data.error || 'กรุณาลองใหม่อีกครั้ง'));
@@ -97,7 +97,7 @@ function ProjectManageButtons({ project, isFreelancer, userId }: ProjectManageBu
       });
       
       if (response.data.success) {
-        toast.success('ยกเลิกคำขอร่วมงานเรียบร้อยแล้ว');
+        toast.success('ยกเลิกคำขอร่วมงานแล้ว');
         router.refresh();
       } else {
         toast.error('เกิดข้อผิดพลาด: ' + (response.data.error || 'กรุณาลองใหม่อีกครั้ง'));
@@ -127,7 +127,7 @@ function ProjectManageButtons({ project, isFreelancer, userId }: ProjectManageBu
       });
       
       if (response.data.success) {
-        toast.success('ส่งงานเพื่อรอการตรวจสอบเรียบร้อยแล้ว');
+        toast.success('ส่งมอบงานแล้ว');
         router.refresh();
       } else {
         toast.error('เกิดข้อผิดพลาด: ' + (response.data.error || 'กรุณาลองใหม่อีกครั้ง'));
@@ -150,7 +150,7 @@ function ProjectManageButtons({ project, isFreelancer, userId }: ProjectManageBu
         status: 'awaiting'
       });
       if (response.data.success) {
-        toast.success('ส่งงานแก้ไขเรียบร้อยแล้ว');
+        toast.success('ส่งงานที่แก้ไขแล้ว');
         router.refresh();
       } else {
         toast.error('เกิดข้อผิดพลาด: ' + (response.data.error || 'กรุณาลองใหม่อีกครั้ง'));
@@ -176,7 +176,7 @@ function ProjectManageButtons({ project, isFreelancer, userId }: ProjectManageBu
       });
       
       if (response.data.success) {
-        toast.success('ยกเลิกคำขอเรียบร้อยแล้ว');
+        toast.success('ยกเลิกคำขอแล้ว');
         router.refresh();
       } else {
         toast.error('เกิดข้อผิดพลาด: ' + (response.data.error || 'กรุณาลองใหม่อีกครั้ง'));
@@ -202,7 +202,7 @@ function ProjectManageButtons({ project, isFreelancer, userId }: ProjectManageBu
       });
       
       if (response.data.success) {
-        toast.success('ยอมรับฟรีแลนซ์เรียบร้อยแล้ว');
+        toast.success('ยอมรับฟรีแลนซ์แล้ว');
         router.refresh();
       } else {
         toast.error('เกิดข้อผิดพลาด: ' + (response.data.error || 'กรุณาลองใหม่อีกครั้ง'));
@@ -227,7 +227,7 @@ function ProjectManageButtons({ project, isFreelancer, userId }: ProjectManageBu
       });
       
       if (response.data.success) {
-        toast.success('ปฏิเสธฟรีแลนซ์เรียบร้อยแล้ว');
+        toast.success('ปฏิเสธฟรีแลนซ์แล้ว');
         router.refresh();
       } else {
         toast.error('เกิดข้อผิดพลาด: ' + (response.data.error || 'กรุณาลองใหม่อีกครั้ง'));
@@ -252,7 +252,7 @@ function ProjectManageButtons({ project, isFreelancer, userId }: ProjectManageBu
       });
       
       if (response.data.success) {
-        toast.success('ยืนยันงานเสร็จสิ้นเรียบร้อยแล้ว');
+        toast.success('ยืนยันงานเสร็จสิ้นแล้ว');
         router.refresh();
       } else {
         toast.error('เกิดข้อผิดพลาด: ' + (response.data.error || 'กรุณาลองใหม่อีกครั้ง'));
@@ -276,7 +276,7 @@ function ProjectManageButtons({ project, isFreelancer, userId }: ProjectManageBu
       });
       
       if (response.data.success) {
-        toast.success('ส่งคำขอแก้ไขเรียบร้อยแล้ว');
+        toast.success('ส่งคำขอแก้ไขแล้ว');
         router.refresh();
       } else {
         toast.error('เกิดข้อผิดพลาด: ' + (response.data.error || 'กรุณาลองใหม่อีกครั้ง'));

@@ -214,13 +214,13 @@ function ProjectManageCard({
         </>
       )}
       
-      <div className="mt-4 flex justify-between place-items-end">
+      <div className="mt-4 flex justify-between place-items-end w-full">
         <ProjectManageButtons 
           project={project}
           isFreelancer={isFreelancer}
           userId={userId}
         />
-        <Link href={`/project/${id}`} className="text-primary-blue-500 text-sm hover:underline">
+        <Link href={`/project/${id}`} className="text-primary-blue-500 ml-auto text-sm hover:underline">
           ดูรายละเอียด →
         </Link>
       </div>

@@ -147,7 +147,7 @@ export default function AllProjectsPage() {
       setProjects(prev => prev.filter(project => project.id !== projectId));
       
       // แจ้งเตือนสำเร็จ
-      toast.success('ลบโปรเจกต์เรียบร้อยแล้ว');
+      toast.success('ลบโปรเจกต์สำเร็จ');
       
       // ปิดหน้าต่างยืนยัน
       setShowDeleteConfirm(null);
@@ -267,7 +267,7 @@ export default function AllProjectsPage() {
   return (
     <div className="max-w-6xl mx-auto">
       {/* Toaster component for showing notifications */}
-      <Toaster position="top-right" />
+      <Toaster position="bottom-left" />
       
       {/* Header */}
       <section className="mt-6 p-6 flex flex-col gap-2 bg-primary-blue-500 rounded-xl mb-6">

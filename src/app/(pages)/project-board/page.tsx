@@ -118,7 +118,7 @@ function ProjectBoardPage() {
     return (
         <div className="flex flex-col gap-3">
             {/* Toaster component for showing notifications */}
-            <Toaster position="top-right" />
+            <Toaster position="bottom-left" />
             
             {/* page title */}
             <section className="mt-6 mb-4 flex gap-6 flex-col md:flex-row justify-between place-items-end">

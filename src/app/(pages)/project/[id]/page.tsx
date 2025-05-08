@@ -163,7 +163,7 @@ export default function ProjectPage() {
   return (
     <div className="max-w-5xl mx-auto">
       {/* Toaster component for showing notifications */}
-      <Toaster position="top-right" />
+      <Toaster position="bottom-left" />
       
       {/* ปุ่มย้อนกลับและปุ่มสมัคร */}
       <div className="flex justify-between items-center mb-6">
