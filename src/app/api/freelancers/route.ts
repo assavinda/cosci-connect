@@ -106,7 +106,7 @@ export async function HEAD(req: NextRequest) {
     const skills = url.searchParams.get('skills')?.split(',');
     const major = url.searchParams.get('major');
     const minPrice = parseInt(url.searchParams.get('minPrice') || '0', 10);
-    const maxPrice = parseInt(url.searchParams.get('maxPrice') || '10000', 10);
+    const maxPrice = url.searchParams.get('maxPrice') ? parseInt(url.searchParams.get('maxPrice')!, 10) : null;
     
     // Connect to database
     await connectToDatabase();

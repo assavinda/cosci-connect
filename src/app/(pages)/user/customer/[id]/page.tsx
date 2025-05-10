@@ -178,7 +178,7 @@ export default function CustomerProfilePage() {
               />
             ) : (
               <div className="w-full h-full bg-primary-blue-300 flex items-center justify-center">
-                <span className="text-4xl font-bold text-white">
+                <span className="text-4xl font-semibold text-white">
                   {customer.name?.charAt(0).toUpperCase() || '?'}
                 </span>
               </div>
@@ -187,7 +187,7 @@ export default function CustomerProfilePage() {
           
           {/* ข้อมูลพื้นฐาน */}
           <div className="flex-1 text-center md:text-left flex flex-col items-center md:items-start">
-            <h1 className="text-l md:text-xl font-bold">{customer.name}</h1>
+            <h1 className="text-l md:text-xl font-semibold">{customer.name}</h1>
             <div className="flex flex-wrap gap-4 justify-center md:justify-start">
               <span className="py-1 rounded-full text-sm text-gray-500">
                 {customer.major}
@@ -206,7 +206,7 @@ export default function CustomerProfilePage() {
                 <p>
                   ราคาโปรเจกต์เฉลี่ย
                   {customerProjects.length > 0 ? (
-                    <span className="text-primary-blue-500 font-bold text-xl block">
+                    <span className="text-primary-blue-500 font-semibold text-xl block">
                       {formatPrice(customerProjects.reduce((sum, project) => sum + project.budget, 0) / customerProjects.length)}
                     </span>
                   ) : (
@@ -241,7 +241,7 @@ export default function CustomerProfilePage() {
                 <circle cx="12" cy="8" r="5"></circle>
                 <path d="M20 21a8 8 0 1 0-16 0"></path>
               </svg>
-              <h2 className="text-lg font-bold">ข้อมูลติดต่อ</h2>
+              <h2 className="text-lg font-semibold">ข้อมูลติดต่อ</h2>
             </div>
             
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
@@ -255,7 +255,7 @@ export default function CustomerProfilePage() {
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary-blue-500">
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
               </svg>
-              <h2 className="text-lg font-bold">สถิติโปรเจกต์</h2>
+              <h2 className="text-lg font-semibold">สถิติโปรเจกต์</h2>
             </div>
             
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
@@ -294,7 +294,7 @@ export default function CustomerProfilePage() {
                 <circle cx="12" cy="8" r="5"></circle>
                 <path d="M20 21a8 8 0 1 0-16 0"></path>
               </svg>
-              <h2 className="text-lg font-bold">เกี่ยวกับ</h2>
+              <h2 className="text-lg font-semibold">เกี่ยวกับ</h2>
             </div>
             
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
@@ -366,7 +366,7 @@ export default function CustomerProfilePage() {
                       className="block bg-gray-50 rounded-lg p-4 border border-gray-100 hover:border-primary-blue-300 hover:shadow-md transition-all"
                     >
                       <div className="flex justify-between items-start">
-                        <h3 className="font-bold text-primary-blue-500">{project.title}</h3>
+                        <h3 className="font-semibold text-primary-blue-500">{project.title}</h3>
                         <span className={`px-2 py-0.5 rounded-full text-xs ${getStatusColor(project.status)}`}>
                           {getStatusText(project.status)}
                         </span>

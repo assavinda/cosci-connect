@@ -311,12 +311,20 @@ function Navbar() {
             </div>
           ) : (
             // Not logged in - show login button
-            <Link 
-              href="/auth?state=login"
-              className="btn-primary text-sm py-1"
-            >
-              เข้าสู่ระบบ
-            </Link>
+            <div className="flex gap-2">
+              <Link 
+                href="/auth?state=login"
+                className="btn-primary text-s py-1"
+              >
+                เข้าสู่ระบบ
+              </Link>
+              <Link 
+                href="/auth?state=register"
+                className="btn-secondary text-s py-1"
+              >
+                สร้างบัญชี
+              </Link>
+            </div>
           )}
         </div>
       </nav>

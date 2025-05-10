@@ -286,7 +286,7 @@ function OTP({ onClose, onVerified, email }: OTPProps) {
             </div>
             <h2 className="text-xl font-medium text-gray-800 mb-2">ยืนยันตัวตนสำเร็จ</h2>
             <p className="text-gray-600 mb-6">
-              กำลังเข้าสู่ระบบอัตโนมัติ...
+              กรุณารอสักครู่...
             </p>
             <div className="flex justify-center">
               <div className="w-8 h-8 border-4 border-primary-blue-400 border-r-transparent rounded-full animate-spin"></div>

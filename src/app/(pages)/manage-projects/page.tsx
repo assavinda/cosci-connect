@@ -355,16 +355,6 @@ export default function ManageProjectsPage() {
   }
 
   const isFreelancer = session?.user?.role === 'student';
-  const totalProjects = 
-    projects.waitingResponse.length + 
-    projects.in_progress.length + 
-    projects.revision.length + 
-    projects.awaiting.length + 
-    projects.completed.length +
-    // สำหรับตัวเลขโปรเจกต์ เราต้องนับเฉพาะโปรเจกต์จริงๆ ไม่ใช่จำนวนการ์ดที่แยกแสดง
-    // ดังนั้นสำหรับ requests ให้ใช้ Set เพื่อนับจำนวนโปรเจกต์ที่ไม่ซ้ำกัน
-    (isFreelancer ? projects.requests.length : 
-      new Set(projects.requests.map(p => p.id)).size);
   
   return (
     <div className="flex flex-col gap-6">

@@ -99,7 +99,7 @@ function AccountPage() {
   // Show edit form if in edit mode
   if (isEditing && userData) {
     return (
-      <div className="max-w-4xl mx-auto">
+      <div className="w-full mx-auto">
         <EditProfileForm 
           userData={userData}
           onUpdateSuccess={handleUpdateSuccess}
@@ -111,23 +111,10 @@ function AccountPage() {
 
   // Show account page content when authenticated and data is loaded
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-medium text-primary-blue-500">โปรไฟล์ของฉัน</h1>
-          <div className="flex gap-3">
-            <button 
-              onClick={handleEditProfile}
-              className="btn-secondary flex items-center gap-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-              </svg>
-              แก้ไขโปรไฟล์
-            </button>
-            <LogOutButton />
-          </div>
+    <div className="w-full mx-auto ">
+      <div className="bg-white rounded-xl p-6 mb-6">
+        <div className="flex justify-start items-center mb-6 border-b border-gray-200 pb-4">
+          <h1 className="text-xl font-medium text-primary-blue-500">โปรไฟล์ของฉัน</h1>
         </div>
 
         {userData && (
@@ -135,7 +122,7 @@ function AccountPage() {
             {/* Left column - Profile image and basic info */}
             <div className="md:col-span-1">
               <div className="flex flex-col items-center">
-                <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 mb-4">
+                <div className="w-24 h-24 lg:w-32 lg:h-32 rounded-full overflow-hidden bg-white flex items-center justify-center outline-8 outline-double outline-primary-blue-500 shadow-lg mb-4">
                   {userData.profileImageUrl ? (
                     <img 
                       src={userData.profileImageUrl} 
@@ -150,8 +137,22 @@ function AccountPage() {
                 </div>
                 <h2 className="text-xl font-medium text-center">{userData.name}</h2>
                 <p className="text-gray-500 text-center mb-4">{userData.email}</p>
+
+                <div className="flex gap-3 mb-3">
+                  <button 
+                    onClick={handleEditProfile}
+                    className="btn-secondary flex items-center gap-2"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    แก้ไขโปรไฟล์
+                  </button>
+                  <LogOutButton />
+                </div>
                 
-                <div className="w-full bg-gray-100 rounded-lg p-4 mt-2">
+                <div className="bg-white rounded-xl shadow-sm p-6 w-full">
                   <div className="mb-2">
                     <span className="text-sm text-gray-500">บทบาท</span>
                     <p className="font-medium">{userData.role === 'student' ? 'นิสิต' : 
@@ -191,9 +192,9 @@ function AccountPage() {
                 {/* ราคาเริ่มต้น (สำหรับนิสิตเท่านั้น) */}
                 {userData.role === 'student' && userData.basePrice && (
                   <div className="mt-4 w-full">
-                    <div className="bg-gray-100 p-4 rounded-lg">
+                    <div className="bg-white rounded-xl shadow-sm p-6 mt-6">
                       <span className="text-sm text-gray-500">ราคาเริ่มต้น</span>
-                      <p className="font-medium text-primary-blue-500 text-lg">
+                      <p className="font-medium text-primary-blue-500 text-xl">
                         {formatCurrency(userData.basePrice)}
                       </p>
                     </div>
@@ -204,21 +205,21 @@ function AccountPage() {
             
             {/* Right column - Details */}
             <div className="md:col-span-2">
-              <div className="bg-gray-50 rounded-xl p-4 mb-6">
+              <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
                 <h3 className="text-lg font-medium mb-2">ข้อมูลส่วนตัว</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <span className="text-sm text-gray-500">ชื่อ</span>
-                    <p className="font-medium">{userData.firstName}</p>
+                    <p className="font-medium text-l">{userData.firstName}</p>
                   </div>
                   <div>
                     <span className="text-sm text-gray-500">นามสกุล</span>
-                    <p className="font-medium">{userData.lastName}</p>
+                    <p className="font-medium text-l">{userData.lastName}</p>
                   </div>
                 </div>
               </div>
               
-              <div className="bg-gray-50 rounded-xl p-4 mb-6">
+              <div className="bg-white rounded-xl shadow-sm p-6">
                 <h3 className="text-lg font-medium mb-2">เกี่ยวกับฉัน</h3>
                 <p className="text-gray-700">
                   {userData.bio || 'ยังไม่มีข้อมูล'}
@@ -226,7 +227,7 @@ function AccountPage() {
               </div>
               
               {userData.skills && userData.skills.length > 0 && (
-                <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                <div className="bg-white rounded-xl shadow-sm p-6 mt-6">
                   <h3 className="text-lg font-medium mb-2">ทักษะ</h3>
                   <div className="flex flex-wrap gap-2">
                     {userData.skills.map(skill => (
@@ -242,7 +243,7 @@ function AccountPage() {
               )}
               
               {userData.role === 'student' && userData.galleryImages && userData.galleryImages.length > 0 && (
-                <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                <div className="bg-white rounded-xl shadow-sm p-6 mt-6">
                   <h3 className="text-lg font-medium mb-2">ตัวอย่างผลงาน</h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {userData.galleryImages.map((image, index) => (
@@ -260,7 +261,7 @@ function AccountPage() {
               )}
               
               {userData.role === 'student' && userData.portfolioUrl && (
-                <div className="bg-gray-50 rounded-xl p-4 mt-6">
+                <div className="bg-white rounded-xl shadow-sm p-6 mt-6">
                   <h3 className="text-lg font-medium mb-2">พอร์ตโฟลิโอ</h3>
                   <a 
                     href={userData.portfolioUrl} 

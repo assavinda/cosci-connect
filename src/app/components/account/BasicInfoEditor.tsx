@@ -34,10 +34,9 @@ const BasicInfoEditor: React.FC<BasicInfoEditorProps> = ({
 
   return (
     <div>
-      <h3 className="text-lg font-medium mb-3">ข้อมูลส่วนตัว</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
-          <label htmlFor="firstName" className="label">ชื่อ</label>
+          <label htmlFor="firstName" className="text-lg font-medium mb-2">ชื่อ</label>
           <input
             type="text"
             id="firstName"
@@ -48,7 +47,7 @@ const BasicInfoEditor: React.FC<BasicInfoEditorProps> = ({
           />
         </div>
         <div>
-          <label htmlFor="lastName" className="label">นามสกุล</label>
+          <label htmlFor="lastName" className="text-lg font-medium mb-2">นามสกุล</label>
           <input
             type="text"
             id="lastName"
@@ -61,7 +60,7 @@ const BasicInfoEditor: React.FC<BasicInfoEditorProps> = ({
       </div>
       
       <div>
-        <label htmlFor="bio" className="label">คำอธิบายตนเอง</label>
+        <label htmlFor="bio" className="text-lg font-medium mb-2">คำอธิบายตนเอง</label>
         <textarea
           id="bio"
           className="input min-h-24 resize-none"

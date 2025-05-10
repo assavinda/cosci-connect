@@ -19,7 +19,7 @@ interface Freelancer {
 
 interface PriceRange {
   min: number;
-  max: number;
+  max: number | null;
 }
 
 interface FreelanceListProps {
@@ -37,7 +37,7 @@ function FreelanceList({
   searchQuery = '',
   selectedSkills = [],
   selectedMajor = '',
-  priceRange = { min: 0, max: 10000 }
+  priceRange = { min: 0, max: null }
 }: FreelanceListProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -66,7 +66,7 @@ function FreelanceList({
         if (selectedSkills.length > 0) params.skills = selectedSkills.join(',');
         if (selectedMajor) params.major = selectedMajor;
         if (priceRange.min > 0) params.minPrice = priceRange.min;
-        if (priceRange.max < 10000) params.maxPrice = priceRange.max;
+        if (priceRange.max !== null) params.maxPrice = priceRange.max;
         
         // Fetch data from API
         const response = await axios.get('/api/freelancers', { params });
@@ -168,11 +168,11 @@ function FreelanceList({
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
         <p className="text-gray-500">
-          {(searchQuery || selectedSkills.length > 0 || selectedMajor || priceRange.min > 0 || priceRange.max < 10000) ? 
-            'ไม่พบฟรีแลนซ์ที่ตรงตามเงื่อนไขการค้นหา กรุณาลองเปลี่ยนตัวกรอง' : 
-            'ไม่พบข้อมูลฟรีแลนซ์ที่พร้อมรับงาน'}
+        {(searchQuery || selectedSkills.length > 0 || selectedMajor || priceRange.min > 0 || priceRange.max !== null) ? 
+        'ไม่พบฟรีแลนซ์ที่ตรงตามเงื่อนไขการค้นหา' : 
+        'ไม่พบข้อมูลฟรีแลนซ์ที่พร้อมรับงาน'}
         </p>
-        {(searchQuery || selectedSkills.length > 0 || selectedMajor || priceRange.min > 0 || priceRange.max < 10000) && (
+        {(searchQuery || selectedSkills.length > 0 || selectedMajor || priceRange.min > 0 || priceRange.max !== null) && (
           <button 
             onClick={() => router.push('/find-freelance')}
             className="mt-4 px-4 py-2 bg-primary-blue-500 text-white rounded-lg hover:bg-primary-blue-600"
@@ -184,24 +184,10 @@ function FreelanceList({
     );
   }
   
-  // Create filter text for display
-  const getFilterText = () => {
-    const filters = [];
-    if (searchQuery) filters.push(`คำค้นหา: "${searchQuery}"`);
-    if (selectedSkills.length > 0) filters.push(`ทักษะ: ${selectedSkills.length} ทักษะ`);
-    if (selectedMajor) filters.push(`วิชาเอก: ${selectedMajor}`);
-    if (priceRange.min > 0 || priceRange.max < 10000) filters.push(`ราคา: ${priceRange.min} - ${priceRange.max} ฿`);
-    
-    return filters.length > 0 ? filters.join(', ') : 'ทั้งหมด';
-  };
-  
   return (
     <div>
       {/* Page indicator and filter info */}
-      <div className="flex flex-col sm:flex-row sm:justify-between mb-6 gap-2">
-        <p className="text-gray-400 text-sm">
-          กรองตาม: <span className="text-gray-600 font-medium">{getFilterText()}</span>
-        </p>
+      <div className="flex flex-col sm:flex-row sm:justify-end mb-6 gap-2">
         <div className="flex items-center gap-2">
           <p className="text-gray-500 text-sm whitespace-nowrap">
             หน้า {currentPage} จาก {totalPages}
@@ -236,7 +222,7 @@ function FreelanceList({
           ...(selectedSkills.length > 0 && { skills: selectedSkills.join(',') }),
           ...(selectedMajor && { major: selectedMajor }),
           ...(priceRange.min > 0 && { minPrice: priceRange.min.toString() }),
-          ...(priceRange.max < 10000 && { maxPrice: priceRange.max.toString() }),
+          ...(priceRange.max !== null && { maxPrice: priceRange.max.toString() }),
         }}
       />
     </div>

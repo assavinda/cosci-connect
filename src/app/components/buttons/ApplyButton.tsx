@@ -64,7 +64,7 @@ function ApplyButton({ projectId, projectTitle, alreadyApplied = false }: ApplyB
     <>
       <button 
         onClick={handleApply}
-        className="btn-primary flex items-center gap-2"
+        className="btn-primary flex items-center gap-2 w-full justify-center"
         disabled={isSubmitting}
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -76,7 +76,7 @@ function ApplyButton({ projectId, projectTitle, alreadyApplied = false }: ApplyB
 
       {/* Modal ยืนยันการสมัคร */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/25 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
             <div className="p-6">
               <h3 className="text-lg font-medium mb-4">ยืนยันการส่งคำขอร่วมงาน</h3>

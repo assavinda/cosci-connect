@@ -186,7 +186,7 @@ export default function FreelancerProfilePage() {
               />
             ) : (
               <div className="w-full h-full bg-primary-blue-300 flex items-center justify-center">
-                <span className="text-4xl font-bold text-white">
+                <span className="text-4xl font-semibold text-white">
                   {freelancer.name?.charAt(0).toUpperCase() || '?'}
                 </span>
               </div>
@@ -195,7 +195,7 @@ export default function FreelancerProfilePage() {
           
           {/* ข้อมูลพื้นฐาน */}
             <div className="flex-1 text-center md:text-left flex flex-col items-center md:items-start">
-              <h1 className="text-l md:text-xl font-bold">{freelancer.name}</h1>
+              <h1 className="text-l md:text-xl font-semibold">{freelancer.name}</h1>
               <div className="flex flex-wrap gap-4 justify-center md:justify-start">
               <span className="py-1 rounded-full text-sm text-gray-500">
                 {freelancer.major}
@@ -221,7 +221,7 @@ export default function FreelancerProfilePage() {
                 <div className="w-[263.31px] h-full border border-gray-300 rounded-xl py-3 text-center flex items-center justify-center">
                   <p>
                     ราคาเริ่มต้น
-                    <span className="text-primary-blue-500 font-bold text-xl block">
+                    <span className="text-primary-blue-500 font-semibold text-xl block">
                     {formatPrice(freelancer.basePrice)}
                     </span>
                   </p>
@@ -260,7 +260,7 @@ export default function FreelancerProfilePage() {
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" className="text-primary-blue-500">
                 <path d="M12 2C8.14 2 5 5.14 5 9C5 11.38 6.19 13.47 8 14.74V17C8 17.55 8.45 18 9 18H15C15.55 18 16 17.55 16 17V14.74C17.81 13.47 19 11.38 19 9C19 5.14 15.86 2 12 2M9 21V20H15V21C15 21.55 14.55 22 14 22H10C9.45 22 9 21.55 9 21Z" stroke="#1167AE" strokeWidth="1.5" fill="none"/>
               </svg>
-              <h2 className="text-lg font-bold">ทักษะ</h2>
+              <h2 className="text-lg font-semibold">ทักษะ</h2>
               <span className="bg-primary-blue-100 text-primary-blue-600 text-xs px-2 py-0.5 rounded-full">
                 {freelancer.skills?.length || 0}
               </span>
@@ -292,7 +292,7 @@ export default function FreelancerProfilePage() {
                 <path d="M16 17H8" stroke="#1167AE" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M10 9H9H8" stroke="#1167AE" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              <h2 className="text-lg font-bold">พอร์ตโฟลิโอ</h2>
+              <h2 className="text-lg font-semibold">พอร์ตโฟลิโอ</h2>
             </div>
             
             {freelancer.portfolioUrl ? (
@@ -326,7 +326,7 @@ export default function FreelancerProfilePage() {
                 <circle cx="12" cy="8" r="5"></circle>
                 <path d="M20 21a8 8 0 1 0-16 0"></path>
               </svg>
-              <h2 className="text-lg font-bold">เกี่ยวกับฟรีแลนซ์</h2>
+              <h2 className="text-lg font-semibold">เกี่ยวกับฟรีแลนซ์</h2>
             </div>
             
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
@@ -455,7 +455,7 @@ export default function FreelancerProfilePage() {
                           href={`/project/${project.id}`}
                           className="block bg-gray-50 rounded-lg p-4 border border-gray-100 hover:border-primary-blue-300 hover:shadow-md transition-all"
                         >
-                          <h3 className="font-bold text-primary-blue-500">{project.title}</h3>
+                          <h3 className="font-semibold text-primary-blue-500">{project.title}</h3>
                           <div className="mt-2 space-y-1">
                             <div className="flex justify-between text-sm">
                               <span className="text-gray-500">เจ้าของโปรเจกต์</span>

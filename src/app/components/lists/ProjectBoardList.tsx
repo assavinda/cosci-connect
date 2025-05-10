@@ -127,41 +127,6 @@ function ProjectBoardList({ initialItemsPerPage = 12, filter = 'open' }: Project
         }
     }, [searchParams, totalPages]);
 
-    // สร้าง filter text สำหรับแสดงในหน้า
-    const getFilterText = () => {
-      const filters = [];
-      
-      const status = searchParams.get('status') || filter;
-      if (status === 'open') {
-        filters.push('โปรเจกต์ที่เปิดรับสมัคร');
-      } else if (status === 'all') {
-        filters.push('โปรเจกต์ทั้งหมด');
-      } else if (status === 'assigned') {
-        filters.push('โปรเจกต์ที่มีผู้รับงานแล้ว');
-      } else if (status === 'in_progress') {
-        filters.push('โปรเจกต์ที่กำลังดำเนินการ');
-      } else if (status === 'completed') {
-        filters.push('โปรเจกต์ที่เสร็จสิ้น');
-      }
-      
-      const q = searchParams.get('q');
-      if (q) filters.push(`คำค้นหา: "${q}"`);
-      
-      const skills = searchParams.get('skills');
-      if (skills) {
-        const skillsArray = skills.split(',');
-        filters.push(`ทักษะ: ${skillsArray.length} ทักษะ`);
-      }
-      
-      const minPrice = searchParams.get('minPrice');
-      const maxPrice = searchParams.get('maxPrice');
-      if (minPrice || maxPrice) {
-        filters.push(`งบประมาณ: ${minPrice || '0'} - ${maxPrice || '10000'} ฿`);
-      }
-      
-      return filters.join(', ');
-    };
-
     // แสดง loading state
     if (loading) {
       return (
@@ -209,10 +174,7 @@ function ProjectBoardList({ initialItemsPerPage = 12, filter = 'open' }: Project
     return (
         <div>
           {/* Page indicator at top right */}
-          <div className="flex justify-between mb-6">
-              <p className="text-gray-400 text-sm">
-                กรองตาม: <span className="text-gray-600 font-medium">{getFilterText()}</span>
-              </p>
+          <div className="flex justify-end mb-6">
               <p className="text-gray-500 text-sm">
                   หน้า {currentPage} จาก {totalPages}
               </p>

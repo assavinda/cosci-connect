@@ -15,7 +15,7 @@ function LogOutButton() {
   return (
     <button
       onClick={handleLogout}
-      className="btn-secondary flex items-center justify-center gap-2"
+      className="btn-danger flex items-center justify-center gap-2"
       disabled={isLoading}
     >
       {isLoading ? (

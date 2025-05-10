@@ -61,6 +61,7 @@ function ProjectBoardCard({
         <hr className="text-gray-200"/>
         
         {/* Required Skills */}
+        <p className="text-gray-400 text-xs">required skills</p>
         <div className="flex flex-wrap gap-1.5">
           {displaySkills.length > 0 ? (
             <>
@@ -82,8 +83,6 @@ function ProjectBoardCard({
             <p className="text-gray-400 text-xs">ไม่ระบุทักษะ</p>
           )}
         </div>
-        
-        <p className="text-gray-400 text-xs">required skills</p>
         <p className="text-gray-400 truncate">
             {description}
         </p>

@@ -96,7 +96,10 @@ function ProjectManageCard({
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all">
       <div className="flex justify-between items-start mb-3">
-        <h3 className="font-medium text-primary-blue-500 truncate">{title}</h3>
+      <Link href={`/project/${id}`}>
+        <h3 className="font-medium text-primary-blue-500 hover:text-primary-blue-400 truncate">{title}</h3>
+      </Link>
+        
         <span className={`text-xs px-2 py-1 rounded-full text-nowrap ${
           status === 'open' ? 'bg-yellow-100 text-yellow-800' : 
           status === 'revision' ? 'bg-orange-100 text-orange-800' :
@@ -205,7 +208,7 @@ function ProjectManageCard({
               </div>
               <div className="relative w-full bg-gray-200 rounded-full h-2">
                 <div 
-                  className={`${getProgressColor(progress, project.status === 'revision')} h-3 rounded-full transition-all duration-500 ease-in-out`} 
+                  className={`${getProgressColor(progress, project.status === 'revision')} h-2 rounded-full transition-all duration-500 ease-in-out`} 
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>

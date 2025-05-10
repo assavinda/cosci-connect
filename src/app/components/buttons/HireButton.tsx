@@ -179,8 +179,8 @@ const HireButton: React.FC<HireButtonProps> = ({
 
       {/* Modal/Popup */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/25 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[50vh] overflow-y-auto">
             <div className="sticky top-0 bg-primary-blue-500 p-4 flex justify-between items-center">
               <h2 className="text-lg font-medium text-white">เลือกโปรเจกต์สำหรับจ้างฟรีแลนซ์</h2>
               <button

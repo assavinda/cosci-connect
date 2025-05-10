@@ -623,8 +623,6 @@ function RegisterForm({ onLoginClick }: RegisterFormProps) {
             </span>
           </div>
 
-          <StepIndicator currentStep={currentStep} totalSteps={5} />
-
           <hr className="text-gray-200" />
 
           {error && (

@@ -19,7 +19,7 @@ const BasePriceEditor: React.FC<BasePriceEditorProps> = ({ basePrice, onBasePric
 
   return (
     <div>
-      <h3 className="text-lg font-medium mb-3">ราคาเริ่มต้น</h3>
+      <h3 className="text-lg font-medium mb-2">ราคาเริ่มต้น</h3>
       <div className="flex items-center gap-2">
         <input
           type="number"
@@ -32,7 +32,6 @@ const BasePriceEditor: React.FC<BasePriceEditorProps> = ({ basePrice, onBasePric
         />
         <span className="text-gray-600">บาท</span>
       </div>
-      <p className="text-sm text-gray-500 mt-1">ราคาเริ่มต้นสำหรับการรับงาน (ขั้นต่ำ 100 บาท)</p>
     </div>
   );
 };

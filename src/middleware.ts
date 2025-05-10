@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
+  
   // Get the token
   const token = await getToken({
     req: request,
@@ -18,12 +18,18 @@ export async function middleware(request: NextRequest) {
     '/',
     '/find-freelance',
     '/project-board',
+    '/images', // เพิ่มเส้นทางรูปภาพให้เป็น public
   ];
 
   // Check if the current path is in the public routes
-  const isPublicRoute = publicRoutes.some(route => 
+  const isPublicRoute = publicRoutes.some(route =>
     pathname === route || pathname.startsWith(`${route}/`)
   );
+
+  // If it's an image path, allow access without authentication
+  if (pathname.match(/\.(jpg|jpeg|png|gif|svg|webp)$/i)) {
+    return NextResponse.next();
+  }
 
   // If authenticated and trying to access auth page
   if (token && pathname === '/auth') {
@@ -52,6 +58,6 @@ export const config = {
      * - public (public files)
      * - api (API routes that handle their own auth)
      */
-    '/((?!_next/static|_next/image|favicon.ico|public|api).*)',
+    '/((?!_next/static|_next/image|favicon\\.ico|public|api).*)',
   ],
 };

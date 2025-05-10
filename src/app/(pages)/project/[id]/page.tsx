@@ -202,7 +202,7 @@ export default function ProjectPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="w-full mx-auto mt-6">
       {/* Toaster for notifications */}
       <Toaster position="bottom-left" />
       
@@ -214,104 +214,100 @@ export default function ProjectPage() {
           </svg>
           กลับไปหน้าโปรเจกต์บอร์ด
         </Link>
-        
-        {/* Action buttons for different user roles */}
-        {session?.user?.role === 'student' && (
-          // If freelancer is assigned to this project
-          project.assignedTo === session?.user?.id ? (
-            <Link 
-              href="/manage-projects" 
-              className="btn-primary flex items-center gap-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-              </svg>
-              ไปหน้าจัดการโปรเจกต์
-            </Link>
-          ) : (
-            // If freelancer has received a direct request
-            project.requestToFreelancer === session?.user?.id ? (
-              <ProjectManageButtons 
-                project={project}
-                isFreelancer={true}
-                userId={session?.user?.id}
-              />
-            ) : (
-              // If project is open for applications
-              project?.status === 'open' && (
-                hasApplied ? (
-                  <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                    </svg>
-                    คุณได้ส่งคำขอร่วมงานแล้ว
-                  </div>
-                ) : (
-                  <ApplyButton 
-                    projectId={project.id} 
-                    projectTitle={project.title}
-                    alreadyApplied={hasApplied}
-                  />
-                )
-              )
-            )
-          )
-        )}
-        
-        {/* Action buttons for project owners */}
-        {session?.user?.id === project.owner && (
-          project.status === 'awaiting' ? (
-            <ProjectManageButtons 
-              project={project}
-              isFreelancer={false}
-              userId={session?.user?.id}
-            />
-          ) : (
-            <Link href="/manage-projects" className="btn-primary flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-              </svg>
-              ไปหน้าจัดการโปรเจกต์
-            </Link>
-          )
-        )}
       </div>
 
       {/* Project information card */}
-      <div className="bg-white shadow-md rounded-xl overflow-hidden">
+      <div className="bg-white overflow-hidden">
         {/* Header - Project title and status */}
-        <div className="bg-primary-blue-500 p-6 text-white">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <h1 className="text-2xl font-medium">{project.title}</h1>
-            <span className={`px-4 py-1 rounded-full text-sm font-medium ${getStatusColor(project.status)}`}>
-              {getStatusText(project.status)}
-            </span>
-          </div>
-          <div className="flex items-center mt-2 text-white/80">
-            <div className="mr-2">โดย:</div>
-            {ownerProfile ? (
-              <div className="flex items-center">
-                <div className="w-6 h-6 rounded-full overflow-hidden bg-white/20 mr-2 flex items-center justify-center">
-                  {ownerProfile.profileImageUrl ? (
-                    <img 
-                      src={ownerProfile.profileImageUrl} 
-                      alt={ownerProfile.name} 
-                      className="w-full h-full object-cover"
+        <div className="p-3 border-b border-gray-200 mx-3">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
+            <div className="flex flex-col gap-2 w-full md:w-auto">
+            <p className="text-gray-500 text-sm">ชื่อโปรเจกต์</p>
+              <h1 className="text-2xl font-medium text-primary-blue-500">{project.title}</h1>
+              <div className="flex flex-col md:flex-row items-start w-full md:w-fit gap-4 mt-2 border border-gray-200 rounded-lg p-2">
+              <div className="flex place-items-center gap-2">
+                  <p className="text-gray-500 text-sm">วันที่โพสต์</p>
+                  <p className="font-medium text-primary-blue-400">{formatDate(project.createdAt)}</p>
+                </div>
+
+                <div className="flex place-items-center gap-2">
+                  <p className="text-gray-500 text-sm">กำหนดส่งงาน</p>
+                  <p className="font-medium text-primary-blue-400">{formatDate(project.deadline)}</p>
+                </div>
+              </div>
+              
+            </div>
+            
+            <div className="self-center flex flex-col gap-2 w-full md:w-auto">
+                <div className="text-center border border-gray-200 rounded-lg px-4 py-2 flex flex-col gap-2">
+                    <p className="text-gray-500 text-sm">งบค่าจ้าง</p>
+                    <p className="text-xl font-medium text-primary-blue-500">{formatPrice(project.budget)}</p>
+                </div>
+                {/* Action buttons for different user roles */}
+                {session?.user?.role === 'student' && (
+                  // If freelancer is assigned to this project
+                  project.assignedTo === session?.user?.id ? (
+                    <Link 
+                      href="/manage-projects" 
+                      className="btn-primary flex items-center gap-2"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                      </svg>
+                      ไปหน้าจัดการโปรเจกต์
+                    </Link>
+                  ) : (
+                    // If freelancer has received a direct request
+                    project.requestToFreelancer === session?.user?.id ? (
+                      <ProjectManageButtons 
+                        project={project}
+                        isFreelancer={true}
+                        userId={session?.user?.id}
+                      />
+                    ) : (
+                      // If project is open for applications
+                      project?.status === 'open' && (
+                        hasApplied ? (
+                          <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                            คุณได้ส่งคำขอร่วมงานแล้ว
+                          </div>
+                        ) : (
+                          <ApplyButton 
+                            projectId={project.id} 
+                            projectTitle={project.title}
+                            alreadyApplied={hasApplied}
+                          />
+                        )
+                      )
+                    )
+                  )
+                )}
+                
+                {/* Action buttons for project owners */}
+                {session?.user?.id === project.owner && (
+                  project.status === 'awaiting' ? (
+                    <ProjectManageButtons 
+                      project={project}
+                      isFreelancer={false}
+                      userId={session?.user?.id}
                     />
                   ) : (
-                    <span className="text-xs font-medium">
-                      {ownerProfile.name.charAt(0).toUpperCase()}
-                    </span>
-                  )}
-                </div>
-                <span>{ownerProfile.name}</span>
-              </div>
-            ) : (
-              <span>{project.ownerName}</span>
-            )}
+                    <Link href="/manage-projects" className="btn-primary flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                      </svg>
+                      ไปหน้าจัดการโปรเจกต์
+                    </Link>
+                  )
+                )}
+            </div>
+            
           </div>
         </div>
 
@@ -320,64 +316,23 @@ export default function ProjectPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left column - General info */}
             <div className="lg:col-span-1 space-y-6">
-              {/* Project info */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h2 className="text-lg font-medium mb-3 text-gray-800">ข้อมูลโปรเจกต์</h2>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-gray-500 text-sm">งบประมาณ</p>
-                    <p className="text-xl font-medium text-primary-blue-500">{formatPrice(project.budget)}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-sm">กำหนดส่งงาน</p>
-                    <p className="font-medium">{formatDate(project.deadline)}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-sm">วันที่สร้าง</p>
-                    <p className="font-medium">{formatDate(project.createdAt)}</p>
-                  </div>
-
-                  {project.status === 'in_progress' && (
-                    <div>
-                      <p className="text-gray-500 text-sm">ความคืบหน้า</p>
-                      <div className="mt-1">
-                        <div className="w-full bg-gray-200 rounded-full h-2.5">
-                          <div 
-                            className="bg-primary-blue-500 h-2.5 rounded-full transition-all duration-300" 
-                            style={{ width: `${project.progress || 0}%` }}
-                          ></div>
-                        </div>
-                        <p className="text-right text-sm mt-1">{project.progress || 0}%</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {project.status === 'revision' && (
-                    <div>
-                      <p className="text-gray-500 text-sm">ความคืบหน้าการแก้ไข</p>
-                      <div className="mt-1">
-                        <div className="w-full bg-gray-200 rounded-full h-2.5">
-                          <div 
-                            className="bg-orange-500 h-2.5 rounded-full transition-all duration-300" 
-                            style={{ width: `${project.progress || 0}%` }}
-                          ></div>
-                        </div>
-                        <p className="text-right text-sm mt-1">{project.progress || 0}%</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
               {/* Required skills */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h2 className="text-lg font-medium mb-3 text-gray-800">ทักษะที่ต้องการ</h2>
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <div className="flex items-center mb-4 gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" className="text-primary-blue-500">
+                    <path d="M12 2C8.14 2 5 5.14 5 9C5 11.38 6.19 13.47 8 14.74V17C8 17.55 8.45 18 9 18H15C15.55 18 16 17.55 16 17V14.74C17.81 13.47 19 11.38 19 9C19 5.14 15.86 2 12 2M9 21V20H15V21C15 21.55 14.55 22 14 22H10C9.45 22 9 21.55 9 21Z" stroke="#1167AE" strokeWidth="1.5" fill="none"/>
+                  </svg>
+                  <h2 className="text-lg font-semibold">ทักษะที่ต้องการ</h2>
+                  <span className="bg-primary-blue-100 text-primary-blue-600 text-xs px-2 py-0.5 rounded-full">
+                    {project.requiredSkills.length || 0}
+                  </span>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {project.requiredSkills && project.requiredSkills.length > 0 ? (
                     project.requiredSkills.map((skill, index) => (
                       <span 
                         key={index} 
-                        className="bg-primary-blue-100 text-primary-blue-600 text-sm px-3 py-1 rounded-lg"
+                        className="bg-primary-blue-50 text-primary-blue-600 text-sm px-3 py-1 rounded-full border border-primary-blue-100 hover:bg-primary-blue-100 transition-colors"
                       >
                         {skill}
                       </span>
@@ -389,12 +344,22 @@ export default function ProjectPage() {
               </div>
               
               {/* Project owner info */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h2 className="text-lg font-medium mb-3 text-gray-800">เจ้าของโปรเจกต์</h2>
-                <div className="flex items-center gap-3">
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <div className="flex items-center mb-4 gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary-blue-500">
+                    <circle cx="12" cy="8" r="5"></circle>
+                    <path d="M20 21a8 8 0 1 0-16 0"></path>
+                  </svg>
+                  <h2 className="text-lg font-semibold">เจ้าของโปรเจกต์</h2>
+                </div>
+                <div>
                   {ownerProfile ? (
                     <>
-                      <div className="w-12 h-12 rounded-full bg-primary-blue-200 flex items-center justify-center text-primary-blue-600 font-medium overflow-hidden">
+                    <Link 
+                      href={`/user/customer/${project.owner}`}
+                      className="flex items-center gap-3"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-primary-blue-200 flex items-center justify-center text-primary-blue-600 font-medium overflow-hidden outline-3 outline-double outline-primary-blue-500">
                         {ownerProfile.profileImageUrl ? (
                           <img 
                             src={ownerProfile.profileImageUrl} 
@@ -406,18 +371,14 @@ export default function ProjectPage() {
                         )}
                       </div>
                       <div>
-                        <p className="font-medium">{ownerProfile.name}</p>
-                        <Link 
-                          href={`/user/customer/${project.owner}`}
-                          className="text-sm text-primary-blue-500 hover:underline"
-                        >
-                          ดูโปรไฟล์
-                        </Link>
+                          <p className="font-medium hover:text-primary-blue-500">{ownerProfile.name}</p>
+                          <p className="text-sm text-primary-blue-500 hover:underline">ดูโปรไฟล์</p>
                       </div>
+                    </Link>
                     </>
                   ) : (
                     <>
-                      <div className="w-12 h-12 rounded-full bg-primary-blue-200 flex items-center justify-center text-primary-blue-600 font-medium">
+                      <div className="w-12 h-12 rounded-full bg-primary-blue-200 flex items-center justify-center text-primary-blue-600 font-medium overflow-hidden outline-3 outline-double outline-primary-blue-500">
                         {project.ownerName?.charAt(0) || '?'}
                       </div>
                       <div>
@@ -443,26 +404,19 @@ export default function ProjectPage() {
                   </div>
                 )}
               </div>
-            </div>
-            
-            {/* Right column - Project details and assigned freelancer */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Project description */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h2 className="text-lg font-medium mb-3 text-gray-800">รายละเอียดงาน</h2>
-                <div className="whitespace-pre-line text-gray-700">
-                  {project.description}
-                </div>
-              </div>
-              
+
               {/* Assigned freelancer information (if any) */}
               {project.assignedTo && (
-                <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="bg-white rounded-xl shadow-sm p-6">
                   <h2 className="text-lg font-medium mb-3 text-gray-800">ฟรีแลนซ์ที่รับงาน</h2>
-                  <div className="flex items-center gap-3">
+                  <div>
                     {freelancerProfile ? (
                       <>
-                        <div className="w-12 h-12 rounded-full bg-green-200 flex items-center justify-center text-green-600 font-medium overflow-hidden">
+                        <Link 
+                            href={`/user/freelance/${project.assignedTo}`}
+                            className="flex items-center gap-3"
+                        >
+                        <div className="w-12 h-12 rounded-full bg-primary-blue-200 flex items-center justify-center text-primary-blue-600 font-medium overflow-hidden outline-3 outline-double outline-primary-blue-500">
                           {freelancerProfile.profileImageUrl ? (
                             <img 
                               src={freelancerProfile.profileImageUrl} 
@@ -474,22 +428,22 @@ export default function ProjectPage() {
                           )}
                         </div>
                         <div>
-                          <p className="font-medium">{freelancerProfile.name}</p>
-                          <Link 
-                            href={`/user/freelance/${project.assignedTo}`}
+                        <p className="font-medium hover:text-primary-blue-500">{freelancerProfile.name}</p>
+                          <p
                             className="text-sm text-primary-blue-500 hover:underline"
                           >
                             ดูโปรไฟล์
-                          </Link>
+                          </p>
                         </div>
+                        </Link>
                       </>
                     ) : (
                       <>
-                        <div className="w-12 h-12 rounded-full bg-green-200 flex items-center justify-center text-green-600 font-medium">
+                        <div className="w-12 h-12 rounded-full bg-primary-blue-200 flex items-center justify-center text-primary-blue-600 font-medium overflow-hidden outline-3 outline-double outline-primary-blue-500">
                           {project.assignedFreelancerName?.charAt(0) || 'F'}
                         </div>
                         <div>
-                          <p className="font-medium">{project.assignedFreelancerName || 'ฟรีแลนซ์'}</p>
+                          <p className="font-medium hover:text-primary-blue-500">{project.assignedFreelancerName || 'ฟรีแลนซ์'}</p>
                           <Link 
                             href={`/user/freelance/${project.assignedTo}`}
                             className="text-sm text-primary-blue-500 hover:underline"
@@ -512,10 +466,21 @@ export default function ProjectPage() {
                   )}
                 </div>
               )}
+            </div>
+            
+            {/* Right column - Project details and assigned freelancer */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Project description */}
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <h2 className="text-lg font-medium mb-3 text-gray-800">รายละเอียดงาน</h2>
+                <div className="whitespace-pre-line text-gray-700">
+                  {project.description}
+                </div>
+              </div>
               
               {/* Project timeline */}
               {(project.status !== 'open' && project.status !== 'cancelled') && (
-                <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="bg-white rounded-xl shadow-sm p-6">
                   <h2 className="text-lg font-medium mb-3 text-gray-800">สถานะโปรเจกต์</h2>
                   <div className="relative">
                     <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gray-200"></div>
@@ -614,14 +579,6 @@ export default function ProjectPage() {
                       <p className="text-yellow-700 text-sm">
                         โปรเจกต์นี้เปิดรับฟรีแลนซ์ที่มีทักษะตรงตามที่ระบุไว้ ก่อนสมัครควรตรวจสอบว่าคุณมีทักษะที่เหมาะสมและสามารถส่งงานได้ตามกำหนดเวลา
                       </p>
-                      <div className="mt-2">
-                        <button
-                          onClick={() => document.getElementById('applyButton')?.click()}
-                          className="text-sm font-medium text-primary-blue-500 hover:text-primary-blue-600 hover:underline"
-                        >
-                          สมัครเข้าร่วมโปรเจกต์ →
-                        </button>
-                      </div>
                     </div>
                   </div>
                 </div>

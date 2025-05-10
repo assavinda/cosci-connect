@@ -31,8 +31,8 @@ function ProjectBoardPage() {
     );
     const [status, setStatus] = useState(searchParams.get('status') || 'open');
     const [priceRange, setPriceRange] = useState({
-      min: parseInt(searchParams.get('minPrice') || '0', 10),
-      max: parseInt(searchParams.get('maxPrice') || '10000', 10)
+        min: parseInt(searchParams.get('minPrice') || '0', 10),
+        max: searchParams.get('maxPrice') ? parseInt(searchParams.get('maxPrice')!, 10) : null
     });
     
     // เพิ่ม usePusher hook เพื่อใช้งาน Pusher
@@ -98,7 +98,7 @@ function ProjectBoardPage() {
         if (selectedSkills.length > 0) params.set('skills', selectedSkills.join(','));
         if (status !== 'open') params.set('status', status);
         if (priceRange.min > 0) params.set('minPrice', priceRange.min.toString());
-        if (priceRange.max < 10000) params.set('maxPrice', priceRange.max.toString());
+        if (priceRange.max !== null) params.set('maxPrice', priceRange.max.toString());
         
         // Reset to page 1
         params.set('page', '1');
@@ -111,9 +111,9 @@ function ProjectBoardPage() {
         setSearchQuery('');
         setSelectedSkills([]);
         setStatus('open');
-        setPriceRange({ min: 0, max: 10000 });
+        setPriceRange({ min: 0, max: null });
         router.push('/project-board');
-    };
+    };    
 
     return (
         <div className="flex flex-col gap-3">
@@ -139,8 +139,6 @@ function ProjectBoardPage() {
                 onSearchChange={setSearchQuery}
                 selectedSkills={selectedSkills}
                 onSkillsChange={setSelectedSkills}
-                status={status}
-                onStatusChange={setStatus}
                 priceRange={priceRange}
                 onPriceRangeChange={setPriceRange}
                 onApplyFilters={applyFilters}

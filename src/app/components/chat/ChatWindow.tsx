@@ -552,7 +552,7 @@ function ChatWindow({
               ))
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                <p>ยังไม่มีข้อความ เริ่มส่งข้อความกันเถอะ</p>
+                <p>ยังไม่มีข้อความ เริ่มส่งข้อความเลย</p>
               </div>
             )}
             <div ref={chatEndRef} />

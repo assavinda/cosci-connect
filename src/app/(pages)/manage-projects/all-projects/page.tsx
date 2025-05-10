@@ -206,21 +206,6 @@ export default function AllProjectsPage() {
     return new Date(dateString).toLocaleDateString('th-TH', options);
   };
   
-  // ฟังก์ชันค้นหาและกรองโปรเจกต์
-  const getFilteredProjects = () => {
-    return projects.filter(project => {
-      // กรองตามคำค้นหา
-      const matchesSearch = searchTerm === '' || 
-        project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.description.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      // กรองตามสถานะ
-      const matchesStatus = filterStatus === 'all' || project.status === filterStatus;
-      
-      return matchesSearch && matchesStatus;
-    });
-  };
-  
   // รายการสถานะที่เป็นไปได้
   const statusOptions = [
     { value: 'all', label: 'สถานะทั้งหมด' },
@@ -260,14 +245,20 @@ export default function AllProjectsPage() {
 
   // ตรวจสอบว่าผู้ใช้เป็นฟรีแลนซ์หรือไม่
   const isFreelancer = session?.user?.role === 'student';
-  
-  // กรองโปรเจกต์ตามการค้นหาและตัวกรอง
-  const filteredProjects = getFilteredProjects();
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full mx-auto pt-6">
       {/* Toaster component for showing notifications */}
       <Toaster position="bottom-left" />
+
+      <div className="flex justify-between items-center mb-6">
+        <Link href="/manage-projects" className="text-primary-blue-500 hover:text-primary-blue-600 flex items-center gap-1 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 18l-6-6 6-6"/>
+          </svg>
+          กลับไปหน้าจัดการโปรเจกต์
+        </Link>
+      </div>
       
       {/* Header */}
       <section className="mt-6 p-6 flex flex-col gap-2 bg-primary-blue-500 rounded-xl mb-6">
@@ -282,14 +273,6 @@ export default function AllProjectsPage() {
                 : 'ดูรายการโปรเจกต์ทั้งหมดที่คุณเป็นเจ้าของ'}
             </p>
           </div>
-          
-          <Link href="/manage-projects" className="btn-secondary flex items-center gap-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white border-transparent">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="19" y1="12" x2="5" y2="12"></line>
-              <polyline points="12 19 5 12 12 5"></polyline>
-            </svg>
-            กลับไปหน้าจัดการโปรเจกต์
-          </Link>
         </div>
         
         {/* จำนวนโปรเจกต์ */}
@@ -299,54 +282,12 @@ export default function AllProjectsPage() {
               {projects.length}
             </span></p>
           </div>
-          <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-lg">
-            <p className="text-white text-sm">กำลังแสดง: <span className="font-medium">
-              {filteredProjects.length}
-            </span></p>
-          </div>
         </div>
       </section>
       
-      {/* Search and filter */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          {/* ช่องค้นหา */}
-          <div className="flex-1">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="ค้นหาโปรเจกต์..."
-                className="input pl-10 w-full"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-              </div>
-            </div>
-          </div>
-          
-          {/* ตัวกรองสถานะ */}
-          <div className="flex-shrink-0 w-full md:w-48">
-            <select
-              className="input w-full"
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-            >
-              {statusOptions.map(option => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-      
       {/* Project list */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        {filteredProjects.length > 0 ? (
+        {projects.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -361,7 +302,7 @@ export default function AllProjectsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredProjects.map((project) => (
+                {projects.map((project) => (
                   <tr key={project.id} className="hover:bg-gray-50 transition-colors">
                     <td className="p-4">
                       <div className="font-medium text-primary-blue-500">{project.title}</div>
@@ -388,16 +329,15 @@ export default function AllProjectsPage() {
                       <div className="text-xs text-center mt-1">{project.progress || 0}%</div>
                     </td>
                     <td className="p-4">
-                      <div className="flex gap-2 justify-center">
+                      <div className="flex gap-2 justify-start">
                         <Link 
                           href={`/project/${project.id}`}
                           className="p-2 rounded-lg hover:bg-gray-100 text-primary-blue-500 transition-colors"
                           title="ดูรายละเอียด"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                          </svg>
+                          <div className="btn-primary">
+                            <p>ดูโปรเจกต์</p>
+                          </div>
                         </Link>
                         
                         {/* แสดงปุ่มลบเฉพาะเมื่อเป็นเจ้าของและสถานะเป็น open */}
@@ -479,9 +419,9 @@ export default function AllProjectsPage() {
       </div>
       
       {/* Footer with pagination (ถ้าจำเป็น) */}
-      {filteredProjects.length > 0 && (
+      {projects.length > 0 && (
         <div className="mt-4 text-center text-gray-500 text-sm">
-          แสดง {filteredProjects.length} จาก {projects.length} โปรเจกต์
+          แสดง {projects.length} จาก {projects.length} โปรเจกต์
         </div>
       )}
     </div>

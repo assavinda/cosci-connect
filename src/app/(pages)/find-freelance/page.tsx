@@ -19,7 +19,7 @@ export default function FindFreelancePage() {
     const [selectedMajor, setSelectedMajor] = useState(searchParams.get('major') || '');
     const [priceRange, setPriceRange] = useState({
         min: parseInt(searchParams.get('minPrice') || '0', 10),
-        max: parseInt(searchParams.get('maxPrice') || '10000', 10)
+        max: searchParams.get('maxPrice') ? parseInt(searchParams.get('maxPrice')!, 10) : null
     });
     
     // เพิ่ม usePusher hook เพื่อใช้งาน Pusher
@@ -51,7 +51,7 @@ export default function FindFreelancePage() {
         if (minPrice || maxPrice) {
             setPriceRange({
                 min: minPrice ? parseInt(minPrice, 10) : 0,
-                max: maxPrice ? parseInt(maxPrice, 10) : 10000
+                max: maxPrice ? parseInt(maxPrice, 10) : null
             });
         }
     }, [searchParams]);
@@ -86,7 +86,7 @@ export default function FindFreelancePage() {
             if (selectedSkills.length > 0) params.skills = selectedSkills.join(',');
             if (selectedMajor) params.major = selectedMajor;
             if (priceRange.min > 0) params.minPrice = priceRange.min;
-            if (priceRange.max < 10000) params.maxPrice = priceRange.max;
+            if (priceRange.max !== null) params.maxPrice = priceRange.max;
             
             // Make HEAD request to get count
             const response = await axios.head('/api/freelancers', { params });
@@ -116,7 +116,7 @@ export default function FindFreelancePage() {
         if (selectedSkills.length > 0) params.set('skills', selectedSkills.join(','));
         if (selectedMajor) params.set('major', selectedMajor);
         if (priceRange.min > 0) params.set('minPrice', priceRange.min.toString());
-        if (priceRange.max < 10000) params.set('maxPrice', priceRange.max.toString());
+        if (priceRange.max !== null) params.set('maxPrice', priceRange.max.toString());
         
         // Reset to page 1
         params.set('page', '1');
@@ -128,7 +128,7 @@ export default function FindFreelancePage() {
         setSearchQuery('');
         setSelectedSkills([]);
         setSelectedMajor('');
-        setPriceRange({ min: 0, max: 10000 });
+        setPriceRange({ min: 0, max: null });
         router.push('/find-freelance');
     };
     

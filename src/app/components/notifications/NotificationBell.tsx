@@ -108,7 +108,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onClick, isOpen = f
       
       {/* Notification badge */}
       {unreadCount > 0 && (
-        <span className="absolute -top-1 -right-1 flex justify-center items-center w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse">
+        <span className="absolute -top-1 -right-1 flex justify-center items-center w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full">
           {unreadCount > 9 ? '9+' : unreadCount}
         </span>
       )}

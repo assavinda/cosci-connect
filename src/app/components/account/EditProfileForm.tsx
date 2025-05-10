@@ -142,8 +142,17 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ userData, onUpdateSuc
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-md p-6">
-      <h2 className="text-xl font-medium text-primary-blue-500 mb-4">แก้ไขโปรไฟล์</h2>
+    <div className="bg-white p-6">
+      <div className="flex justify-between items-center mb-6">
+        <button onClick={onCancel} className="text-primary-blue-500 hover:text-primary-blue-600 flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 18l-6-6 6-6"/>
+          </svg>
+          กลับไปยังหน้าโปรไฟล์
+        </button>
+      </div>
+
+      <h2 className="text-xl font-medium text-primary-blue-500 mb-4 border-b border-gray-300 pb-4">แก้ไขโปรไฟล์</h2>
       
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-300 text-red-700 rounded-lg">

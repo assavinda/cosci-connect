@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     const skills = url.searchParams.get('skills')?.split(',');
     const status = url.searchParams.get('status') || 'open'; // Default to open projects
     const minPrice = parseInt(url.searchParams.get('minPrice') || '0', 10);
-    const maxPrice = parseInt(url.searchParams.get('maxPrice') || '10000', 10);
+    const maxPrice = url.searchParams.get('maxPrice') ? parseInt(url.searchParams.get('maxPrice')!, 10) : null;
     const owner = url.searchParams.get('owner'); // Optional owner filter
     const assignedTo = url.searchParams.get('assignedTo'); // Optional assignedTo filter
     const requestToFreelancer = url.searchParams.get('requestToFreelancer'); // Optional requestToFreelancer filter
@@ -67,11 +67,13 @@ export async function GET(req: NextRequest) {
     }
     
     // Add budget range filter
-    if (minPrice > 0 || maxPrice < 10000) {
-      query.budget = {
-        $gte: minPrice,
-        $lte: maxPrice
-      };
+    if (minPrice > 0 || maxPrice !== null) {
+      query.budget = { $gte: minPrice };
+      
+      // เพิ่ม $lte เฉพาะเมื่อมีการระบุ maxPrice
+      if (maxPrice !== null) {
+        query.budget.$lte = maxPrice;
+      }
     }
     
     // ส่วนใหม่: สำหรับฟรีแลนซ์ที่ต้องการเห็นเฉพาะโปรเจกต์ที่เกี่ยวข้องกับตัวเอง

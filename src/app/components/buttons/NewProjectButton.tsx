@@ -9,7 +9,7 @@ import { toast } from 'react-hot-toast';
 interface ProjectFormData {
   title: string;
   description: string;
-  budget: string;
+  budget: number;
   deadline: string;
   requiredSkills: string[];
   // ฟิลด์ต่อไปนี้จะถูกกำหนดโดยระบบ:
@@ -29,7 +29,7 @@ const NewProjectModal = ({ isOpen, onClose, onSubmit }) => {
   const [formData, setFormData] = useState<ProjectFormData>({
     title: '',
     description: '',
-    budget: '',
+    budget: 100,
     deadline: '',
     requiredSkills: []
   });
@@ -84,7 +84,7 @@ const NewProjectModal = ({ isOpen, onClose, onSubmit }) => {
       valid = false;
     }
     
-    if (!formData.budget.trim()) {
+    if (formData.budget === null || formData.budget === undefined) {
       newErrors.budget = 'กรุณาระบุงบประมาณ';
       valid = false;
     } else if (isNaN(Number(formData.budget))) {
@@ -143,7 +143,7 @@ const NewProjectModal = ({ isOpen, onClose, onSubmit }) => {
       setFormData({
         title: '',
         description: '',
-        budget: '',
+        budget: 100,
         deadline: '',
         requiredSkills: []
       });
@@ -194,8 +194,8 @@ const NewProjectModal = ({ isOpen, onClose, onSubmit }) => {
           <div className="space-y-6">
             {/* Project title */}
             <div>
-              <label htmlFor="title" className="label">
-                ชื่อโปรเจกต์ <span className="text-red-500">*</span>
+              <label htmlFor="title" className="font-medium text-sm text-gray-700">
+                ชื่อโปรเจกต์
               </label>
               <input
                 type="text"
@@ -213,8 +213,8 @@ const NewProjectModal = ({ isOpen, onClose, onSubmit }) => {
             
             {/* Description */}
             <div>
-              <label htmlFor="description" className="label">
-                รายละเอียดโปรเจกต์ <span className="text-red-500">*</span>
+              <label htmlFor="description" className="font-medium text-sm text-gray-700">
+                รายละเอียดโปรเจกต์ 
               </label>
               <textarea
                 id="description"
@@ -234,19 +234,23 @@ const NewProjectModal = ({ isOpen, onClose, onSubmit }) => {
             {/* Budget and Deadline in two columns */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Budget */}
-              <div>
-                <label htmlFor="budget" className="label">
-                  งบประมาณ (บาท) <span className="text-red-500">*</span>
+              <div className="flex flex-col">
+                <label htmlFor="budget" className="font-medium text-sm text-gray-700">
+                  งบประมาณ
                 </label>
-                <input
-                  type="text"
-                  id="budget"
-                  name="budget"
-                  className={`input ${errors.budget ? 'border-red-500' : ''}`}
-                  placeholder="ระบุงบประมาณ"
-                  value={formData.budget}
-                  onChange={handleChange}
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    id="budget"
+                    name="budget"
+                    min="100"
+                    step="100"
+                    className={`input max-w-32 ${errors.budget ? 'border-red-500' : ''}`}
+                    value={formData.budget}
+                    onChange={handleChange}
+                  />
+                  <span className="text-gray-600">บาท</span>
+                </div>
                 {errors.budget && (
                   <p className="text-red-500 text-xs mt-1">{errors.budget}</p>
                 )}
@@ -254,8 +258,8 @@ const NewProjectModal = ({ isOpen, onClose, onSubmit }) => {
               
               {/* Deadline */}
               <div>
-                <label htmlFor="deadline" className="label">
-                  วันที่ต้องการให้งานเสร็จ <span className="text-red-500">*</span>
+                <label htmlFor="deadline" className="font-medium text-sm text-gray-700">
+                  กำหนดส่งงาน
                 </label>
                 <input
                   type="date"
@@ -274,7 +278,7 @@ const NewProjectModal = ({ isOpen, onClose, onSubmit }) => {
             
             {/* Required Skills */}
             <div>
-              <label className="label">
+              <label className="font-medium text-sm text-gray-700">
                 ทักษะที่ต้องการ <span className="text-xs text-gray-500 ml-1">(เลือกอย่างน้อย 1 ทักษะ)</span>
               </label>
               
