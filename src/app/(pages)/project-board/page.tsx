@@ -3,7 +3,7 @@
 import NewProjectButton from "../../components/buttons/NewProjectButton";
 import ProjectBoardList from "../../components/lists/ProjectBoardList";
 import ProjectFilter from "../../components/filters/ProjectFilter";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import axios from "axios";
 import { Toaster } from 'react-hot-toast';
@@ -18,7 +18,11 @@ const skillCategories = {
   "Audio": ["Sound Design", "Music Production", "Voice Over"]
 };
 
-function ProjectBoardPage() {
+// Get all skills from all categories
+const allSkills = Object.values(skillCategories).flat();
+
+// Create a client component that uses useSearchParams
+function ProjectBoardContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const [totalProjects, setTotalProjects] = useState(0);
@@ -37,9 +41,6 @@ function ProjectBoardPage() {
     
     // เพิ่ม usePusher hook เพื่อใช้งาน Pusher
     const { subscribeToProjectList } = usePusher();
-    
-    // Get all skills from all categories
-    const allSkills = Object.values(skillCategories).flat();
     
     // เพิ่ม Effect สำหรับการลงทะเบียนรับการอัปเดตรายการโปรเจกต์แบบ realtime
     useEffect(() => {
@@ -153,7 +154,21 @@ function ProjectBoardPage() {
                 filter={status}
             />
         </div>
-    )
+    );
 }
 
-export default ProjectBoardPage
+// Loading fallback component
+function ProjectBoardLoading() {
+    return <div className="flex justify-center items-center h-64">กำลังโหลด...</div>;
+}
+
+// Main component with Suspense
+function ProjectBoardPage() {
+    return (
+        <Suspense fallback={<ProjectBoardLoading />}>
+            <ProjectBoardContent />
+        </Suspense>
+    );
+}
+
+export default ProjectBoardPage;

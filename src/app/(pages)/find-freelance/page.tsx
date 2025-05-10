@@ -1,15 +1,31 @@
 'use client';
 
-import React, { useState, useEffect } from "react";
+import React, { Suspense } from "react";
+import Loading from "../../components/common/Loading";
+
+// แยก Component หลักไปอยู่ด้านล่าง
+const FindFreelancePage = () => {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center my-12">
+        <Loading size="large" color="primary" />
+      </div>
+    }>
+      <FreelancePageContent />
+    </Suspense>
+  );
+};
+
+// สร้าง Component ย่อยที่มีโค้ดหลักทั้งหมด
+import { useState, useEffect } from "react";
 import FreelanceList from "../../components/lists/FreelanceList";
 import FreelanceFilter from "../../components/filters/FreelanceFilter";
 import { useSearchParams, useRouter } from "next/navigation";
 import axios from "axios";
-import Loading from "../../components/common/Loading";
 import { skillCategories } from "../../components/auth/register/RegisterForm";
 import { usePusher } from "../../../providers/PusherProvider";
 
-export default function FindFreelancePage() {
+function FreelancePageContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const [totalFreelancers, setTotalFreelancers] = useState(0);
@@ -102,7 +118,7 @@ export default function FindFreelancePage() {
             setIsLoading(false);
         }
     };
-    
+
     // เรียก fetchTotalCount เมื่อ component โหลดครั้งแรกหรือเมื่อตัวกรองเปลี่ยน
     useEffect(() => {
         fetchTotalCount();
@@ -187,3 +203,5 @@ export default function FindFreelancePage() {
         </div>
     );
 }
+
+export default FindFreelancePage;
