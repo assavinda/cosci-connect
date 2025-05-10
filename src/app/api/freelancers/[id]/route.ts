@@ -10,11 +10,11 @@ import pusherServer, {
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get freelancer ID from route params
-    const id = params.id;
+    const { id } =  await params;
     
     // Validate the ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -69,11 +69,11 @@ export async function GET(
 // PATCH - Update a freelancer profile
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get freelancer ID from route params
-    const id = params.id;
+    const { id } =  await params;
     
     // Validate the ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -166,6 +166,14 @@ export async function PATCH(
       { new: true }
     ).lean().exec();
     
+    // Check if updatedUser is null
+    if (!updatedUser) {
+      return NextResponse.json(
+        { error: 'Failed to update freelancer: User not found after update' },
+        { status: 404 }
+      );
+    }
+
     // Map to response object (clean up sensitive data)
     const freelancer = {
       id: updatedUser._id.toString(),

@@ -22,11 +22,11 @@ import {
 // GET - Retrieve a specific project by ID
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get project ID from route params
-    const id = params.id;
+    const { id } =  await params;
     
     // Validate the ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -82,7 +82,7 @@ export async function GET(
 // PATCH - Update a project by ID
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get authenticated user
@@ -96,7 +96,7 @@ export async function PATCH(
     }
     
     // Get project ID from route params
-    const id = params.id;
+    const { id } =  await params;
     
     // Validate the ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -674,7 +674,7 @@ export async function PATCH(
 // DELETE - Delete a project by ID
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get authenticated user
@@ -688,7 +688,7 @@ export async function DELETE(
     }
     
     // Get project ID from route params
-    const id = params.id;
+    const { id } =  await params;
     
     // Validate the ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -759,7 +759,7 @@ export async function DELETE(
 // PUT - Update a project in a more idempotent way or handle bulk updates
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get authenticated user
@@ -773,7 +773,7 @@ export async function PUT(
     }
     
     // Get project ID from route params
-    const id = params.id;
+    const { id } =  await params;
     
     // Validate the ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -904,4 +904,3 @@ export async function PUT(
     );
   }
 }
-

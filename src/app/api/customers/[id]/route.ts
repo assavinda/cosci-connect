@@ -6,11 +6,11 @@ import mongoose from 'mongoose';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // รับไอดีผู้ใช้จากพารามิเตอร์ของเส้นทาง
-    const id = params.id;
+    const { id } =  await params;
     
     // ตรวจสอบรูปแบบไอดี
     if (!mongoose.Types.ObjectId.isValid(id)) {

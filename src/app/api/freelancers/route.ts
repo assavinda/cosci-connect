@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
     }
     
     // Add price range filter
-    if (minPrice > 0 || maxPrice < 10000) {
+    if (minPrice > 0 || maxPrice !== null) {
       query.basePrice = {
         $gte: minPrice,
         $lte: maxPrice
@@ -139,7 +139,7 @@ export async function HEAD(req: NextRequest) {
     }
     
     // Add price range filter
-    if (minPrice > 0 || maxPrice < 10000) {
+    if (minPrice > 0 || maxPrice !== null) {
       query.basePrice = {
         $gte: minPrice,
         $lte: maxPrice

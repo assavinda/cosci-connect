@@ -8,7 +8,7 @@ import { getServerSession, getUserIdFromSession } from '@/libs/auth';
 // POST - Mark a specific notification as read
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // ใช้ getServerSession ที่สร้างเอง
@@ -24,7 +24,7 @@ export async function POST(
     }
 
     // Get notification ID from route params
-    const id = params.id;
+    const { id } =  await params;
     
     // Validate the ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
