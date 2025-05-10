@@ -81,7 +81,7 @@ function ApplyButton({ projectId, projectTitle, alreadyApplied = false }: ApplyB
             <div className="p-6">
               <h3 className="text-lg font-medium mb-4">ยืนยันการส่งคำขอร่วมงาน</h3>
               <p className="text-gray-600 mb-6">
-                คุณต้องการส่งคำขอร่วมงานในโปรเจกต์ "{projectTitle}" ใช่หรือไม่?
+                คุณต้องการส่งคำขอร่วมงานในโปรเจกต์ {projectTitle} ใช่หรือไม่?
               </p>
 
               <div className="flex justify-end gap-3">

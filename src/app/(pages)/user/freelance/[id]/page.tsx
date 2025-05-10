@@ -438,7 +438,7 @@ export default function FreelancerProfilePage() {
                         <polyline points="21 15 16 10 5 21"></polyline>
                       </svg>
                       <p className="text-gray-500 mb-2">ฟรีแลนซ์ยังไม่ได้เพิ่มตัวอย่างผลงาน</p>
-                      <p className="text-gray-400 text-sm">คุณสามารถดูประวัติการทำงานได้ในแท็บ "โปรเจกต์ที่เคยทำ"</p>
+                      <p className="text-gray-400 text-sm">คุณสามารถดูประวัติการทำงานได้ในแท็บโปรเจกต์ที่เคยทำ</p>
                     </div>
                   )}
                 </div>
@@ -484,7 +484,7 @@ export default function FreelancerProfilePage() {
                         <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
                       </svg>
                       <p className="text-gray-500 mb-2">ฟรีแลนซ์ยังไม่มีโปรเจกต์ที่ทำเสร็จ</p>
-                      <p className="text-gray-400 text-sm">คุณสามารถดูตัวอย่างผลงานได้ในแท็บ "ตัวอย่างผลงาน"</p>
+                      <p className="text-gray-400 text-sm">คุณสามารถดูตัวอย่างผลงานได้ในแท็บตัวอย่างผลงาน</p>
                     </div>
                   )}
                 </div>

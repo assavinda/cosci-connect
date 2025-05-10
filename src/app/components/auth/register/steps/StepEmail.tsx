@@ -114,7 +114,7 @@ function StepEmail({ email, isVerified, validation, onEmailChange, onEmailTouche
           </p>
         ) : (
           <p className="text-gray-600 text-sm mt-1">
-            เมื่อกดปุ่ม "ถัดไป" ระบบจะส่งรหัส OTP ไปยังอีเมลของคุณ 
+            เมื่อกดปุ่มถัดไป ระบบจะส่งรหัส OTP ไปยังอีเมลของคุณ 
             กรุณาตรวจสอบว่าอีเมลถูกต้องก่อนดำเนินการต่อ
           </p>
         )}

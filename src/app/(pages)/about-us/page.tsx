@@ -42,7 +42,7 @@ function AboutUsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-10 md:px-20">
           <div className="shadow-sm rounded-xl">
             <div className="bg-radial from-primary-blue-400 to-primary-blue-600 flex justify-center pt-10 rounded-t-xl">
-              <img src="/images/bros/313.png" alt="cosci:connect" className="h-[360px] object-cover"/>
+              <img src="/images/bros/313.png" alt="313" className="h-[360px] object-cover"/>
             </div>
             <div className="flex flex-col gap-2 justify-center text-center p-3">
               <p className="font-medium text-m">พฤหัส อัศวะศิริจินดา</p>
@@ -52,7 +52,7 @@ function AboutUsPage() {
 
           <div className="shadow-sm rounded-xl">
             <div className="bg-radial from-primary-blue-400 to-primary-blue-600 flex justify-center pt-10 rounded-t-xl">
-              <img src="/images/bros/304.png" alt="cosci:connect" className="h-[360px] object-cover"/>
+              <img src="/images/bros/304.png" alt="304" className="h-[360px] object-cover"/>
             </div>
             <div className="flex flex-col gap-2 justify-center text-center p-3">
               <p className="font-medium text-m">ณัฐภัทร อังชวาลา</p>
@@ -62,7 +62,7 @@ function AboutUsPage() {
 
           <div className="shadow-sm rounded-xl">
             <div className="bg-radial from-primary-blue-400 to-primary-blue-600 flex justify-center pt-10 rounded-t-xl">
-              <img src="/images/bros/408.png" alt="cosci:connect" className="h-[360px] object-cover"/>
+              <img src="/images/bros/408.png" alt="408" className="h-[360px] object-cover"/>
             </div>
             <div className="flex flex-col gap-2 justify-center text-center p-3">
               <p className="font-medium text-m">ปรัชญ์ เติมศรีสุข</p>

@@ -133,6 +133,7 @@ const MajorDropdown: React.FC<MajorDropdownProps> = ({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         role="combobox"
+        aria-controls="dropdown-list-id"
       >
         <span className={`block truncate ${!value ? 'text-gray-500' : ''}`}>
           {selectedOption ? selectedOption.label : placeholder}
