@@ -2,18 +2,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/libs/mongodb';
 import Notification from '@/models/Notification';
+import User from '@/models/User'; // เพิ่ม import User Model
 import mongoose from 'mongoose';
 import { markAllNotificationsAsRead } from '@/utils/notificationUtils';
-import { getServerSession, getUserIdFromSession } from '@/libs/auth';
+import { getServerSession } from "next-auth/next";
 
 // GET - Fetch user notifications
 export async function GET(req: NextRequest) {
   try {
-    // ใช้ getServerSession ที่สร้างเอง
-    const session = await getServerSession({ req });
-    const userId = getUserIdFromSession(session);
+    // ใช้ getServerSession ของ next-auth พร้อมกับ 
+    const session = await getServerSession();
     
-    if (!userId) {
+    // ตรวจสอบว่ามี session และ session.user หรือไม่
+    if (!session?.user?.email) {
       console.error('Session not found or invalid:', session);
       return NextResponse.json(
         { error: 'Unauthorized - Please login to view notifications' },
@@ -21,8 +22,18 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Connect to the database
+    // ค้นหา user จาก email ใน session
     await connectToDatabase();
+    const user = await User.findOne({ email: session.user.email }).exec();
+    
+    if (!user?._id) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+    
+    const userId = user._id;
     
     // Parse query parameters
     const url = new URL(req.url);
@@ -35,7 +46,7 @@ export async function GET(req: NextRequest) {
     
     // Build query
     const query: any = { 
-      recipientId: new mongoose.Types.ObjectId(userId) 
+      recipientId: userId instanceof mongoose.Types.ObjectId ? userId : null
     };
     
     if (unreadOnly) {
@@ -73,7 +84,7 @@ export async function GET(req: NextRequest) {
     
     // Count unread notifications
     const unreadCount = await Notification.countDocuments({
-      recipientId: new mongoose.Types.ObjectId(userId),
+      recipientId: userId instanceof mongoose.Types.ObjectId ? userId : new mongoose.Types.ObjectId(userId as string),
       isRead: false
     });
     
@@ -101,19 +112,29 @@ export async function GET(req: NextRequest) {
 // PATCH - Mark notifications as read
 export async function PATCH(req: NextRequest) {
   try {
-    // ใช้ getServerSession ที่สร้างเอง
-    const session = await getServerSession({ req });
-    const userId = getUserIdFromSession(session);
+    // ใช้ getServerSession ของ next-auth พร้อมกับ 
+    const session = await getServerSession();
     
-    if (!userId) {
+    // ตรวจสอบว่ามี session และ session.user หรือไม่
+    if (!session?.user?.email) {
       return NextResponse.json(
         { error: 'Unauthorized - Please login to manage notifications' },
         { status: 401 }
       );
     }
 
-    // Connect to the database
+    // ค้นหา user จาก email ใน session
     await connectToDatabase();
+    const user = await User.findOne({ email: session.user.email }).exec();
+    
+    if (!user?._id) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+    
+    const userId = user._id.toString();
     
     // Get request body
     const data = await req.json();
@@ -184,19 +205,29 @@ export async function PATCH(req: NextRequest) {
 // DELETE - Delete a notification
 export async function DELETE(req: NextRequest) {
   try {
-    // ใช้ getServerSession ที่สร้างเอง
-    const session = await getServerSession({ req });
-    const userId = getUserIdFromSession(session);
+    // ใช้ getServerSession ของ next-auth พร้อมกับ 
+    const session = await getServerSession();
     
-    if (!userId) {
+    // ตรวจสอบว่ามี session และ session.user หรือไม่
+    if (!session?.user?.email) {
       return NextResponse.json(
         { error: 'Unauthorized - Please login to delete notifications' },
         { status: 401 }
       );
     }
 
-    // Connect to the database
+    // ค้นหา user จาก email ใน session
     await connectToDatabase();
+    const user = await User.findOne({ email: session.user.email }).exec();
+    
+    if (!user?._id) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+    
+    const userId = user._id.toString();
     
     // Get notification ID from request
     const url = new URL(req.url);
