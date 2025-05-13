@@ -34,20 +34,6 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, onClose }
     }
   }, [isOpen, refreshNotifications]);
 
-  // เพิ่ม event listener สำหรับการคลิกนอกพาเนล
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [onClose]);
-
   // ฟังก์ชันจัดการคลิกที่การแจ้งเตือน
   const handleNotificationClick = async (notification) => {
     // Mark as read

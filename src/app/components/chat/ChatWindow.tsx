@@ -309,25 +309,6 @@ function ChatWindow({
     }
   };
 
-  // จัดการกับการคลิกนอกหน้าต่างแชทเพื่อปิด
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (chatWindowRef.current && !chatWindowRef.current.contains(event.target as Node)) {
-        // ตรวจสอบว่าคลิกที่ปุ่ม "ส่งข้อความ" หรือไม่
-        const isSendMessageButton = (event.target as Element).closest('button[aria-label="ส่งข้อความ"]');
-        if (!isSendMessageButton && isOpen) {
-          onClose();
-        }
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen, onClose]);
-
   // แสดงหน้าแชทกับผู้ใช้ที่เลือก
   const openChat = (chat: ChatContact) => {
     setSelectedChat(chat);

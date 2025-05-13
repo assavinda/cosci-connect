@@ -297,7 +297,6 @@ export default function FreelancerProfilePage() {
             
             {freelancer.portfolioUrl ? (
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                {/* เพิ่ม PDFViewer component สำหรับดูไฟล์ PDF */}
                 <PDFViewer 
                   pdfUrl={addPDFTransformation(freelancer.portfolioUrl)} 
                   fileName={`พอร์ตโฟลิโอของ ${freelancer.name}`}
