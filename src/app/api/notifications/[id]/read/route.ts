@@ -9,7 +9,7 @@ import { getServerSession } from "next-auth/next";
 // POST - Mark a specific notification as read
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // ใช้ getServerSession ของ next-auth เหมือนกับใน route.ts
@@ -38,7 +38,7 @@ export async function POST(
     const userId = user._id.toString();
 
     // Get notification ID from route params
-    const { id } = params;
+    const { id } =  await params;
     
     // Validate the ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
